@@ -82,7 +82,7 @@ test-local:
     END
 
     # push to earthly cache
-    SAVE IMAGE --push ghcr.io/chief-of-state/chief-of-state:earthly-cache
+    SAVE IMAGE --push ghcr.io/chief-of-state/chief-of-state-cache:test
 
 codecov:
     FROM +test-local
