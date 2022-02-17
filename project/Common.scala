@@ -57,6 +57,7 @@ object Common extends AutoPlugin {
       Test / testOptions += Tests.Argument("-oDF"),
       Test / logBuffered := false,
       coverageExcludedPackages := "<empty>;com.github.chiefofstate.protobuf.*;" +
+      ";com.github.chiefofstate.test.helloword.*;" +
       "com.github.chiefofstate.StartNodeBehaviour;" +
       "com.github.chiefofstate.ServiceBootstrapper;" +
       "com.github.chiefofstate.StartNode;",
