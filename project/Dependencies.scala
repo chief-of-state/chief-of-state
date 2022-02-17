@@ -23,7 +23,7 @@ object Dependencies {
     val LogstashLogbackVersion: String = "6.3"
     val OpenTelemetryVersion: String   = "1.6.0"
     val TestContainers: String         = "0.40.1"
-    val OtelToolsVersion: String       = "0.1.9"
+    val OtelToolsVersion: String       = "0.1.10"
   }
 
   import Dependencies.Versions._
