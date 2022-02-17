@@ -5,13 +5,13 @@ This document describes the anatomy of a common COS application and the language
 
 chief-of-state defines its public interfaces as [gRPC](https://grpc.io/) services and objects as [protobufs](https://developers.google.com/protocol-buffers) in `.proto` files. You will need to generate these for your application language to interact with chief-of-state and also to implement the requried write-handler and read-handler methods (more on those later).
 
-The protos are located in a github repo: https://github.com/namely/chief-of-state-protos
+[The protos are on GitHub](https://github.com/chief-of-state/chief-of-state-protos)
 
 A popular way of incorporating them into your project is via git submodules,
 which you can add like so:
 ```sh
 # adds COS protos to proto/cos
-git submodule add git@github.com:namely/chief-of-state-protos ./protos/cos
+ git submodule add git@github.com:chief-of-state/chief-of-state-protos ./protos/cos
 ```
 
 From there, you can generate the COS interfaces for your language (see the official quick start guide for your language https://grpc.io/docs/languages/).
@@ -28,13 +28,11 @@ find $SRC_DIR -name "*.proto" | xargs -I{} protoc -I=$SRC_DIR --java_out=$DST_DI
 
 **Pro tip:** many languages have wrappers around protoc to make this easier,
 like [scalap-pb](https://scalapb.github.io/) for scala (which chief-of-state
-uses internally). Namely also offers an open-source docker-based solution
-[namely/docker-protoc](https://github.com/namely/docker-protoc) with support
-for many languages.
+uses internally).
 
 ## Implement a "Write Side"
 
-Drawing from CQRS terminology, COS defines a [writeside interface](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/writeside.proto) that you must implement to define how state is created and updated.
+Drawing from CQRS terminology, COS defines a [writeside interface](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/writeside.proto) that you must implement to define how state is created and updated.
 
 ### Methods
 `HandleCommand` accepts a command (or a "request" if you will) and a prior state and returns an event. For example, given a command to `UpdateUserEmail` and a User, this RPC might return an event called `UserEmailUpdated`. This method is encouraged to throw exceptions (as gRPC error statuses) **if** the inbound command (request) is invalid.
@@ -53,7 +51,7 @@ COS_WRITE_SIDE_PORT: 50051
 (If you are new to setting up COS, see the full [configuration](configuration.md) guide.)
 
 ### Sending requests to COS
-Once you have implemented a write handler and registered it with COS, you are able to start sending requests to chief-of-state with the chief-of-state [gRPC client methods](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/service.proto).
+Once you have implemented a write handler and registered it with COS, you are able to start sending requests to chief-of-state with the chief-of-state [gRPC client methods](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/service.proto).
 
 `ProcessCommand` accepts a command (request) and an entity ID, and processes that command by forwarding it to your write handler methods. Commands for a given entity are guaranteed to be processed serially, but commands for unrelated entities can be processed in parallel.
 
@@ -61,7 +59,7 @@ Once you have implemented a write handler and registered it with COS, you are ab
 
 ## Implement a "Read Side"
 
-COS defines a [readside interface](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/readside.proto) and allows you to implement many "readsides" (from CQRS "read side") to stream your events and state to external destinations. For example, you might implement a readside that writes to your applications private elasticsearch cluster for serving fancy search queries, and you could implement a second readside that publishes your event to kafka for consumption by other services.
+COS defines a [readside interface](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/readside.proto) and allows you to implement many "readsides" (from CQRS "read side") to stream your events and state to external destinations. For example, you might implement a readside that writes to your applications private elasticsearch cluster for serving fancy search queries, and you could implement a second readside that publishes your event to kafka for consumption by other services.
 
 The COS readside processor guarantees that events are served in the order they were persisted to the journal per entity. Offsets are tracked for per readside, so adding a readside later will start from the beginning of your event journal (or the oldest available event if you have limited retention).
 

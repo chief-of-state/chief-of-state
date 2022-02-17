@@ -11,7 +11,7 @@ event-sourcing through simple, language-agnostic interfaces via gRPC, and it all
 with Protobuf. Under the hood, COS leverages [Akka](https://akka.io/)
 to scale out and guarantee performant, reliable persistence.
 
-Chief-of-state was built by Namely with the following principles:
+Chief-of-state was built with the following principles:
 
 * Wire format should be the same as persistence
 * Scaling should not require re-architecture
@@ -30,7 +30,7 @@ reacting to state changes.
 ### Chief Of State Service
 
 The main entry point of a chief-of-state based application is the
-[Service](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/service.proto). Developers will
+[Service](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/service.proto). Developers will
 interact with chief of state via:
 
 - `ProcessCommand` is used by the application to send commands to process via [Write Handler](#write-handler).
@@ -39,7 +39,7 @@ interact with chief of state via:
 ### Write Handler
 
 Developers describe state mutations by implementing two RPC’s in
-the [WriteSideHandlerService](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/writeside.proto):
+the [WriteSideHandlerService](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/writeside.proto):
 
 - `HandleCommand` accepts a command and the prior state of an entity and returns an Event. For example, given a command
   to UpdateUserEmail and a User, this RPC might return UserEmailUpdated.
@@ -49,7 +49,7 @@ the [WriteSideHandlerService](https://github.com/namely/chief-of-state-protos/bl
 ### Read Handler
 
 In response to state mutations, COS is able to send changes to
-many [ReadSideHandlerService](https://github.com/namely/chief-of-state-protos/blob/master/chief_of_state/v1/readside.proto)
+many [ReadSideHandlerService](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/readside.proto)
 implementations, which may take any action. COS guarantees at-least-once delivery of events and resulting state to each
 read side in the order they were persisted.
 
@@ -81,8 +81,7 @@ The following docs are available:
 
 You can join these groups and chat to discuss and ask Chief Of State related questions on:
 
-[![Gitter](https://img.shields.io/gitter/room/namely/chief-of-state?style=flat-square)](https://gitter.im/namely/chief-of-state?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![Github: namely/chief-of-state](https://img.shields.io/badge/github%3A-issues-blue.svg?style=flat-square)](https://github.com/namely/chief-of-state/issues)
+[![Github: chief-of-state/chief-of-state](https://img.shields.io/badge/github%3A-issues-blue.svg?style=flat-square)](https://github.com/chief-of-state/chief-of-state/issues)
 
 ## Contribution
 
