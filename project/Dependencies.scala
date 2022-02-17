@@ -6,37 +6,34 @@ object Dependencies {
   // Package versions
   object Versions {
     val ScalaVersion: String = "2.13.6"
-    val AkkaVersion: String = "2.6.17"
+    val AkkaVersion: String = "2.6.18"
     val SilencerVersion: String = "1.7.8"
-    val LogbackVersion: String = "1.2.6"
+    val LogbackVersion: String = "1.2.10"
     val ScalapbCommonProtoVersion: String = "2.5.0-2"
     val ScalapbValidationVersion: String = "0.1.4"
     val ScalaTestVersion: String = "3.2.10"
-    val AkkaManagementVersion: String = "1.1.2"
-    val AkkaProjectionVersion: String = "1.2.2"
-    val PostgresDriverVersion: String = "42.3.1"
+    val AkkaManagementVersion: String = "1.1.3"
+    val AkkaProjectionVersion: String = "1.2.3"
+    val PostgresDriverVersion: String = "42.3.2"
     val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "5.0.4"
-    val ScalaMockVersion: String = "5.1.0"
+    val ScalaMockVersion: String = "5.2.0"
 
     val JaninoVersion: String = "3.1.6"
     val LogstashLogbackVersion: String = "6.3"
-
-    val OpenTelemetryVersion: String = "1.6.0"
-
-    val TestContainers: String = "0.39.8"
-
-    val OtelToolsVersion: String = "0.1.9"
+    val OpenTelemetryVersion: String = "1.10.1"
+    val TestContainers: String = "0.40.0"
+    val OtelToolsVersion: String = "0.1.10"
   }
 
   import Dependencies.Versions._
 
   val excludeGRPC = ExclusionRule(organization = "io.grpc")
   val jars: Seq[ModuleID] = Seq(
-    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion,
+    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % ScalapbCommonProtoVersion,
     "com.thesamet.scalapb" %% "scalapb-runtime" % scalapbVersion % "protobuf",
     "com.thesamet.scalapb" %% "scalapb-runtime-grpc" % scalapbVersion,
-    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.10" % ScalapbCommonProtoVersion % "protobuf",
+    "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % ScalapbCommonProtoVersion % "protobuf",
     "io.grpc" % "grpc-netty" % grpcJavaVersion,
     "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
     "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion,

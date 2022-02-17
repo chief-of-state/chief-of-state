@@ -1,5 +1,3 @@
-import sbt._
-import sbt.Keys.{ resolvers, _ }
 import Dependencies.Versions
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
   headerLicense,
@@ -8,7 +6,9 @@ import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{
   HeaderLicenseStyle
 }
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
-import scoverage.ScoverageKeys.{ coverageExcludedPackages, coverageFailOnMinimum, coverageMinimum }
+import sbt.Keys._
+import sbt._
+import scoverage.ScoverageKeys.{ coverageExcludedPackages, coverageFailOnMinimum, coverageMinimumStmtTotal }
 
 object Common extends AutoPlugin {
 
@@ -19,24 +19,25 @@ object Common extends AutoPlugin {
   override def globalSettings =
     Seq(
       scalaVersion := Versions.ScalaVersion,
-      organization := "com.namely",
-      organizationName := "Namely Inc.",
-      organizationHomepage := Some(url("https://www.namely.com/")),
+      organization := "com.github.chiefofstate",
+      organizationName := "Chief Of State.",
+      organizationHomepage := Some(url("https://github.com/chief-of-state")),
       startYear := Some(2020),
       licenses += ("MIT", new URL("https://opensource.org/licenses/MIT")),
       headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
-      headerLicense := Some(HeaderLicense.Custom("""|Copyright (c) 2020 Namely Inc.
+      headerLicense := Some(HeaderLicense.Custom("""|Copyright (c) 2022 ChiefOfState.
              |
              |""".stripMargin)),
       developers += Developer(
         "contributors",
         "Contributors",
         "",
-        url("https://github.com/namely/chief-of-state/graphs/contributors")))
+        url("https://github.com/chief-of-state/chief-of-state/graphs/contributors")))
 
   override def projectSettings =
     Seq(
       scalacOptions ++= Seq(
+        "-target:8",
         "-Xfatal-warnings",
         "-deprecation",
         "-Xlint",
@@ -50,14 +51,14 @@ object Common extends AutoPlugin {
         ("com.github.ghik" % "silencer-lib" % Versions.SilencerVersion % Provided).cross(CrossVersion.full)),
       scalafmtOnCompile := true,
       // require test coverage
-      coverageMinimum := 85,
+      coverageMinimumStmtTotal := 70,
       coverageFailOnMinimum := true,
       // show full stack traces and test case durations
       Test / testOptions += Tests.Argument("-oDF"),
       Test / logBuffered := false,
-      coverageExcludedPackages := "<empty>;com.namely.protobuf.*;" +
-      "com.namely.chiefofstate.StartNodeBehaviour;" +
-      "com.namely.chiefofstate.ServiceBootstrapper;" +
-      "com.namely.chiefofstate.StartNode;",
+      coverageExcludedPackages := "<empty>;com.github.chiefofstate.protobuf.*;" +
+      "com.github.chiefofstate.StartNodeBehaviour;" +
+      "com.github.chiefofstate.ServiceBootstrapper;" +
+      "com.github.chiefofstate.StartNode;",
       Test / fork := true)
 }
