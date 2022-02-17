@@ -8,7 +8,7 @@ lazy val root: Project = project
   .enablePlugins(JavaAppPackaging)
   .settings(
     headerLicense := None,
-    Compile / mainClass := Some("com.namely.chiefofstate.StartNode"),
+    Compile / mainClass := Some("com.github.chiefofstate.StartNode"),
     makeBatScripts := Seq(),
     executableScriptName := "entrypoint",
     Universal / javaOptions ++= Seq(
