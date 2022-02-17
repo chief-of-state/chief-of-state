@@ -1,5 +1,9 @@
 # Chief of State
 
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/chief-of-state/chief-of-state/Master/master)
+[![codecov](https://codecov.io/gh/chief-of-state/chief-of-state/branch/master/graph/badge.svg?token=DBO3JBTHZ0)](https://codecov.io/gh/chief-of-state/chief-of-state)
+
+
 ## Overview
 
 Chief-of-state (COS) is an Open Source clustered persistence tool for building event sourced applications. COS supports CQRS and
