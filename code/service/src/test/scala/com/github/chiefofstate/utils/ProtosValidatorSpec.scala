@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate
+package com.github.chiefofstate.utils
 
-import com.github.chiefofstate
 import com.github.chiefofstate.config._
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.protobuf.v1.tests.{ Account, AccountOpened }
+import com.github.chiefofstate.utils
 import com.google.protobuf.any.Any
 
 class ProtosValidatorSpec extends BaseSpec {
@@ -29,7 +29,7 @@ class ProtosValidatorSpec extends BaseSpec {
       val writeSideConfig = sharedConfig.copy(enableProtoValidation = false)
 
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(writeSideConfig)
+        ProtosValidator(writeSideConfig)
 
       val event = AccountOpened()
       val state = Account()
@@ -50,7 +50,7 @@ class ProtosValidatorSpec extends BaseSpec {
         sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(eventUrl), statesProtos = Seq(stateUrl))
 
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(writeSideConfig)
+        utils.ProtosValidator(writeSideConfig)
 
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
       isValid shouldBe true
@@ -62,7 +62,7 @@ class ProtosValidatorSpec extends BaseSpec {
       val writeSideConfig = sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
 
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(writeSideConfig)
+        utils.ProtosValidator(writeSideConfig)
       val event = AccountOpened()
       val state = Account()
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
@@ -75,7 +75,7 @@ class ProtosValidatorSpec extends BaseSpec {
       val writeSideConfig = sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
 
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(writeSideConfig)
+        utils.ProtosValidator(writeSideConfig)
 
       val event: AccountOpened = AccountOpened()
       val state: Account = Account()

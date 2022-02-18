@@ -36,8 +36,7 @@ private[readside] class ReadSideProjection(
     val readSideId: String,
     val dataSource: DataSource,
     readSideHandler: ReadSideHandler,
-    val numShards: Int
-) {
+    val numShards: Int) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   implicit val sys: ActorSystem[_] = actorSystem
@@ -51,8 +50,7 @@ private[readside] class ReadSideProjection(
       numberOfInstances = numShards,
       behaviorFactory = shardNumber => jdbcProjection(shardNumber.toString),
       settings = ShardedDaemonProcessSettings(actorSystem),
-      stopMessage = Some(ProjectionBehavior.Stop)
-    )
+      stopMessage = Some(ProjectionBehavior.Stop))
 
   /**
    * creates a jdbc projection behavior
@@ -67,8 +65,7 @@ private[readside] class ReadSideProjection(
       // defines a session factory that returns a jdbc
       // session connected to the hikari pool
       sessionFactory = () => new ReadSideJdbcSession(dataSource.getConnection()),
-      handler = () => new ReadSideJdbcHandler(tagName, readSideId, readSideHandler)
-    )
+      handler = () => new ReadSideJdbcHandler(tagName, readSideId, readSideHandler))
 
     ProjectionBehavior(projection)
   }
@@ -85,8 +82,6 @@ private[readside] object ReadSideProjection {
    */
   private[readside] def sourceProvider(
       system: ActorSystem[_],
-      tag: String
-  ): SourceProvider[Offset, EventEnvelope[EventWrapper]] =
-    EventSourcedProvider
-      .eventsByTag[EventWrapper](system, readJournalPluginId = JdbcReadJournal.Identifier, tag)
+      tag: String): SourceProvider[Offset, EventEnvelope[EventWrapper]] =
+    EventSourcedProvider.eventsByTag[EventWrapper](system, readJournalPluginId = JdbcReadJournal.Identifier, tag)
 }

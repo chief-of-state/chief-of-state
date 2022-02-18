@@ -12,13 +12,17 @@ import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.github.chiefofstate.config.CosConfig
+import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
+import com.github.chiefofstate.services.{ CoSService, ManagerService }
 import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded }
+import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import com.github.chiefofstate.readside.ReadSideManager
+import com.github.chiefofstate.readside.{ ReadSideBootstrap, ReadSideManager }
+import com.github.chiefofstate.utils.{ NettyHelper, ProtosValidator, Util }
 import com.typesafe.config.Config
-import io.grpc.netty.NettyServerBuilder
 import io.grpc._
+import io.grpc.netty.NettyServerBuilder
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
 import io.opentelemetry.sdk.OpenTelemetrySdk
@@ -87,11 +91,11 @@ object ServiceBootstrapper {
             eventsAndStateProtoValidation)
         })
 
-        // read side settings
-        startReadSide(context.system, cosConfig, grpcClientInterceptors)
+        // read side service
+        startReadSides(context.system, cosConfig, grpcClientInterceptors)
 
         // start the service
-        startService(sharding, config, cosConfig)
+        startServices(context.system, sharding, config, cosConfig)
 
         Behaviors.same
 
@@ -115,7 +119,8 @@ object ServiceBootstrapper {
    * @param config the application configuration
    * @param cosConfig the cos specific configuration
    */
-  private def startService(
+  private def startServices(
+      system: ActorSystem[_],
       clusterSharding: ClusterSharding,
       config: Config,
       cosConfig: CosConfig): ShutdownHookThread = {
@@ -124,32 +129,31 @@ object ServiceBootstrapper {
     // create the traced execution context for grpc
     val grpcEc: ExecutionContext = TracedExecutorService.get()
 
-    // create interceptor using the global tracer
-    val tracingServerInterceptor: ServerInterceptor =
-      GrpcTracing.create(GlobalOpenTelemetry.get()).newServerInterceptor()
+    // instantiate the grpc service, bind to the execution context
+    val serviceImpl: CoSService =
+      new CoSService(clusterSharding, cosConfig.writeSideConfig)
 
-    // instantiate the grpc service, bind do the execution context
-    val serviceImpl: GrpcServiceImpl =
-      new GrpcServiceImpl(clusterSharding, cosConfig.writeSideConfig)
+    // create an instance of the read side state manager service
+    val readSideStateManager = new ReadSideManager(system, cosConfig.eventsConfig.numShards)
+    val readSideStateServiceImpl = new ManagerService(readSideStateManager)(grpcEc)
 
-    // intercept the service
-    val service: ServerServiceDefinition = ServerInterceptors.intercept(
-      ChiefOfStateService.bindService(serviceImpl, grpcEc),
-      tracingServerInterceptor,
-      new StatusServerInterceptor(),
-      GrpcHeadersInterceptor)
+    // create the server builder
+    var builder = NettyServerBuilder
+      .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
+      .addService(setServiceWithInterceptors(ChiefOfStateService.bindService(serviceImpl, grpcEc)))
+
+    // only start the read side manager if readSide is enabled
+    if (cosConfig.enableReadSide)
+      builder = builder.addService(
+        setServiceWithInterceptors(ReadSideManagerService.bindService(readSideStateServiceImpl, grpcEc)))
 
     // attach service to netty server
-    val server: Server = NettyServerBuilder
-      .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
-      .addService(service)
-      .build()
-      .start()
+    val server: Server = builder.build().start()
 
-    log.info("ChiefOfState Service started, listening on " + cosConfig.grpcConfig.server.port)
+    log.info("ChiefOfState Services started, listening on " + cosConfig.grpcConfig.server.port)
     server.awaitTermination()
     sys.addShutdownHook {
-      log.info("shutting down ChiefOfState service....")
+      log.info("shutting down ChiefOfState Services....")
       server.shutdown()
     }
   }
@@ -161,17 +165,33 @@ object ServiceBootstrapper {
    * @param cosConfig the chief of state config
    * @param interceptors gRPC client interceptors for remote calls
    */
-  private def startReadSide(
+  private def startReadSides(
       system: ActorSystem[_],
       cosConfig: CosConfig,
       interceptors: Seq[ClientInterceptor]): Unit = {
     // if read side is enabled
     if (cosConfig.enableReadSide) {
       // instantiate a read side manager
-      val readSideManager: ReadSideManager =
-        ReadSideManager(system = system, interceptors = interceptors, numShards = cosConfig.eventsConfig.numShards)
+      val readSideBootstrap: ReadSideBootstrap =
+        ReadSideBootstrap(system = system, interceptors = interceptors, numShards = cosConfig.eventsConfig.numShards)
       // initialize all configured read sides
-      readSideManager.init()
+      readSideBootstrap.init()
     }
+  }
+
+  /**
+   * sets gRPC service definitions with the default interceptors
+   *
+   * @param serviceDefinition the service definition
+   * @return a new ServerServiceDefinition with the various interceptors
+   */
+  private def setServiceWithInterceptors(serviceDefinition: ServerServiceDefinition): ServerServiceDefinition = {
+    val tracingServerInterceptor: ServerInterceptor =
+      GrpcTracing.create(GlobalOpenTelemetry.get()).newServerInterceptor()
+    ServerInterceptors.intercept(
+      serviceDefinition,
+      tracingServerInterceptor,
+      new StatusServerInterceptor(),
+      GrpcHeadersInterceptor)
   }
 }

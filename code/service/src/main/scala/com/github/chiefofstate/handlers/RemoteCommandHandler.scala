@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate
+package com.github.chiefofstate.handlers
 
 import com.github.chiefofstate.config.GrpcConfig
 import com.github.chiefofstate.protobuf.v1.common.Header.Value
@@ -25,10 +25,7 @@ import scala.util.Try
  * @param grpcConfig the grpc config
  * @param writeHandlerServiceStub the grpc client stub
  */
-case class RemoteCommandHandler(
-    grpcConfig: GrpcConfig,
-    writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub
-) {
+case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -39,10 +36,7 @@ case class RemoteCommandHandler(
    * @param priorState the aggregate state before the command to handle
    * @return an eventual HandleCommandResponse
    */
-  def handleCommand(
-      remoteCommand: RemoteCommand,
-      priorState: StateWrapper
-  ): Try[HandleCommandResponse] = {
+  def handleCommand(remoteCommand: RemoteCommand, priorState: StateWrapper): Try[HandleCommandResponse] = {
     log.debug(s"sending request to the command handler, ${remoteCommand.getCommand.typeUrl}")
 
     // let us set the client request headers
@@ -54,10 +48,7 @@ case class RemoteCommandHandler(
           case Value.StringValue(value) =>
             headers.put(Metadata.Key.of(header.key, Metadata.ASCII_STRING_MARSHALLER), value)
           case Value.BytesValue(value) =>
-            headers.put(
-              Metadata.Key.of(header.key, Metadata.BINARY_BYTE_MARSHALLER),
-              value.toByteArray
-            )
+            headers.put(Metadata.Key.of(header.key, Metadata.BINARY_BYTE_MARSHALLER), value.toByteArray)
           case Value.Empty =>
             throw new RuntimeException("header value must be string or bytes")
         }
@@ -70,8 +61,7 @@ case class RemoteCommandHandler(
           HandleCommandRequest()
             .withPriorState(priorState.getState)
             .withCommand(remoteCommand.getCommand)
-            .withPriorEventMeta(priorState.getMeta)
-        )
+            .withPriorEventMeta(priorState.getMeta))
     }
   }
 }

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate
+package com.github.chiefofstate.utils
 
 import io.grpc.netty.NegotiationType.{ PLAINTEXT, TLS }
 import io.grpc.netty.{ NegotiationType, NettyChannelBuilder }

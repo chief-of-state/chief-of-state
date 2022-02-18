@@ -8,10 +8,7 @@ package com.github.chiefofstate.readside
 
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
-import com.github.chiefofstate.protobuf.v1.readside.{
-  HandleReadSideRequest,
-  HandleReadSideResponse
-}
+import com.github.chiefofstate.protobuf.v1.readside.{ HandleReadSideRequest, HandleReadSideResponse }
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.api.GlobalOpenTelemetry
@@ -29,11 +26,11 @@ import scala.util.{ Failure, Success, Try }
  */
 private[readside] class ReadSideHandlerImpl(
     processorId: String,
-    readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub
-) extends ReadSideHandler {
+    readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub)
+    extends ReadSideHandler {
 
-  private val COS_EVENT_TAG_HEADER       = "x-cos-event-tag"
-  private val COS_ENTITY_ID_HEADER       = "x-cos-entity-id"
+  private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
+  private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
   private[readside] val spanName: String = "ReadSideHandler.processEvent"
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
@@ -51,8 +48,7 @@ private[readside] class ReadSideHandlerImpl(
       event: com.google.protobuf.any.Any,
       eventTag: String,
       resultingState: com.google.protobuf.any.Any,
-      meta: MetaData
-  ): Boolean = {
+      meta: MetaData): Boolean = {
 
     // start the span
     val span: Try[Span] = Try {
@@ -67,21 +63,13 @@ private[readside] class ReadSideHandlerImpl(
 
     val response: Try[HandleReadSideResponse] = Try {
       val headers = new Metadata()
-      headers.put(
-        Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER),
-        meta.entityId
-      )
+      headers.put(Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER), meta.entityId)
       headers.put(Metadata.Key.of(COS_EVENT_TAG_HEADER, Metadata.ASCII_STRING_MARSHALLER), eventTag)
 
       readSideHandlerServiceBlockingStub
         .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
         .handleReadSide(
-          HandleReadSideRequest()
-            .withEvent(event)
-            .withState(resultingState)
-            .withMeta(meta)
-            .withReadSideId(processorId)
-        )
+          HandleReadSideRequest().withEvent(event).withState(resultingState).withMeta(meta).withReadSideId(processorId))
     }
 
     // finish the span
@@ -98,15 +86,13 @@ private[readside] class ReadSideHandlerImpl(
       // return false when remote server responds with "false"
       case Success(_) =>
         logger.warn(
-          s"read side returned failure, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
-        )
+          s"read side returned failure, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}")
         false
 
       // return false when remote server fails
       case Failure(exception) =>
         logger.error(
-          s"read side processing failure, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}, cause=${exception.getMessage}"
-        )
+          s"read side processing failure, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}, cause=${exception.getMessage}")
         // for debug purposes, log the stack trace as well
         logger.debug("remote handler failure", exception)
         false
@@ -129,6 +115,5 @@ private[readside] trait ReadSideHandler {
       event: com.google.protobuf.any.Any,
       eventTag: String,
       resultingState: com.google.protobuf.any.Any,
-      meta: MetaData
-  ): Boolean
+      meta: MetaData): Boolean
 }
