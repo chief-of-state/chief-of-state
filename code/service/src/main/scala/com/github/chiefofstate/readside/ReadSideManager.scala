@@ -29,7 +29,8 @@ class ReadSideManager(
     interceptors: Seq[ClientInterceptor],
     dbConfig: ReadSideManager.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
-    numShards: Int) {
+    numShards: Int
+) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -37,32 +38,42 @@ class ReadSideManager(
     ReadSideManager.getDataSource(dbConfig)
 
   def init(): Unit = {
-
     logger.info(s"initializing read sides, count=${readSideConfigs.size}")
 
     // configure each read side
-    readSideConfigs.foreach(rsconfig => {
-
-      logger.info(s"starting read side, id=${rsconfig.processorId}")
+    readSideConfigs.foreach { config =>
+      logger.info(s"starting read side, id=${config.readSideId}")
 
       // construct a remote gRPC read side client for this read side
       // and register interceptors
       val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
-        NettyHelper.builder(rsconfig.host, rsconfig.port, rsconfig.useTls).build).withInterceptors(interceptors: _*)
+        NettyHelper.builder(config.host, config.port, config.useTls).build
+      ).withInterceptors(interceptors: _*)
       // instantiate a remote read side processor with the gRPC client
-      val remoteReadSideProcessor: ReadSideHandlerImpl = new ReadSideHandlerImpl(rsconfig.processorId, rpcClient)
+      val remoteReadSideProcessor: ReadSideHandlerImpl =
+        new ReadSideHandlerImpl(config.readSideId, rpcClient)
       // instantiate the read side projection with the remote processor
       val projection =
-        new ReadSideProjection(system, rsconfig.processorId, dataSource, remoteReadSideProcessor, numShards)
+        new ReadSideProjection(
+          system,
+          config.readSideId,
+          dataSource,
+          remoteReadSideProcessor,
+          numShards
+        )
       // start the sharded daemon process
       projection.start()
-    })
+    }
   }
 }
 
 object ReadSideManager {
 
-  def apply(system: ActorSystem[_], interceptors: Seq[ClientInterceptor], numShards: Int): ReadSideManager = {
+  def apply(
+      system: ActorSystem[_],
+      interceptors: Seq[ClientInterceptor],
+      numShards: Int
+  ): ReadSideManager = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
@@ -79,7 +90,8 @@ object ReadSideManager {
       interceptors = interceptors,
       dbConfig = dbConfig,
       readSideConfigs = configs,
-      numShards = numShards)
+      numShards = numShards
+    )
   }
 
   /**
@@ -119,10 +131,11 @@ object ReadSideManager {
       maxPoolSize: Int,
       minIdleConnections: Int,
       idleTimeoutMs: Long,
-      maxLifetimeMs: Long)
+      maxLifetimeMs: Long
+  )
 
   private[readside] object DbConfig {
-    def apply(jdbcCfg: Config): DbConfig = {
+    def apply(jdbcCfg: Config): DbConfig =
       DbConfig(
         jdbcUrl = jdbcCfg.getString("url"),
         username = jdbcCfg.getString("user"),
@@ -130,7 +143,7 @@ object ReadSideManager {
         maxPoolSize = jdbcCfg.getInt("hikari-settings.max-pool-size"),
         minIdleConnections = jdbcCfg.getInt("hikari-settings.min-idle-connections"),
         idleTimeoutMs = jdbcCfg.getLong("hikari-settings.idle-timeout-ms"),
-        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms"))
-    }
+        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms")
+      )
   }
 }

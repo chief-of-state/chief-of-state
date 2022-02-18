@@ -23,9 +23,12 @@ import scala.util.Try
  * handles command via a gRPC call
  *
  * @param grpcConfig the grpc config
- * @param writeHandlerServicetub the grpc client stub
+ * @param writeHandlerServiceStub the grpc client stub
  */
-case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: WriteSideHandlerServiceBlockingStub) {
+case class RemoteCommandHandler(
+    grpcConfig: GrpcConfig,
+    writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub
+) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -36,32 +39,39 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
    * @param priorState the aggregate state before the command to handle
    * @return an eventual HandleCommandResponse
    */
-  def handleCommand(remoteCommand: RemoteCommand, priorState: StateWrapper): Try[HandleCommandResponse] = {
+  def handleCommand(
+      remoteCommand: RemoteCommand,
+      priorState: StateWrapper
+  ): Try[HandleCommandResponse] = {
     log.debug(s"sending request to the command handler, ${remoteCommand.getCommand.typeUrl}")
 
     // let us set the client request headers
     val headers: Metadata = new Metadata()
 
     Try {
-      remoteCommand.propagatedHeaders.foreach(header => {
+      remoteCommand.propagatedHeaders.foreach { header =>
         header.value match {
           case Value.StringValue(value) =>
             headers.put(Metadata.Key.of(header.key, Metadata.ASCII_STRING_MARSHALLER), value)
           case Value.BytesValue(value) =>
-            headers.put(Metadata.Key.of(header.key, Metadata.BINARY_BYTE_MARSHALLER), value.toByteArray)
+            headers.put(
+              Metadata.Key.of(header.key, Metadata.BINARY_BYTE_MARSHALLER),
+              value.toByteArray
+            )
           case Value.Empty =>
             throw new RuntimeException("header value must be string or bytes")
         }
-      })
+      }
 
-      MetadataUtils
-        .attachHeaders(writeHandlerServicetub, headers)
+      writeHandlerServiceStub
+        .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleCommand(
           HandleCommandRequest()
             .withPriorState(priorState.getState)
             .withCommand(remoteCommand.getCommand)
-            .withPriorEventMeta(priorState.getMeta))
+            .withPriorEventMeta(priorState.getMeta)
+        )
     }
   }
 }
