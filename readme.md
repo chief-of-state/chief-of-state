@@ -1,8 +1,7 @@
 # Chief of State
 
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/chief-of-state/chief-of-state/Master/master)
-![GitHub](https://img.shields.io/github/license/chief-of-state/chief-of-state)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/chief-of-state/chief-of-state)
+![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/chief-of-state/chief-of-state?include_prereleases)
 
 
 ## Overview
