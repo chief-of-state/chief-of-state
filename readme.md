@@ -115,4 +115,4 @@ earthly -P --no-output +test-local
 
 ## Sample Projects
 
-[Python](https://github.com/namely/cos-python-sample)
+[Python](https://github.com/chief-of-state/cos-python-sample)
