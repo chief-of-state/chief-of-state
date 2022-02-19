@@ -10,8 +10,8 @@ import akka.actor.ExtendedActorSystem
 import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.{ ActorRef, ActorRefResolver }
 import akka.serialization.SerializerWithStringManifest
-import com.google.protobuf.{ any, ByteString }
 import com.github.chiefofstate.protobuf.v1.internal.WireMessageWithActorRef
+import com.google.protobuf.{ any, ByteString }
 import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
 
 import java.nio.charset.StandardCharsets

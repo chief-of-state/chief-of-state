@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate
+package com.github.chiefofstate.utils
 
-import com.github.chiefofstate.Util.{ Instants, Timestamps }
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.common.Header.Value.{ BytesValue, StringValue }
 import com.github.chiefofstate.protobuf.v1.tests.AccountOpened
+import com.github.chiefofstate.utils.Util.{ Instants, Timestamps }
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import com.google.rpc.error_details.BadRequest

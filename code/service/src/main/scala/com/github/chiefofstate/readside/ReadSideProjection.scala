@@ -26,14 +26,14 @@ import javax.sql.DataSource
  * akka projections read sides
  *
  * @param actorSystem actor system
- * @param processorId ID for this read side
+ * @param readSideId ID for this read side
  * @param dataSource hikari data source to connect through
  * @param readSideHandler the handler implementation for the read side
  * @param numShards number of shards for projections/tags
  */
 private[readside] class ReadSideProjection(
     actorSystem: ActorSystem[_],
-    val processorId: String,
+    val readSideId: String,
     val dataSource: DataSource,
     readSideHandler: ReadSideHandler,
     val numShards: Int) {
@@ -44,14 +44,13 @@ private[readside] class ReadSideProjection(
   /**
    * Initialize the projection to start fetching the events that are emitted
    */
-  def start(): Unit = {
+  def start(): Unit =
     ShardedDaemonProcess(actorSystem).init[ProjectionBehavior.Command](
-      name = processorId,
+      name = readSideId,
       numberOfInstances = numShards,
       behaviorFactory = shardNumber => jdbcProjection(shardNumber.toString),
       settings = ShardedDaemonProcessSettings(actorSystem),
       stopMessage = Some(ProjectionBehavior.Stop))
-  }
 
   /**
    * creates a jdbc projection behavior
@@ -61,12 +60,12 @@ private[readside] class ReadSideProjection(
    */
   private[readside] def jdbcProjection(tagName: String): Behavior[ProjectionBehavior.Command] = {
     val projection = JdbcProjection.exactlyOnce(
-      projectionId = ProjectionId(processorId, tagName),
+      projectionId = ProjectionId(readSideId, tagName),
       sourceProvider = ReadSideProjection.sourceProvider(actorSystem, tagName),
       // defines a session factory that returns a jdbc
       // session connected to the hikari pool
       sessionFactory = () => new ReadSideJdbcSession(dataSource.getConnection()),
-      handler = () => new ReadSideJdbcHandler(tagName, processorId, readSideHandler))
+      handler = () => new ReadSideJdbcHandler(tagName, readSideId, readSideHandler))
 
     ProjectionBehavior(projection)
   }
@@ -83,7 +82,6 @@ private[readside] object ReadSideProjection {
    */
   private[readside] def sourceProvider(
       system: ActorSystem[_],
-      tag: String): SourceProvider[Offset, EventEnvelope[EventWrapper]] = {
+      tag: String): SourceProvider[Offset, EventEnvelope[EventWrapper]] =
     EventSourcedProvider.eventsByTag[EventWrapper](system, readJournalPluginId = JdbcReadJournal.Identifier, tag)
-  }
 }

@@ -6,131 +6,353 @@
 
 package com.github.chiefofstate.readside
 
+import akka.Done
 import akka.actor.typed.ActorSystem
-import com.github.chiefofstate.NettyHelper
-import com.github.chiefofstate.config.{ ReadSideConfig, ReadSideConfigReader }
-import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
-import com.typesafe.config.Config
-import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
-import io.grpc.ClientInterceptor
+import akka.persistence.query.Sequence
+import akka.projection.ProjectionId
+import akka.projection.scaladsl.ProjectionManagement
 import org.slf4j.{ Logger, LoggerFactory }
 
-/**
- * Used to configure and start all read side processors
- *
- * @param system actor system
- * @param interceptors sequence of interceptors for the gRPC client
- * @param dbConfig the DB config for creating a hikari data source
- * @param readSideConfigs sequence of configs for specific read sides
- * @param numShards number of shards for projections/tags
- */
-class ReadSideManager(
-    system: ActorSystem[_],
-    interceptors: Seq[ClientInterceptor],
-    dbConfig: ReadSideManager.DbConfig,
-    readSideConfigs: Seq[ReadSideConfig],
-    numShards: Int) {
+import scala.concurrent.{ ExecutionContextExecutor, Future }
+import scala.util.{ Failure, Success }
 
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+sealed trait StateManager {
 
-  private[readside] lazy val dataSource: HikariDataSource =
-    ReadSideManager.getDataSource(dbConfig)
+  /**
+   * returns the offset of a read side given the offset
+   *
+   * @param readSideId the read side unique id
+   * @param shardNumber the cluster shard number.
+   *                    This number cannot be greater than the number of shard configured in the system
+   * @return the offset value
+   */
+  def offset(readSideId: String, shardNumber: Int): Future[Long]
 
-  def init(): Unit = {
+  /**
+   * returns all the offsets of a read side across the whole cluster
+   *
+   * @param readSideId the read side unique id
+   * @return the list of all the offsets
+   */
+  def offsets(readSideId: String): Future[Seq[(Int, Long)]]
 
-    logger.info(s"initializing read sides, count=${readSideConfigs.size}")
+  /**
+   * restarts a given read side on a given shard.
+   * This will clear the read side offset and start it over again from the first offset.
+   *
+   * @param readSideId the read side unique id
+   * @param shardNumber the cluster shard number.
+   *                    This number cannot be greater than the number of shard configured in the system
+   * @return true when successful or false when failed
+   */
+  def restart(readSideId: String, shardNumber: Int): Future[Boolean]
 
-    // configure each read side
-    readSideConfigs.foreach(rsconfig => {
+  /**
+   * restarts a given read side across the whole cluster
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  def restartForAll(readSideId: String): Future[Boolean]
 
-      logger.info(s"starting read side, id=${rsconfig.processorId}")
+  /**
+   * pauses a given read side on a given shard.
+   *
+   * @param readSideId the read side unique id
+   * @param shardNumber the cluster shard number
+   * @return true when successful or false when failed
+   */
+  def pause(readSideId: String, shardNumber: Int): Future[Boolean]
 
-      // construct a remote gRPC read side client for this read side
-      // and register interceptors
-      val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
-        NettyHelper.builder(rsconfig.host, rsconfig.port, rsconfig.useTls).build).withInterceptors(interceptors: _*)
-      // instantiate a remote read side processor with the gRPC client
-      val remoteReadSideProcessor: ReadSideHandlerImpl = new ReadSideHandlerImpl(rsconfig.processorId, rpcClient)
-      // instantiate the read side projection with the remote processor
-      val projection =
-        new ReadSideProjection(system, rsconfig.processorId, dataSource, remoteReadSideProcessor, numShards)
-      // start the sharded daemon process
-      projection.start()
-    })
-  }
+  /**
+   * pauses a given read side across the whole cluster
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  def pauseForAll(readSideId: String): Future[Boolean]
+
+  /**
+   * resumes a paused given read side on a given shard.
+   *
+   * @param readSideId the read side unique id
+   * @param shardNumber the cluster shard number
+   * @return true when successful or false when failed
+   */
+  def resume(readSideId: String, shardNumber: Int): Future[Boolean]
+
+  /**
+   *  resumes a paused given read side across the whole cluster
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  def resumeForAll(readSideId: String): Future[Boolean]
+
+  /**
+   * skips the current offset to read for a given shard and continue with next.
+   * The operation will automatically restart the read side.
+   *
+   * @param readSideId the read side unique id
+   * @param shardNumber the cluster shard number
+   * @return true when successful or false when failed
+   */
+  def skipOffset(readSideId: String, shardNumber: Int): Unit
+
+  /**
+   * skips the current offset to read across all shards and continue with next.
+   * The operation will automatically restart the read side.
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  def skipOffsets(readSideId: String): Unit
 }
 
-object ReadSideManager {
+/**
+ * helps manage all read sides state
+ *
+ * @param system the actor system
+ * @param numShards the number of cluster shards
+ */
+class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManager {
+  // set the logger
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  def apply(system: ActorSystem[_], interceptors: Seq[ClientInterceptor], numShards: Int): ReadSideManager = {
+  // grab the execution context from the actor system
+  implicit val ec: ExecutionContextExecutor = system.executionContext
 
-    val dbConfig: DbConfig = {
-      // read the jdbc-default settings
-      val jdbcCfg: Config = system.settings.config.getConfig("jdbc-default")
+  // create an instance of the projection management
+  val mgmt: ProjectionManagement = ProjectionManagement(system)
 
-      DbConfig(jdbcCfg)
+  /**
+   * returns the offset of a read side given the offset
+   *
+   * @param readSideId  the read side unique id
+   * @param shardNumber the cluster shard number.
+   *                    This number cannot be greater than the number of shard configured in the system
+   * @return the offset value
+   */
+  override def offset(readSideId: String, shardNumber: Int): Future[Long] = {
+    // let us assert that the shardNumber is between 0 and numShards.
+    require(shardNumber >= 0 && shardNumber <= (numShards - 1), "wrong shard number provided")
+    // create the projection ID
+    val projectionId = ProjectionId(readSideId, shardNumber.toString)
+    // get the current offset
+    mgmt.getOffset[Sequence](projectionId).map {
+      case Some(sequence) => sequence.value
+      case None =>
+        logger.warn(s"unable to retrieve the offset of readSide=$readSideId given the shard=$shardNumber")
+        0L
     }
-
-    // get the individual read side configs
-    val configs: Seq[ReadSideConfig] = ReadSideConfigReader.getReadSideSettings
-    // make the manager
-    new ReadSideManager(
-      system = system,
-      interceptors = interceptors,
-      dbConfig = dbConfig,
-      readSideConfigs = configs,
-      numShards = numShards)
   }
 
   /**
-   * create a hikari data source using a dbconfig class
+   * returns all the offsets of a read side across the whole cluster
    *
-   * @param dbConfig database configs
-   * @return a hikari data source instance
+   * @param readSideId the read side unique id
+   * @return the list of all the offsets
    */
-  def getDataSource(dbConfig: DbConfig): HikariDataSource = {
-    // make a hikari config for this db
-    val hikariCfg: HikariConfig = new HikariConfig()
-    // apply settings
-    hikariCfg.setPoolName("cos-readside-pool")
-    // FIXME, apply schema here as a hikari setting?
-    hikariCfg.setJdbcUrl(dbConfig.jdbcUrl)
-    hikariCfg.setUsername(dbConfig.username)
-    hikariCfg.setPassword(dbConfig.password)
-    // turn off autocommit so that akka can control it
-    hikariCfg.setAutoCommit(false)
-    // set max pool size
-    hikariCfg.setMaximumPoolSize(dbConfig.maxPoolSize)
-    // set min pool size
-    hikariCfg.setMinimumIdle(dbConfig.minIdleConnections)
-    // set pool idle timeout
-    hikariCfg.setIdleTimeout(dbConfig.idleTimeoutMs)
-    // connection lifetime after close
-    hikariCfg.setMaxLifetime(dbConfig.maxLifetimeMs)
-    // return the data source
-    new HikariDataSource(hikariCfg)
+  override def offsets(readSideId: String): Future[Seq[(Int, Long)]] = {
+    // let us loop through all the available shards and fetch the various offsets
+    val futures = (0 until numShards).map { shardNumber =>
+      // create the projection ID
+      val projectionId = ProjectionId(readSideId, shardNumber.toString)
+      // get the current offset
+      mgmt.getOffset[Sequence](projectionId).map {
+        case Some(sequence) => (shardNumber, sequence.value)
+        case None =>
+          logger.warn(s"unable to retrieve the offset of readSide=$readSideId given the shard=$shardNumber")
+          (shardNumber, 0L)
+      }
+    }
+    // execute the futures
+    Future.sequence(futures).transformWith {
+      case Failure(exception) =>
+        logger.error(s"fail to fetch offsets, readSideID=$readSideId, cause=${exception.getMessage}")
+        Future.failed(exception)
+      case Success(value) => Future.successful(value)
+    }
   }
 
-  // convenience case class for passing around the hikari settings
-  private[readside] case class DbConfig(
-      jdbcUrl: String,
-      username: String,
-      password: String,
-      maxPoolSize: Int,
-      minIdleConnections: Int,
-      idleTimeoutMs: Long,
-      maxLifetimeMs: Long)
+  /**
+   * restarts a given read side on a given shard.
+   * This will clear the read side offset and start it over again from the first offset.
+   *
+   * @param readSideId  the read side unique id
+   * @param shardNumber the cluster shard number.
+   *                    This number cannot be greater than the number of shard configured in the system
+   * @return true when successful or false when failed
+   */
+  override def restart(readSideId: String, shardNumber: Int): Future[Boolean] = {
+    // let us assert that the shardNumber is between 0 and numShards.
+    require(shardNumber >= 0 && shardNumber <= (numShards - 1), "wrong shard number provided")
+    // create the projection ID
+    val projectionId = ProjectionId(readSideId, shardNumber.toString)
+    // execute the restart
+    ProjectionManagement(system).clearOffset(projectionId).transformWith[Boolean] {
+      case Failure(exception) =>
+        logger.error(
+          s"read side restart failed, readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}")
+        Future.failed(exception)
+      case Success(_) =>
+        logger.info(s"read side restart successfully, readSideID=$readSideId, shardNumber=$shardNumber")
+        Future.successful(true)
+    }
+  }
 
-  private[readside] object DbConfig {
-    def apply(jdbcCfg: Config): DbConfig = {
-      DbConfig(
-        jdbcUrl = jdbcCfg.getString("url"),
-        username = jdbcCfg.getString("user"),
-        password = jdbcCfg.getString("password"),
-        maxPoolSize = jdbcCfg.getInt("hikari-settings.max-pool-size"),
-        minIdleConnections = jdbcCfg.getInt("hikari-settings.min-idle-connections"),
-        idleTimeoutMs = jdbcCfg.getLong("hikari-settings.idle-timeout-ms"),
-        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms"))
+  /**
+   * restarts a given read side across the whole cluster
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  override def restartForAll(readSideId: String): Future[Boolean] = {
+    // let us loop through all the available shards and fetch the various offsets
+    // and restart the read side for each shard
+    val futures = (0 until numShards).map { shardNumber =>
+      // create the projection ID
+      val projectionId = ProjectionId(readSideId, shardNumber.toString)
+      // let us clear the offset and allow the readside to restart
+      ProjectionManagement(system).clearOffset(projectionId)
+    }
+    // execute the future
+    handleForAll(futures, readSideId)
+  }
+
+  /**
+   * pauses a given read side on a given shard.
+   *
+   * @param readSideId  the read side unique id
+   * @param shardNumber the cluster shard number
+   * @return true when successful or false when failed
+   */
+  override def pause(readSideId: String, shardNumber: Int): Future[Boolean] = {
+    // let us assert that the shardNumber is between 0 and numShards.
+    require(shardNumber >= 0 && shardNumber <= (numShards - 1), "wrong shard number provided")
+    // create the projection ID
+    val projectionId = ProjectionId(readSideId, shardNumber.toString)
+    // execute the restart
+    ProjectionManagement(system).pause(projectionId).transformWith[Boolean] {
+      case Failure(exception) =>
+        logger.error(
+          s"unable to pause read side readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}")
+        Future.failed(exception)
+      case Success(_) =>
+        logger.info(s"read side pause successfully, readSideID=$readSideId, shardNumber=$shardNumber")
+        Future.successful(true)
+    }
+  }
+
+  /**
+   * pauses a given read side across the whole cluster
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  override def pauseForAll(readSideId: String): Future[Boolean] = {
+    // let us loop through all the available shards and fetch the various offsets
+    // and restart the read side for each shard
+    val futures = (0 until numShards).map { shardNumber =>
+      // create the projection ID
+      val projectionId = ProjectionId(readSideId, shardNumber.toString)
+      // let us clear the offset and allow the readside to restart
+      ProjectionManagement(system).pause(projectionId)
+    }
+    // execute the future
+    handleForAll(futures, readSideId)
+  }
+
+  /**
+   * resumes a paused given read side on a given shard.
+   *
+   * @param readSideId  the read side unique id
+   * @param shardNumber the cluster shard number
+   * @return true when successful or false when failed
+   */
+  override def resume(readSideId: String, shardNumber: Int): Future[Boolean] = {
+    // let us assert that the shardNumber is between 0 and numShards.
+    require(shardNumber >= 0 && shardNumber <= (numShards - 1), "wrong shard number provided")
+    // create the projection ID
+    val projectionId = ProjectionId(readSideId, shardNumber.toString)
+    // execute the restart
+    ProjectionManagement(system).resume(projectionId).transformWith[Boolean] {
+      case Failure(exception) =>
+        logger.error(
+          s"unable to pause read side readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}")
+        Future.failed(exception)
+      case Success(_) =>
+        logger.info(s"read side pause successfully, readSideID=$readSideId, shardNumber=$shardNumber")
+        Future.successful(true)
+    }
+  }
+
+  /**
+   * resumes a paused given read side across the whole cluster
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  override def resumeForAll(readSideId: String): Future[Boolean] = {
+    // let us loop through all the available shards and fetch the various offsets
+    // and restart the read side for each shard
+    val futures = (0 until numShards).map { shardNumber =>
+      // create the projection ID
+      val projectionId = ProjectionId(readSideId, shardNumber.toString)
+      // let us clear the offset and allow the readside to restart
+      ProjectionManagement(system).resume(projectionId)
+    }
+    // execute the future
+    handleForAll(futures, readSideId)
+  }
+
+  /**
+   * skips the current offset to read for a given shard and continue with next.
+   * The operation will automatically restart the read side.
+   *
+   * @param readSideId  the read side unique id
+   * @param shardNumber the cluster shard number
+   * @return true when successful or false when failed
+   */
+  override def skipOffset(readSideId: String, shardNumber: Int): Unit = {
+    val projectionId = ProjectionId(readSideId, shardNumber.toString)
+    val currentOffset: Future[Option[Sequence]] = ProjectionManagement(system).getOffset[Sequence](projectionId)
+    currentOffset.foreach {
+      case Some(s) => ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
+      case None    => // already removed
+    }
+  }
+
+  /**
+   * skips the current offset to read across all shards and continue with next.
+   * The operation will automatically restart the read side.
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  override def skipOffsets(readSideId: String): Unit = {
+    // let us loop through all the available shards and fetch the various offsets
+    // and restart the read side for each shard
+    (0 until numShards).foreach { shardNumber =>
+      // create the projection ID
+      val projectionId = ProjectionId(readSideId, shardNumber.toString)
+      val currentOffset: Future[Option[Sequence]] = ProjectionManagement(system).getOffset[Sequence](projectionId)
+      // process the value of the future
+      currentOffset.foreach {
+        case Some(s) => ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
+        case None    => // already removed
+      }
+    }
+  }
+
+  private def handleForAll(futures: Seq[Future[Done]], readSideId: String): Future[Boolean] = {
+    Future.sequence(futures).transformWith[Boolean] {
+      case Failure(exception) =>
+        logger.error(s"read side restart failed, readSideID=$readSideId, cause=${exception.getMessage}")
+        Future.failed(exception)
+      case Success(_) =>
+        logger.info(s"read side restart successfully, readSideID=$readSideId")
+        Future.successful(true)
     }
   }
 }

@@ -7,7 +7,7 @@
 package com.github.chiefofstate.config
 
 final case class ReadSideConfig(
-    processorId: String,
+    readSideId: String,
     host: String = "",
     port: Int = -1,
     useTls: Boolean = false,
@@ -19,7 +19,8 @@ final case class ReadSideConfig(
    * @param key Setting key
    * @param value Setting value
    */
-  def addSetting(key: String, value: String): ReadSideConfig = copy(settings = settings + (key -> value))
+  def addSetting(key: String, value: String): ReadSideConfig =
+    copy(settings = settings + (key -> value))
 
   /**
    * Gets the setting from the config

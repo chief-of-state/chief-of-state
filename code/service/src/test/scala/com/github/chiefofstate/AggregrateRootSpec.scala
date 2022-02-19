@@ -9,8 +9,8 @@ package com.github.chiefofstate
 import akka.actor.testkit.typed.scaladsl.TestProbe
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.persistence.typed.PersistenceId
-import com.github.chiefofstate
 import com.github.chiefofstate.config.CosConfig
+import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
 import com.github.chiefofstate.helper.BaseActorSpec
 import com.github.chiefofstate.protobuf.v1.common.{ Header, MetaData }
 import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
@@ -20,6 +20,7 @@ import com.github.chiefofstate.protobuf.v1.tests.{ Account, AccountOpened, OpenA
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.protobuf.v1.writeside._
 import com.github.chiefofstate.serialization.MessageWithActorRef
+import com.github.chiefofstate.utils.{ ProtosValidator, Util }
 import com.google.protobuf.any
 import com.google.protobuf.any.Any
 import com.google.protobuf.empty.Empty
@@ -173,12 +174,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(cosConfig.writeSideConfig)
+        ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,
@@ -239,11 +240,11 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(cosConfig.writeSideConfig)
+        utils.ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,
@@ -291,13 +292,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
 
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(cosConfig.writeSideConfig)
+        utils.ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,
@@ -347,12 +348,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(cosConfig.writeSideConfig)
+        utils.ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,
@@ -407,12 +408,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(cosConfig.writeSideConfig)
+        utils.ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,
@@ -470,12 +471,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(mainConfig.writeSideConfig)
+        utils.ProtosValidator(mainConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,
@@ -543,12 +544,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(mainConfig.writeSideConfig)
+        utils.ProtosValidator(mainConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,
@@ -608,9 +609,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(mainConfig.writeSideConfig)
@@ -676,12 +677,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(cosConfig.writeSideConfig)
+        utils.ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,
@@ -746,13 +747,13 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       val remoteCommandHandler: RemoteCommandHandler =
-        chiefofstate.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
 
       val remoteEventHandler: RemoteEventHandler =
-        chiefofstate.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        handlers.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
-        chiefofstate.ProtosValidator(cosConfig.writeSideConfig)
+        utils.ProtosValidator(cosConfig.writeSideConfig)
 
       val aggregateRoot = AggregateRoot(
         persistenceId,

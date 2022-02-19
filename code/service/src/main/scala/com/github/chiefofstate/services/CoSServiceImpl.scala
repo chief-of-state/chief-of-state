@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate
+package com.github.chiefofstate.services
 
 import akka.actor.typed.ActorRef
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
 import akka.util.Timeout
+import com.github.chiefofstate.AggregateRoot
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
@@ -16,6 +17,7 @@ import com.github.chiefofstate.protobuf.v1.internal._
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
 import com.github.chiefofstate.protobuf.v1.service._
 import com.github.chiefofstate.serialization.MessageWithActorRef
+import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto
 import io.grpc.protobuf.StatusProto
@@ -29,7 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 
-class GrpcServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(
+class CoSServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(
     implicit val askTimeout: Timeout)
     extends ChiefOfStateServiceGrpc.ChiefOfStateService {
 
@@ -51,7 +53,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSi
     log.debug(s"Adding tracing headers to command $tracingHeaders")
 
     // ascertain the entity ID
-    GrpcServiceImpl
+    CoSServiceImpl
       .requireEntityId(entityId)
       // run remote command
       .flatMap(_ => {
@@ -77,7 +79,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSi
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
-      .flatMap((value: CommandReply) => Future.fromTry(GrpcServiceImpl.handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(CoSServiceImpl.handleCommandReply(value)))
       .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
@@ -92,7 +94,7 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSi
     val tracingHeaders = TracingHelpers.getTracingHeaders(Context.current())
 
     // ascertain the entity id
-    GrpcServiceImpl
+    CoSServiceImpl
       .requireEntityId(entityId)
       .flatMap(_ => {
         val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
@@ -109,12 +111,12 @@ class GrpcServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSi
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
-      .flatMap((value: CommandReply) => Future.fromTry(GrpcServiceImpl.handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(CoSServiceImpl.handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
 }
 
-object GrpcServiceImpl {
+object CoSServiceImpl {
 
   /**
    * checks whether an entity ID is empty or not

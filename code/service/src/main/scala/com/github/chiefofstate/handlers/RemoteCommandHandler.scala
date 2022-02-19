@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate
+package com.github.chiefofstate.handlers
 
 import com.github.chiefofstate.config.GrpcConfig
 import com.github.chiefofstate.protobuf.v1.common.Header.Value
@@ -23,9 +23,9 @@ import scala.util.Try
  * handles command via a gRPC call
  *
  * @param grpcConfig the grpc config
- * @param writeHandlerServicetub the grpc client stub
+ * @param writeHandlerServiceStub the grpc client stub
  */
-case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: WriteSideHandlerServiceBlockingStub) {
+case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -43,7 +43,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
     val headers: Metadata = new Metadata()
 
     Try {
-      remoteCommand.propagatedHeaders.foreach(header => {
+      remoteCommand.propagatedHeaders.foreach { header =>
         header.value match {
           case Value.StringValue(value) =>
             headers.put(Metadata.Key.of(header.key, Metadata.ASCII_STRING_MARSHALLER), value)
@@ -52,10 +52,10 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: 
           case Value.Empty =>
             throw new RuntimeException("header value must be string or bytes")
         }
-      })
+      }
 
-      MetadataUtils
-        .attachHeaders(writeHandlerServicetub, headers)
+      writeHandlerServiceStub
+        .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleCommand(
           HandleCommandRequest()

@@ -12,7 +12,7 @@ import com.github.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 
-class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
+class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
 
   val cosSchema: String = "cos"
 
@@ -43,12 +43,12 @@ class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
 
   ".apply" should {
     "construct without failure" in {
-      noException shouldBe thrownBy(ReadSideManager(actorSystem, Seq(), 2))
+      noException shouldBe thrownBy(ReadSideBootstrap(actorSystem, Seq(), 2))
     }
   }
   ".getDataSource" should {
     "return a hikari data source" in {
-      val dbConfig = ReadSideManager.DbConfig(
+      val dbConfig = ReadSideBootstrap.DbConfig(
         jdbcUrl = container.jdbcUrl,
         username = container.username,
         password = container.password,
@@ -56,7 +56,7 @@ class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
         minIdleConnections = 1,
         idleTimeoutMs = 1000,
         maxLifetimeMs = 3000)
-      val dataSource = ReadSideManager.getDataSource(dbConfig)
+      val dataSource = ReadSideBootstrap.getDataSource(dbConfig)
 
       noException shouldBe thrownBy(dataSource.getConnection().close())
     }

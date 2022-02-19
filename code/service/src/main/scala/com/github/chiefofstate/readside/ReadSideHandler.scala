@@ -66,8 +66,8 @@ private[readside] class ReadSideHandlerImpl(
       headers.put(Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER), meta.entityId)
       headers.put(Metadata.Key.of(COS_EVENT_TAG_HEADER, Metadata.ASCII_STRING_MARSHALLER), eventTag)
 
-      MetadataUtils
-        .attachHeaders(readSideHandlerServiceBlockingStub, headers)
+      readSideHandlerServiceBlockingStub
+        .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
         .handleReadSide(
           HandleReadSideRequest().withEvent(event).withState(resultingState).withMeta(meta).withReadSideId(processorId))
     }
@@ -100,25 +100,16 @@ private[readside] class ReadSideHandlerImpl(
   }
 }
 
-/**
- * Processes events read from the Journal
- *
- * @param event          the actual event
- * @param eventTag       the event tag
- * @param resultingState the resulting state of the applied event
- * @param meta           the additional meta data
- * @return an eventual HandleReadSideResponse
- */
 private[readside] trait ReadSideHandler {
 
   /**
-   * handles a read side message
+   * Processes events read from the Journal
    *
-   * @param event
-   * @param eventTag
-   * @param resultingState
-   * @param meta
-   * @return
+   * @param event          the actual event
+   * @param eventTag       the event tag
+   * @param resultingState the resulting state of the applied event
+   * @param meta           the additional meta data
+   * @return an eventual HandleReadSideResponse
    */
   def processEvent(
       event: com.google.protobuf.any.Any,

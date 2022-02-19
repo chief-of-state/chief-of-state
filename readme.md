@@ -1,7 +1,7 @@
 # Chief of State
 
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/chief-of-state/chief-of-state/Master/master)
-[![codecov](https://codecov.io/gh/chief-of-state/chief-of-state/branch/master/graph/badge.svg?token=DBO3JBTHZ0)](https://codecov.io/gh/chief-of-state/chief-of-state)
+![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/chief-of-state/chief-of-state?include_prereleases)
 
 
 ## Overview
@@ -67,6 +67,11 @@ Some potential read side handlers might:
 - Automatic configuration of postgres storage on boot
 - Opentelemetry integration for tracing and prometheus metrics
 - Direct integration to Kubernetes to form a cluster
+- Read Side Management
+  - Skip offset per shard and across the whole CoS cluster
+  - Pause and Resume read sides per shard and across the whole CoS cluster
+  - Restart read sides per shard and across the whole CoS cluster
+  - List read sides' offsets per shard and across the whole CoS cluster
 
 ## Documentation
 

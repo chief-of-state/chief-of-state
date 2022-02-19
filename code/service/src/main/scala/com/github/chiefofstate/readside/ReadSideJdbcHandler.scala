@@ -9,9 +9,9 @@ package com.github.chiefofstate.readside
 import akka.projection.eventsourced.EventEnvelope
 import akka.projection.jdbc.JdbcSession
 import akka.projection.jdbc.scaladsl.JdbcHandler
-import com.google.protobuf.any.{ Any => ProtoAny }
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
+import com.google.protobuf.any.{ Any => ProtoAny }
 import org.slf4j.{ Logger, LoggerFactory }
 
 /**

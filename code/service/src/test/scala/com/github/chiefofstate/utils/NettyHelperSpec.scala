@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate
+package com.github.chiefofstate.utils
 
 import com.github.chiefofstate.helper.BaseSpec
 
