@@ -13,7 +13,7 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
-import com.github.chiefofstate.services.{ CoSService, ManagerService }
+import com.github.chiefofstate.services.{ CoSServiceImpl, ReadManagerServiceImpl }
 import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded }
 import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
@@ -130,12 +130,12 @@ object ServiceBootstrapper {
     val grpcEc: ExecutionContext = TracedExecutorService.get()
 
     // instantiate the grpc service, bind to the execution context
-    val serviceImpl: CoSService =
-      new CoSService(clusterSharding, cosConfig.writeSideConfig)
+    val serviceImpl: CoSServiceImpl =
+      new CoSServiceImpl(clusterSharding, cosConfig.writeSideConfig)
 
     // create an instance of the read side state manager service
     val readSideStateManager = new ReadSideManager(system, cosConfig.eventsConfig.numShards)
-    val readSideStateServiceImpl = new ManagerService(readSideStateManager)(grpcEc)
+    val readSideStateServiceImpl = new ReadManagerServiceImpl(readSideStateManager)(grpcEc)
 
     // create the server builder
     var builder = NettyServerBuilder

@@ -31,7 +31,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 
-class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(implicit val askTimeout: Timeout)
+class CoSServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(
+    implicit val askTimeout: Timeout)
     extends ChiefOfStateServiceGrpc.ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -52,7 +53,7 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
     log.debug(s"Adding tracing headers to command $tracingHeaders")
 
     // ascertain the entity ID
-    CoSService
+    CoSServiceImpl
       .requireEntityId(entityId)
       // run remote command
       .flatMap(_ => {
@@ -78,7 +79,7 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
-      .flatMap((value: CommandReply) => Future.fromTry(CoSService.handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(CoSServiceImpl.handleCommandReply(value)))
       .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
@@ -93,7 +94,7 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
     val tracingHeaders = TracingHelpers.getTracingHeaders(Context.current())
 
     // ascertain the entity id
-    CoSService
+    CoSServiceImpl
       .requireEntityId(entityId)
       .flatMap(_ => {
         val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
@@ -110,12 +111,12 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
-      .flatMap((value: CommandReply) => Future.fromTry(CoSService.handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(CoSServiceImpl.handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
 }
 
-object CoSService {
+object CoSServiceImpl {
 
   /**
    * checks whether an entity ID is empty or not

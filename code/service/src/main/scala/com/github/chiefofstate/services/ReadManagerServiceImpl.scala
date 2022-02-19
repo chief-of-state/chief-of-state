@@ -15,7 +15,8 @@ import org.slf4j.{ Logger, LoggerFactory }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class ManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionContext) extends ReadSideManagerService {
+class ReadManagerServiceImpl(readSideManager: ReadSideManager)(implicit ec: ExecutionContext)
+    extends ReadSideManagerService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -163,7 +164,7 @@ class ManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionCon
   /**
    * SkippOffset skips the current offset to read across all shards and continue with next. The operation will automatically restart the read side.
    */
-  override def skipOffset(request: SkipOffsetRequest): Future[SkipOffSetResponse] = {
+  override def skipOffset(request: SkipOffsetRequest): Future[SkipOffsetResponse] = {
     // log the method name
     log.debug(ReadSideManagerServiceGrpc.METHOD_SKIP_OFFSET.getFullMethodName)
     // get the readside id
@@ -178,14 +179,14 @@ class ManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionCon
         Future.failed(exception)
       case Success(_) =>
         log.info(s"skipping read side offset successfully, readSideID=$readSideId")
-        Future.successful(SkipOffSetResponse().withSuccessful(true))
+        Future.successful(SkipOffsetResponse().withSuccessful(true))
     }
   }
 
   /**
    * SkippOffset skips the current offset to read for a given shard and continue with next. The operation will automatically restart the read side.
    */
-  override def skipOffsetByShard(request: SkipOffsetByShardRequest): Future[SkipOffSetByShardResponse] = {
+  override def skipOffsetByShard(request: SkipOffsetByShardRequest): Future[SkipOffsetByShardResponse] = {
     // log the method name
     log.debug(ReadSideManagerServiceGrpc.METHOD_SKIP_OFFSET_BY_SHARD.getFullMethodName)
     // get the readside id
@@ -202,7 +203,7 @@ class ManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionCon
         Future.failed(exception)
       case Success(_) =>
         log.info(s"skipping read side offset successfully, readSideID=$readSideId, shardNumber=$shardNumber")
-        Future.successful(SkipOffSetByShardResponse().withSuccessful(true))
+        Future.successful(SkipOffsetByShardResponse().withSuccessful(true))
     }
   }
 }
