@@ -88,6 +88,25 @@ sealed trait StateManager {
    * @return true when successful or false when failed
    */
   def resumeForAll(readSideId: String): Future[Boolean]
+
+  /**
+   * skips the current offset to read for a given shard and continue with next.
+   * The operation will automatically restart the read side.
+   *
+   * @param readSideId the read side unique id
+   * @param shardNumber the cluster shard number
+   * @return true when successful or false when failed
+   */
+  def skipOffset(readSideId: String, shardNumber: Int): Unit
+
+  /**
+   * skips the current offset to read across all shards and continue with next.
+   * The operation will automatically restart the read side.
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  def skipOffsets(readSideId: String): Unit
 }
 
 /**
@@ -285,6 +304,45 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
     }
     // execute the future
     handleForAll(futures, readSideId)
+  }
+
+  /**
+   * skips the current offset to read for a given shard and continue with next.
+   * The operation will automatically restart the read side.
+   *
+   * @param readSideId  the read side unique id
+   * @param shardNumber the cluster shard number
+   * @return true when successful or false when failed
+   */
+  override def skipOffset(readSideId: String, shardNumber: Int): Unit = {
+    val projectionId = ProjectionId(readSideId, shardNumber.toString)
+    val currentOffset: Future[Option[Sequence]] = ProjectionManagement(system).getOffset[Sequence](projectionId)
+    currentOffset.foreach {
+      case Some(s) => ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
+      case None    => // already removed
+    }
+  }
+
+  /**
+   * skips the current offset to read across all shards and continue with next.
+   * The operation will automatically restart the read side.
+   *
+   * @param readSideId the read side unique id
+   * @return true when successful or false when failed
+   */
+  override def skipOffsets(readSideId: String): Unit = {
+    // let us loop through all the available shards and fetch the various offsets
+    // and restart the read side for each shard
+    (0 until numShards).foreach { shardNumber =>
+      // create the projection ID
+      val projectionId = ProjectionId(readSideId, shardNumber.toString)
+      val currentOffset: Future[Option[Sequence]] = ProjectionManagement(system).getOffset[Sequence](projectionId)
+      // process the value of the future
+      currentOffset.foreach {
+        case Some(s) => ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
+        case None    => // already removed
+      }
+    }
   }
 
   private def handleForAll(futures: Seq[Future[Done]], readSideId: String): Future[Boolean] = {

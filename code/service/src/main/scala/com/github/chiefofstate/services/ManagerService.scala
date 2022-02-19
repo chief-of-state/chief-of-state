@@ -13,6 +13,7 @@ import com.github.chiefofstate.readside.ReadSideManager
 import org.slf4j.{ Logger, LoggerFactory }
 
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.{ Failure, Success, Try }
 
 class ManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionContext) extends ReadSideManagerService {
 
@@ -157,5 +158,51 @@ class ManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionCon
       .map(status => {
         ResumeReadSideByShardResponse().withSuccessful(status)
       })
+  }
+
+  /**
+   * SkippOffset skips the current offset to read across all shards and continue with next. The operation will automatically restart the read side.
+   */
+  override def skipOffset(request: SkipOffsetRequest): Future[SkipOffSetResponse] = {
+    // log the method name
+    log.debug(ReadSideManagerServiceGrpc.METHOD_SKIP_OFFSET.getFullMethodName)
+    // get the readside id
+    val readSideId = request.readSideId
+    // execute the request.
+    // In case there is an error an internal error will be returned
+    Try {
+      readSideManager.skipOffsets(readSideId)
+    } match {
+      case Failure(exception) =>
+        log.error(s"skipping read side offset failed, readSideID=$readSideId, cause=${exception.getMessage}")
+        Future.failed(exception)
+      case Success(_) =>
+        log.info(s"skipping read side offset successfully, readSideID=$readSideId")
+        Future.successful(SkipOffSetResponse().withSuccessful(true))
+    }
+  }
+
+  /**
+   * SkippOffset skips the current offset to read for a given shard and continue with next. The operation will automatically restart the read side.
+   */
+  override def skipOffsetByShard(request: SkipOffsetByShardRequest): Future[SkipOffSetByShardResponse] = {
+    // log the method name
+    log.debug(ReadSideManagerServiceGrpc.METHOD_SKIP_OFFSET_BY_SHARD.getFullMethodName)
+    // get the readside id
+    val readSideId = request.readSideId
+    val shardNumber = request.clusterShardNumber.intValue()
+    // execute the request.
+    // In case there is an error an internal error will be returned
+    Try {
+      readSideManager.skipOffset(readSideId, shardNumber)
+    } match {
+      case Failure(exception) =>
+        log.error(
+          s"unable to skip read side offset readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}")
+        Future.failed(exception)
+      case Success(_) =>
+        log.info(s"skipping read side offset successfully, readSideID=$readSideId, shardNumber=$shardNumber")
+        Future.successful(SkipOffSetByShardResponse().withSuccessful(true))
+    }
   }
 }
