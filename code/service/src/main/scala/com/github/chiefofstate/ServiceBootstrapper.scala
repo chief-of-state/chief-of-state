@@ -13,12 +13,12 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
-import com.github.chiefofstate.services.{ CoSServiceImpl, ReadManagerServiceImpl }
 import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded }
 import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.readside.{ ReadSideBootstrap, ReadSideManager }
+import com.github.chiefofstate.services.{ CoSServiceImpl, ReadManagerServiceImpl }
 import com.github.chiefofstate.utils.{ NettyHelper, ProtosValidator, Util }
 import com.typesafe.config.Config
 import io.grpc._

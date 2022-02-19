@@ -9,6 +9,7 @@ package com.github.chiefofstate.services
 import akka.actor.typed.ActorRef
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
 import akka.util.Timeout
+import com.github.chiefofstate.AggregateRoot
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
@@ -16,7 +17,6 @@ import com.github.chiefofstate.protobuf.v1.internal._
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
 import com.github.chiefofstate.protobuf.v1.service._
 import com.github.chiefofstate.serialization.MessageWithActorRef
-import com.github.chiefofstate.AggregateRoot
 import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto

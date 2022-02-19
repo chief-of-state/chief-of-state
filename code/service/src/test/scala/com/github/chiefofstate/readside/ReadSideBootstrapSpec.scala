@@ -12,7 +12,7 @@ import com.github.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
 
-class ReadSideManagerSpec extends BaseSpec with ForAllTestContainer {
+class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
 
   val cosSchema: String = "cos"
 

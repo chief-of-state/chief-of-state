@@ -9,7 +9,6 @@ package com.github.chiefofstate
 import akka.actor.testkit.typed.scaladsl.TestProbe
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.persistence.typed.PersistenceId
-import com.github.chiefofstate
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
 import com.github.chiefofstate.helper.BaseActorSpec

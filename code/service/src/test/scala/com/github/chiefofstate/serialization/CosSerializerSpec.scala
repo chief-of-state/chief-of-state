@@ -9,8 +9,6 @@ package com.github.chiefofstate.serialization
 import akka.actor.ExtendedActorSystem
 import akka.actor.testkit.typed.scaladsl.TestProbe
 import akka.actor.typed.scaladsl.adapter._
-import com.google.protobuf.any.Any
-import com.google.protobuf.wrappers.StringValue
 import com.github.chiefofstate.helper.BaseActorSpec
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.internal.{
@@ -20,6 +18,8 @@ import com.github.chiefofstate.protobuf.v1.internal.{
   WireMessageWithActorRef
 }
 import com.github.chiefofstate.protobuf.v1.tests.OpenAccount
+import com.google.protobuf.any.Any
+import com.google.protobuf.wrappers.StringValue
 import scalapb.GeneratedMessage
 
 class CosSerializerSpec extends BaseActorSpec(s"""
