@@ -6,7 +6,7 @@ object Dependencies {
   // Package versions
   object Versions {
     val ScalaVersion: String = "2.13.8"
-    val AkkaVersion: String = "2.6.18"
+    val AkkaVersion: String = "2.6.19"
     val SilencerVersion: String = "1.7.8"
     val LogbackVersion: String = "1.2.11"
     val ScalapbCommonProtoVersion: String = "2.5.0-3"
@@ -67,6 +67,7 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
     "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % Test,
     "com.lightbend.akka" %% "akka-projection-testkit" % AkkaProjectionVersion % Test,
+    "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
