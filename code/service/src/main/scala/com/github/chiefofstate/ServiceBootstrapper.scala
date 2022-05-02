@@ -11,7 +11,7 @@ import akka.actor.typed.{ ActorSystem, Behavior }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
-import com.github.chiefofstate.config.CosConfig
+import com.github.chiefofstate.config.{ CosConfig, ReadSideConfigReader }
 import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
 import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded }
 import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
@@ -31,6 +31,7 @@ import org.slf4j.{ Logger, LoggerFactory }
 
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.sys.ShutdownHookThread
 
 /**
@@ -146,6 +147,13 @@ object ServiceBootstrapper {
     if (cosConfig.enableReadSide)
       builder = builder.addService(
         setServiceWithInterceptors(ReadSideManagerService.bindService(readSideStateServiceImpl, grpcEc)))
+
+    // for each readSideConfig, handle pauseOnStart
+    val readSideConfigs = ReadSideConfigReader.getReadSideSettings
+    readSideConfigs.foreach { readSideConfig =>
+      if (readSideConfig.pauseOnStart)
+        readSideStateManager.pauseForAll(readSideConfig.readSideId)
+    }
 
     // attach service to netty server
     val server: Server = builder.build().start()

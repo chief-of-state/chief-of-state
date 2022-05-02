@@ -12,6 +12,7 @@ object ReadSideConfigReader {
   val READ_SIDE_HOST_KEY: String = "HOST"
   val READ_SIDE_PORT_KEY: String = "PORT"
   val READ_SIDE_TLS_KEY: String = "USE_TLS"
+  val READ_SIDE_PAUSE_ON_START: String = "PAUSE_ON_START"
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -56,6 +57,9 @@ object ReadSideConfigReader {
           case (config, (READ_SIDE_TLS_KEY, value)) =>
             config.copy(useTls = value.toBooleanOption.getOrElse(false))
 
+          case (config, (READ_SIDE_PAUSE_ON_START, value)) =>
+            config.copy(pauseOnStart = value.toBooleanOption.getOrElse(false))
+
           case (config, (key, value)) =>
             config.addSetting(key, value)
         }
@@ -65,7 +69,7 @@ object ReadSideConfigReader {
       require(readSideConfig.port > 0, s"ProcessorId $readSideId is missing a PORT")
 
       logger.info(
-        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}")
+        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}, pauseOnStart=${readSideConfig.pauseOnStart}")
 
       readSideConfig
     }.toSeq
