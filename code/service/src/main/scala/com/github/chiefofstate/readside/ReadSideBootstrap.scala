@@ -15,6 +15,8 @@ import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import io.grpc.ClientInterceptor
 import org.slf4j.{ Logger, LoggerFactory }
 
+import scala.util.{ Failure, Success, Try }
+
 /**
  * Used to configure and start all read side processors
  *
@@ -55,12 +57,19 @@ class ReadSideBootstrap(
       // instantiate the read side projection with the remote processor
       val projection =
         new ReadSideProjection(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards)
-      // start the sharded daemon process
-      projection.start()
 
-      // pause readSide for all shards after starting it if pause on start is enable
-      if (config.pausedOnStart) {
-        readSideManager.pauseForAll(config.readSideId)
+      Try {
+        // start the projection
+        projection.start()
+
+        // pause readSide for all shards after starting it if pause on start is enable
+        if (config.pausedOnStart) {
+          readSideManager.pauseForAll(config.readSideId)
+        }
+      } match {
+        case Failure(exception) =>
+          logger.error(s"fail to start read side=${config.readSideId}, cause=${exception.getMessage}")
+        case Success(_) => logger.info(s"read side=${config.readSideId} started successfully.")
       }
     }
   }

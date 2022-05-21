@@ -6,26 +6,20 @@
 
 package com.github.chiefofstate.helper
 
-import scala.collection.mutable
-import scala.jdk.CollectionConverters.MapHasAsScala
-import scala.language.postfixOps
-
 object EnvironmentHelper {
-
-  def getEnv: mutable.Map[String, String] = {
-    val pe = Class.forName("java.lang.ProcessEnvironment")
-    val env = pe.getDeclaredMethod("getenv")
-    env.setAccessible(true)
-    val props = pe.getDeclaredField("theCaseInsensitiveEnvironment")
-    props.setAccessible(true)
-    props.get(null).asInstanceOf[java.util.Map[java.lang.String, java.lang.String]].asScala
-  }
-
   def setEnv(key: String, value: String): Unit = {
-    getEnv.put(key, value)
+    val field = System.getenv().getClass.getDeclaredField("m")
+    field.setAccessible(true)
+    val map: java.util.Map[java.lang.String, java.lang.String] =
+      field.get(System.getenv()).asInstanceOf[java.util.Map[java.lang.String, java.lang.String]]
+    map.put(key, value)
   }
 
   def clearEnv(): Unit = {
-    getEnv.clear()
+    val field = System.getenv().getClass.getDeclaredField("m")
+    field.setAccessible(true)
+    val map: java.util.Map[java.lang.String, java.lang.String] =
+      field.get(System.getenv()).asInstanceOf[java.util.Map[java.lang.String, java.lang.String]]
+    map.clear()
   }
 }
