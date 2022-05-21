@@ -7,6 +7,7 @@
 package com.github.chiefofstate.readside
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import akka.actor.typed.ActorSystem
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
 import com.github.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
@@ -34,7 +35,7 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
 
   lazy val testKit: ActorTestKit = ActorTestKit(config)
 
-  lazy val actorSystem = testKit.system
+  lazy val actorSystem: ActorSystem[Nothing] = testKit.system
 
   override def afterAll(): Unit = {
     super.afterAll()
@@ -43,7 +44,8 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
 
   ".apply" should {
     "construct without failure" in {
-      noException shouldBe thrownBy(ReadSideBootstrap(actorSystem, Seq(), 2))
+      val manager = new ReadSideManager(actorSystem, 1)
+      noException shouldBe thrownBy(ReadSideBootstrap(actorSystem, Seq(), 2, manager))
     }
   }
   ".getDataSource" should {
