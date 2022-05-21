@@ -23,13 +23,15 @@ import org.slf4j.{ Logger, LoggerFactory }
  * @param dbConfig the DB config for creating a hikari data source
  * @param readSideConfigs sequence of configs for specific read sides
  * @param numShards number of shards for projections/tags
+ * @param readSideManager specifies the readSide manager
  */
 class ReadSideBootstrap(
     system: ActorSystem[_],
     interceptors: Seq[ClientInterceptor],
     dbConfig: ReadSideBootstrap.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
-    numShards: Int) {
+    numShards: Int,
+    readSideManager: ReadSideManager) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -55,13 +57,22 @@ class ReadSideBootstrap(
         new ReadSideProjection(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards)
       // start the sharded daemon process
       projection.start()
+
+      // pause readSide for all shards after starting it if pause on start is enable
+      if (config.pausedOnStart) {
+        readSideManager.pauseForAll(config.readSideId)
+      }
     }
   }
 }
 
 object ReadSideBootstrap {
 
-  def apply(system: ActorSystem[_], interceptors: Seq[ClientInterceptor], numShards: Int): ReadSideBootstrap = {
+  def apply(
+      system: ActorSystem[_],
+      interceptors: Seq[ClientInterceptor],
+      numShards: Int,
+      readSideManager: ReadSideManager): ReadSideBootstrap = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
@@ -78,7 +89,8 @@ object ReadSideBootstrap {
       interceptors = interceptors,
       dbConfig = dbConfig,
       readSideConfigs = configs,
-      numShards = numShards)
+      numShards = numShards,
+      readSideManager)
   }
 
   /**
