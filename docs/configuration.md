@@ -75,7 +75,7 @@ The following format defines how a CoS read side environment variable is configu
     - **HOST** - Read side host
     - **PORT** - Read side port
     - **USE_TLS** - Use TLS for read side calls
-    - **AUTO_START** - Specifies that the Read side is paused on start. One can use
+    - **AUTO_START** - Set to `true` means that the Read side on start is ready to process events. However, when it set to `false` means that the Read side is paused on start or no not. One can use
       the [cli](https://github.com/chief-of-state/cos-cli) to resume processing
 - <READSIDE_ID> - Unique id for the read side instance. Replace this placeholder with your actual ID.
 
