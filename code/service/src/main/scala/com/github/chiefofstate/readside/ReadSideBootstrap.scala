@@ -15,6 +15,7 @@ import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import io.grpc.ClientInterceptor
 import org.slf4j.{ Logger, LoggerFactory }
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.util.{ Failure, Success, Try }
 
 /**
@@ -40,6 +41,9 @@ class ReadSideBootstrap(
   private[readside] lazy val dataSource: HikariDataSource =
     ReadSideBootstrap.getDataSource(dbConfig)
 
+  // grab the execution context from the actor system
+  implicit val ec: ExecutionContextExecutor = system.executionContext
+
   def init(): Unit = {
     logger.info(s"initializing read sides, count=${readSideConfigs.size}")
 
@@ -61,9 +65,20 @@ class ReadSideBootstrap(
       Try {
         // start the projection
         projection.start()
-
-        // pause readSide for all shards after starting it if pause on start is enable
-        if (!config.autoStart) {
+        // check auto start
+        if (config.autoStart) {
+          // check whether the read side is paused or not
+          readSideManager
+            .isReadSidePaused(config.readSideId)
+            .map(res => {
+              // resume the read Side if it is paused in previous run
+              if (res) {
+                // attempt to resume a maybe paused read side
+                readSideManager.resumeForAll(config.readSideId)
+              }
+            })
+        } else {
+          // pause readSide for all shards after starting it if pause on start is enable
           readSideManager.pauseForAll(config.readSideId)
         }
       } match {
