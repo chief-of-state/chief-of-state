@@ -60,17 +60,30 @@ Property | Required | Description
 COS_TELEMETRY_NAMESPACE | no | Namespace to be used to differentiate different chief of state deployments
 COS_TELEMETRY_COLLECTOR_ENDPOINT | no | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317`
 COS_TRACE_PROPAGATORS | no | A comma separated list of [propagators](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/context/api-propagators.md#propagators-distribution) to enable. Defaults to `b3multi`. Valid values are **
+
 b3**, **b3multi**, **tracecontext**, **baggage**, **jaeger** and **ottracer**
 
 ### Read side configurations
-
-- SETTING_NAME - Supported setting names:
-    - HOST - Read side host
-    - PORT - Read side port
-    - USE_TLS - Use TLS for read side calls
-    - AUTO_START - Specifies that the Read side is paused on start. One can use the [cli](https://github.com/chief-of-state/cos-cli) to resume processing
-- READSIDE_ID - Unique id for the read side instance
+The CoS can handle as many as read sides one desires. CoS read side are configured using environment variables.
+The following format defines how a CoS read side environment variable is configured:
 
 | environment variable | description | default |
 |--- | --- | --- |
 | COS_READ_SIDE_CONFIG__<SETTING_NAME>__<READSIDE_ID> | readside configuration settings | <none> |
+
+- <SETTING_NAME> - Accepted values are:
+    - **HOST** - Read side host
+    - **PORT** - Read side port
+    - **USE_TLS** - Use TLS for read side calls
+    - **AUTO_START** - Specifies that the Read side is paused on start. One can use
+      the [cli](https://github.com/chief-of-state/cos-cli) to resume processing
+- <READSIDE_ID> - Unique id for the read side instance. Replace this placeholder with your actual ID.
+
+#### Example
+
+```shell
+COS_READ_SIDE_CONFIG__HOST__DB_WRITER=db-writer
+COS_READ_SIDE_CONFIG__PORT__DB_WRITER=50053
+COS_READ_SIDE_CONFIG__USE_TLS__DB_WRITER=false
+COS_READ_SIDE_CONFIG__AUTO_START__DB_WRITER=false
+```
