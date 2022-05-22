@@ -21,7 +21,7 @@ final case class ReadSideConfig(
     host: String = "",
     port: Int = -1,
     useTls: Boolean = false,
-    autoStart: Boolean = false,
+    autoStart: Boolean = true,
     settings: Map[String, String] = Map.empty[String, String]) {
 
   /**
