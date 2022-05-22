@@ -15,7 +15,7 @@ object ReadSideConfigReader {
   val READ_SIDE_HOST_KEY: String = "HOST"
   val READ_SIDE_PORT_KEY: String = "PORT"
   val READ_SIDE_TLS_KEY: String = "USE_TLS"
-  val READ_SIDE_PAUSED_ON_START: String = "PAUSED_ON_START"
+  val READ_SIDE_AUTO_START: String = "AUTO_START"
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -60,8 +60,8 @@ object ReadSideConfigReader {
           case (config, (READ_SIDE_TLS_KEY, value)) =>
             config.copy(useTls = value.toBooleanOption.getOrElse(false))
 
-          case (config, (READ_SIDE_PAUSED_ON_START, value)) =>
-            config.copy(pausedOnStart = value.toBooleanOption.getOrElse(false))
+          case (config, (READ_SIDE_AUTO_START, value)) =>
+            config.copy(autoStart = value.toBooleanOption.getOrElse(false))
 
           case (config, (key, value)) =>
             config.addSetting(key, value)

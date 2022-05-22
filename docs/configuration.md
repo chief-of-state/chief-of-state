@@ -68,7 +68,7 @@ b3**, **b3multi**, **tracecontext**, **baggage**, **jaeger** and **ottracer**
     - HOST - Read side host
     - PORT - Read side port
     - USE_TLS - Use TLS for read side calls
-    - PAUSED_ON_START - Specifies that the Read side is paused on start. One can use the [cli](https://github.com/chief-of-state/cos-cli) to resume processing
+    - AUTO_START - Specifies that the Read side is paused on start. One can use the [cli](https://github.com/chief-of-state/cos-cli) to resume processing
 - READSIDE_ID - Unique id for the read side instance
 
 | environment variable | description | default |

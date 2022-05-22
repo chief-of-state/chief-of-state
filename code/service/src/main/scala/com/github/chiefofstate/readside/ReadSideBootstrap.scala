@@ -63,7 +63,7 @@ class ReadSideBootstrap(
         projection.start()
 
         // pause readSide for all shards after starting it if pause on start is enable
-        if (config.pausedOnStart) {
+        if (!config.autoStart) {
           readSideManager.pauseForAll(config.readSideId)
         }
       } match {
