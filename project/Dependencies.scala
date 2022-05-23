@@ -11,18 +11,18 @@ object Dependencies {
     val LogbackVersion: String = "1.2.11"
     val ScalapbCommonProtoVersion: String = "2.5.0-3"
     val ScalapbValidationVersion: String = "0.1.4"
-    val ScalaTestVersion: String = "3.2.11"
+    val ScalaTestVersion: String = "3.2.12"
     val AkkaManagementVersion: String = "1.1.3"
-    val AkkaProjectionVersion: String = "1.2.3"
-    val PostgresDriverVersion: String = "42.3.3"
+    val AkkaProjectionVersion: String = "1.2.4"
+    val PostgresDriverVersion: String = "42.3.4"
     val SlickVersion: String = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "5.0.4"
     val ScalaMockVersion: String = "5.2.0"
 
-    val JaninoVersion: String = "3.1.6"
+    val JaninoVersion: String = "3.1.7"
     val LogstashLogbackVersion: String = "6.3"
     val OpenTelemetryVersion: String = "1.12.0"
-    val TestContainers: String = "0.40.4"
+    val TestContainers: String = "0.40.7"
     val OtelToolsVersion: String = "0.1.11+3-0a26eb8c-SNAPSHOT"
   }
 
