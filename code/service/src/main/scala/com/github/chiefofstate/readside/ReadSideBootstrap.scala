@@ -15,6 +15,9 @@ import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import io.grpc.ClientInterceptor
 import org.slf4j.{ Logger, LoggerFactory }
 
+import scala.concurrent.ExecutionContextExecutor
+import scala.util.{ Failure, Success, Try }
+
 /**
  * Used to configure and start all read side processors
  *
@@ -23,18 +26,23 @@ import org.slf4j.{ Logger, LoggerFactory }
  * @param dbConfig the DB config for creating a hikari data source
  * @param readSideConfigs sequence of configs for specific read sides
  * @param numShards number of shards for projections/tags
+ * @param readSideManager specifies the readSide manager
  */
 class ReadSideBootstrap(
     system: ActorSystem[_],
     interceptors: Seq[ClientInterceptor],
     dbConfig: ReadSideBootstrap.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
-    numShards: Int) {
+    numShards: Int,
+    readSideManager: ReadSideManager) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   private[readside] lazy val dataSource: HikariDataSource =
     ReadSideBootstrap.getDataSource(dbConfig)
+
+  // grab the execution context from the actor system
+  implicit val ec: ExecutionContextExecutor = system.executionContext
 
   def init(): Unit = {
     logger.info(s"initializing read sides, count=${readSideConfigs.size}")
@@ -53,15 +61,43 @@ class ReadSideBootstrap(
       // instantiate the read side projection with the remote processor
       val projection =
         new ReadSideProjection(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards)
-      // start the sharded daemon process
-      projection.start()
+
+      Try {
+        // check auto start
+        if (config.autoStart) {
+          // check whether the read side is paused or not
+          readSideManager
+            .isReadSidePaused(config.readSideId)
+            .map(res => {
+              // resume the read Side if it is paused in previous run
+              if (res) {
+                // attempt to resume a maybe paused read side
+                readSideManager.resumeForAll(config.readSideId)
+              } else {
+                // start the projection
+                projection.start()
+              }
+            })
+        } else {
+          // pause readSide for all shards after starting it if pause on start is enable
+          readSideManager.pauseForAll(config.readSideId)
+        }
+      } match {
+        case Failure(exception) =>
+          logger.error(s"fail to start read side=${config.readSideId}, cause=${exception.getMessage}")
+        case Success(_) => logger.info(s"read side=${config.readSideId} started successfully.")
+      }
     }
   }
 }
 
 object ReadSideBootstrap {
 
-  def apply(system: ActorSystem[_], interceptors: Seq[ClientInterceptor], numShards: Int): ReadSideBootstrap = {
+  def apply(
+      system: ActorSystem[_],
+      interceptors: Seq[ClientInterceptor],
+      numShards: Int,
+      readSideManager: ReadSideManager): ReadSideBootstrap = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
@@ -78,7 +114,8 @@ object ReadSideBootstrap {
       interceptors = interceptors,
       dbConfig = dbConfig,
       readSideConfigs = configs,
-      numShards = numShards)
+      numShards = numShards,
+      readSideManager)
   }
 
   /**

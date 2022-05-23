@@ -107,6 +107,14 @@ sealed trait StateManager {
    * @return true when successful or false when failed
    */
   def skipOffsets(readSideId: String): Unit
+
+  /**
+   * checks whether a given read side is paused or not
+   *
+   * @param readSideId the read side unique id
+   * @return true when the projection is paused and false on the contrary
+   */
+  def isReadSidePaused(readSideId: String): Future[Boolean]
 }
 
 /**
@@ -353,6 +361,31 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
       case Success(_) =>
         logger.info(s"read side restart successfully, readSideID=$readSideId")
         Future.successful(true)
+    }
+  }
+
+  /**
+   * checks whether a given read side is paused or not
+   *
+   * @param readSideId the read side unique id
+   * @return true when the projection is paused and false on the contrary
+   */
+  override def isReadSidePaused(readSideId: String): Future[Boolean] = {
+    // set the management
+    val mgmt = ProjectionManagement(system)
+    // let us loop through all the available shards and fetch the various offsets
+    // and restart the read side for each shard
+    // check the status of the projection
+    val results: Seq[Future[Boolean]] = (0 until numShards).map { shardNumber =>
+      // create the projection ID
+      val projectionId = ProjectionId(readSideId, shardNumber.toString)
+      // check the pause mode of the projection
+      mgmt.isPaused(projectionId)
+    }
+    // run the future
+    Future.sequence(results).transformWith[Boolean] {
+      case Failure(exception) => Future.failed(exception)
+      case Success(value)     => Future.successful(value.forall(_ == true))
     }
   }
 }

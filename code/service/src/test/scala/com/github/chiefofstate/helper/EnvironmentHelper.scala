@@ -7,7 +7,6 @@
 package com.github.chiefofstate.helper
 
 object EnvironmentHelper {
-
   def setEnv(key: String, value: String): Unit = {
     val field = System.getenv().getClass.getDeclaredField("m")
     field.setAccessible(true)

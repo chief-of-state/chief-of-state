@@ -83,7 +83,7 @@ object AggregateRoot {
    * @param context the actor system context
    * @param aggregateState the prior state of the aggregate before the command being handled is received
    * @param aggregateCommand the command to handle
-   * @param commandHandler the remote commands handleer
+   * @param commandHandler the remote commands handler
    * @param eventHandler the remote events handler
    * @return a side effect
    */

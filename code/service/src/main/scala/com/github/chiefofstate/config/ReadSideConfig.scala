@@ -6,11 +6,22 @@
 
 package com.github.chiefofstate.config
 
+/**
+ * ReadSideConfig defines the configuration of CoS readside
+ *
+ * @param readSideId the readSide ID
+ * @param host the read side server host to receive read side requests
+ * @param port the read side server port
+ * @param useTls specifies whether SSL is enabled on the read side server
+ * @param autoStart specifies whether the read side should start processing messages or be in pause mode
+ * @param settings additional read side settings
+ */
 final case class ReadSideConfig(
     readSideId: String,
     host: String = "",
     port: Int = -1,
     useTls: Boolean = false,
+    autoStart: Boolean = true,
     settings: Map[String, String] = Map.empty[String, String]) {
 
   /**

@@ -91,11 +91,14 @@ object ServiceBootstrapper {
             eventsAndStateProtoValidation)
         })
 
+        // create an instance of the readSide manager
+        val readSideManager = new ReadSideManager(context.system, cosConfig.eventsConfig.numShards)
+
         // read side service
-        startReadSides(context.system, cosConfig, grpcClientInterceptors)
+        startReadSides(context.system, cosConfig, grpcClientInterceptors, readSideManager)
 
         // start the service
-        startServices(context.system, sharding, config, cosConfig)
+        startServices(context.system, sharding, cosConfig, readSideManager)
 
         Behaviors.same
 
@@ -116,14 +119,13 @@ object ServiceBootstrapper {
    * starts the main application
    *
    * @param clusterSharding the akka cluster sharding
-   * @param config the application configuration
    * @param cosConfig the cos specific configuration
    */
   private def startServices(
       system: ActorSystem[_],
       clusterSharding: ClusterSharding,
-      config: Config,
-      cosConfig: CosConfig): ShutdownHookThread = {
+      cosConfig: CosConfig,
+      readSideManager: ReadSideManager): ShutdownHookThread = {
     implicit val askTimeout: Timeout = cosConfig.askTimeout
 
     // create the traced execution context for grpc
@@ -134,8 +136,7 @@ object ServiceBootstrapper {
       new CoSServiceImpl(clusterSharding, cosConfig.writeSideConfig)
 
     // create an instance of the read side state manager service
-    val readSideStateManager = new ReadSideManager(system, cosConfig.eventsConfig.numShards)
-    val readSideStateServiceImpl = new ReadManagerServiceImpl(readSideStateManager)(grpcEc)
+    val readSideStateServiceImpl = new ReadManagerServiceImpl(readSideManager)(grpcEc)
 
     // create the server builder
     var builder = NettyServerBuilder
@@ -168,12 +169,17 @@ object ServiceBootstrapper {
   private def startReadSides(
       system: ActorSystem[_],
       cosConfig: CosConfig,
-      interceptors: Seq[ClientInterceptor]): Unit = {
+      interceptors: Seq[ClientInterceptor],
+      readSideManager: ReadSideManager): Unit = {
     // if read side is enabled
     if (cosConfig.enableReadSide) {
       // instantiate a read side manager
       val readSideBootstrap: ReadSideBootstrap =
-        ReadSideBootstrap(system = system, interceptors = interceptors, numShards = cosConfig.eventsConfig.numShards)
+        ReadSideBootstrap(
+          system = system,
+          interceptors = interceptors,
+          numShards = cosConfig.eventsConfig.numShards,
+          readSideManager)
       // initialize all configured read sides
       readSideBootstrap.init()
     }
