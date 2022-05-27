@@ -63,6 +63,8 @@ class ReadSideBootstrap(
         new ReadSideProjection(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards)
 
       Try {
+        // start the projection
+        projection.start()
         // check auto start
         if (config.autoStart) {
           // check whether the read side is paused or not
@@ -73,9 +75,6 @@ class ReadSideBootstrap(
               if (res) {
                 // attempt to resume a maybe paused read side
                 readSideManager.resumeForAll(config.readSideId)
-              } else {
-                // start the projection
-                projection.start()
               }
             })
         } else {
