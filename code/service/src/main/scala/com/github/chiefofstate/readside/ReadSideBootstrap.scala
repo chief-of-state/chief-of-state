@@ -15,7 +15,9 @@ import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import io.grpc.ClientInterceptor
 import org.slf4j.{ Logger, LoggerFactory }
 
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
+import scala.language.postfixOps
 import scala.util.{ Failure, Success, Try }
 
 /**
