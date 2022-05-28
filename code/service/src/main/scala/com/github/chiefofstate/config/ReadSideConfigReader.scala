@@ -72,7 +72,7 @@ object ReadSideConfigReader {
       require(readSideConfig.port > 0, s"ProcessorId $readSideId is missing a PORT")
 
       logger.info(
-        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}")
+        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}")
 
       readSideConfig
     }.toSeq
