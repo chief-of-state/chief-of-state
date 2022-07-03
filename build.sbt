@@ -19,7 +19,6 @@ lazy val root: Project = project
       "-Dotel.traces.exporter=otlp",
       "-Dotel.metrics.exporter=otlp",
       "-Dotel.exporter.otlp.protocol=grpc",
-      "-Dotel.logs.exporter=otlp",
       "-Dotel.propagators=tracecontext,baggage,b3,b3multi,ottrace",
       "-Dotel.traces.sampler=parentbased_always_on",
       "-Dotel.javaagent.debug=false",

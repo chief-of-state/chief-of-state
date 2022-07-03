@@ -56,11 +56,11 @@ _Note: By default, telemetry data will be collected so set this env var to `fals
 
 The following options can be configured via environment variables.
 
-| Property                    | Required | Description                                                                                                                                      |
-|-----------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| OTEL_SERVICE_NAME           | no       | Name to be used to differentiate different chief of state deployments                                                                            |
-| OTEL_EXPORTER_OTLP_ENDPOINT | no       | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317` |
-| OTEL_JAVAAGENT_ENABLED      | no       | Set to `false` will disable the telemetry instrumentation                                                                                        |
+| Property                    | Required                                         | Description                                                                                                                                      |
+|-----------------------------|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| OTEL_SERVICE_NAME           | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | Name to be used to differentiate different chief of state deployments                                                                            |
+| OTEL_EXPORTER_OTLP_ENDPOINT | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317` |
+| OTEL_JAVAAGENT_ENABLED      | yes                                              | Set to `false` will disable the telemetry instrumentation                                                                                        |
 
 ### Read side configurations
 The CoS can handle as many as read sides one desires. CoS read side are configured using environment variables.
