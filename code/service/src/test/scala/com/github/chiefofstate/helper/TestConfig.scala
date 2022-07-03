@@ -47,11 +47,6 @@ object TestConfig {
         # set this value to true whenever a readSide config is set
         enabled = false
       }
-      telemetry {
-        namespace = ""
-        otlp_endpoint = ""
-        trace_propagators = "b3multi"
-      }
     }
   """)
 

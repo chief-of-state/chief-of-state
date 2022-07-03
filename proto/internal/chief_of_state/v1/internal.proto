@@ -42,7 +42,7 @@ message RemoteCommand {
   google.protobuf.Any command = 2;
   // the grpc headers/metadata to propagate to the command handler
   repeated chief_of_state.v1.Header propagated_headers = 3;
-  // the grpc headers/metadata to persist to journal metatdata
+  // the grpc headers/metadata to persist to journal metadata
   repeated chief_of_state.v1.Header persisted_headers = 4;
   // additional data to be added to the state meta
   map<string, google.protobuf.Any> data = 5;

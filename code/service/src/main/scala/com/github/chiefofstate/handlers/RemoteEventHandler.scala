@@ -20,9 +20,9 @@ import scala.util.Try
  * handles a given event by making a rpc call
  *
  * @param grpcConfig the grpc config
- * @param writeHandlerServicetub the grpc client stub
+ * @param writeHandlerServiceStub the grpc client stub
  */
-case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: WriteSideHandlerServiceBlockingStub) {
+case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -37,7 +37,7 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServicetub: Wr
     Try {
       log.debug(s"sending request to the event handler, ${event.typeUrl}")
 
-      writeHandlerServicetub
+      writeHandlerServiceStub
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleEvent(HandleEventRequest().withEvent(event).withPriorState(priorState).withEventMeta(eventMeta))
     }

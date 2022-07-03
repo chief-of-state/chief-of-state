@@ -45,7 +45,7 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
   ".apply" should {
     "construct without failure" in {
       val manager = new ReadSideManager(actorSystem, 1)
-      noException shouldBe thrownBy(ReadSideBootstrap(actorSystem, Seq(), 2, manager))
+      noException shouldBe thrownBy(ReadSideBootstrap(actorSystem, 2, manager))
     }
   }
   ".getDataSource" should {

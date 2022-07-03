@@ -14,6 +14,7 @@ import akka.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
 import com.github.chiefofstate.AggregateRoot
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.helper.{ BaseActorSpec, GrpcHelpers, TestConfig }
+import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.{ CommandReply, RemoteCommand, SendCommand }
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
@@ -30,14 +31,13 @@ import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
 import io.grpc.protobuf.StatusProto
 import io.grpc.stub.MetadataUtils
 import io.grpc.{ ManagedChannel, Metadata, StatusException }
-import io.superflat.otel.tools.GrpcHeadersInterceptor
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{ Duration, FiniteDuration }
 import scala.concurrent.{ Await, ExecutionContext }
 import scala.util.Success
 
-class CoSServiceImplSpec extends BaseActorSpec(s"""
+class ServiceImplSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
       akka.persistence.journal.plugin = "akka.persistence.journal.inmem"
       akka.persistence.snapshot-store.plugin = "akka.persistence.snapshot-store.local"
@@ -80,7 +80,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
   ".processCommand" should {
     "require entity ID" in {
       val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
-      val impl = new CoSServiceImpl(clusterSharding, writeSideConfig)
+      val impl = new ServiceImpl(clusterSharding, writeSideConfig)
 
       val request = ProcessCommandRequest(entityId = "")
 
@@ -109,7 +109,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CoSServiceImpl(clusterSharding, writeSideConfig)
+      val impl = new ServiceImpl(clusterSharding, writeSideConfig)
       // call method
       val request =
         ProcessCommandRequest().withEntityId(entityId).withCommand(any.Any.pack(StringValue("some-command")))
@@ -152,7 +152,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CoSServiceImpl(clusterSharding, customWriteConfig)
+      val impl = new ServiceImpl(clusterSharding, customWriteConfig)
       // bind service and intercept headers
       val serverName: String = InProcessServerBuilder.generateName();
       val service = ChiefOfStateServiceGrpc.bindService(impl, ExecutionContext.global)
@@ -161,7 +161,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
           .forName(serverName)
           .directExecutor()
           .addService(service)
-          .intercept(GrpcHeadersInterceptor)
+          .intercept(MetadataInterceptor)
           .build()
           .start())
       // create a client
@@ -199,7 +199,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CoSServiceImpl(clusterSharding, writeSideConfig)
+      val impl = new ServiceImpl(clusterSharding, writeSideConfig)
       // call method
       val request = ProcessCommandRequest().withEntityId(entityId)
       val sendFuture = impl.processCommand(request)
@@ -224,7 +224,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
   ".getState" should {
     "require entity ID" in {
       val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
-      val impl = new CoSServiceImpl(clusterSharding, writeSideConfig)
+      val impl = new ServiceImpl(clusterSharding, writeSideConfig)
 
       val request = GetStateRequest(entityId = "")
       val actualErr = intercept[StatusException] {
@@ -252,7 +252,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CoSServiceImpl(clusterSharding, writeSideConfig)
+      val impl = new ServiceImpl(clusterSharding, writeSideConfig)
       // call method
       val request = GetStateRequest().withEntityId(entityId)
       val sendFuture = impl.getState(request)
@@ -288,7 +288,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CoSServiceImpl(clusterSharding, writeSideConfig)
+      val impl = new ServiceImpl(clusterSharding, writeSideConfig)
       // call method
       val request = GetStateRequest().withEntityId(entityId)
       val sendFuture = impl.getState(request)
@@ -313,12 +313,12 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
   ".requireEntityId" should {
     "fail if entity missing" in {
       assertThrows[StatusException] {
-        Await.result(CoSServiceImpl.requireEntityId(""), Duration.Inf)
+        Await.result(ServiceImpl.requireEntityId(""), Duration.Inf)
       }
     }
     "pass if entity provided" in {
       noException shouldBe thrownBy {
-        Await.result(CoSServiceImpl.requireEntityId("x"), Duration.Inf)
+        Await.result(ServiceImpl.requireEntityId("x"), Duration.Inf)
       }
     }
   }
@@ -329,7 +329,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
 
       val commandReply: CommandReply = CommandReply().withState(stateWrapper)
 
-      val actual = CoSServiceImpl.handleCommandReply(commandReply)
+      val actual = ServiceImpl.handleCommandReply(commandReply)
 
       actual shouldBe Success(stateWrapper)
     }
@@ -351,7 +351,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
       val commandReply: CommandReply = CommandReply().withError(expectedStatus)
 
       val statusException: StatusException = intercept[StatusException] {
-        CoSServiceImpl.handleCommandReply(commandReply).get
+        ServiceImpl.handleCommandReply(commandReply).get
       }
 
       val javaStatus = StatusProto.fromStatusAndTrailers(statusException.getStatus(), statusException.getTrailers())
@@ -365,7 +365,7 @@ class CoSServiceImplSpec extends BaseActorSpec(s"""
       val commandReply: CommandReply = CommandReply().withReply(CommandReply.Reply.Empty)
 
       assertThrows[StatusException] {
-        CoSServiceImpl.handleCommandReply(commandReply).get
+        ServiceImpl.handleCommandReply(commandReply).get
       }
     }
   }

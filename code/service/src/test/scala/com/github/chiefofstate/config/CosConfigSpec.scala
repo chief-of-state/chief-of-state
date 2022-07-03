@@ -95,9 +95,6 @@ class CosConfigSpec extends BaseSpec {
                 # set this value to true whenever a readSide config is set
                 enabled = false
               }
-              tracing {
-                jaeger-enabled = false
-              }
             }
           """)
       an[ConfigException] shouldBe thrownBy(CosConfig(config))

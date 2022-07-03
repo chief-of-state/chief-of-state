@@ -13,20 +13,17 @@ import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
+import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded }
 import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.readside.{ ReadSideBootstrap, ReadSideManager }
-import com.github.chiefofstate.services.{ CoSServiceImpl, ReadManagerServiceImpl }
+import com.github.chiefofstate.services.{ ReadManagerServiceImpl, ServiceImpl }
 import com.github.chiefofstate.utils.{ NettyHelper, ProtosValidator, Util }
 import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
-import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.instrumentation.grpc.v1_5.GrpcTracing
-import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.superflat.otel.tools._
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.net.InetSocketAddress
@@ -34,7 +31,7 @@ import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
 
 /**
- * This helps setup the required engines needed to smoothly run the ChiefOfState sevice.
+ * This helps init the required engines needed to smoothly run the ChiefOfState sevice.
  * The following engines are started on boot.
  * <ul>
  *   <li> the akka cluster sharding engine
@@ -53,10 +50,6 @@ object ServiceBootstrapper {
     Behaviors.receiveMessage[scalapb.GeneratedMessage] {
       // handle successful migration proceed with the rest of startup
       case _: MigrationSucceeded =>
-        // start the telemetry tools and register global tracer
-        val otelSdk: OpenTelemetrySdk = TelemetryTools(cosConfig.telemetryConfig).start()
-        GlobalOpenTelemetry.set(otelSdk)
-
         // We only proceed when the data stores and various migrations are done successfully.
         log.info("Data store migration complete. About to start...")
 
@@ -65,11 +58,8 @@ object ServiceBootstrapper {
             .builder(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port, cosConfig.writeSideConfig.useTls)
             .build()
 
-        val grpcClientInterceptors: Seq[ClientInterceptor] =
-          Seq(GrpcTracing.create(GlobalOpenTelemetry.get()).newClientInterceptor(), new StatusClientInterceptor())
-
         val writeHandler: WriteSideHandlerServiceBlockingStub =
-          new WriteSideHandlerServiceBlockingStub(channel).withInterceptors(grpcClientInterceptors: _*)
+          new WriteSideHandlerServiceBlockingStub(channel)
 
         val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
         val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
@@ -95,7 +85,7 @@ object ServiceBootstrapper {
         val readSideManager = new ReadSideManager(context.system, cosConfig.eventsConfig.numShards)
 
         // read side service
-        startReadSides(context.system, cosConfig, grpcClientInterceptors, readSideManager)
+        startReadSides(context.system, cosConfig, readSideManager)
 
         // start the service
         startServices(context.system, sharding, cosConfig, readSideManager)
@@ -129,11 +119,11 @@ object ServiceBootstrapper {
     implicit val askTimeout: Timeout = cosConfig.askTimeout
 
     // create the traced execution context for grpc
-    val grpcEc: ExecutionContext = TracedExecutorService.get()
+    val grpcEc: ExecutionContext = system.executionContext
 
     // instantiate the grpc service, bind to the execution context
-    val serviceImpl: CoSServiceImpl =
-      new CoSServiceImpl(clusterSharding, cosConfig.writeSideConfig)
+    val serviceImpl: ServiceImpl =
+      new ServiceImpl(clusterSharding, cosConfig.writeSideConfig)
 
     // create an instance of the read side state manager service
     val readSideStateServiceImpl = new ReadManagerServiceImpl(readSideManager)(grpcEc)
@@ -166,20 +156,12 @@ object ServiceBootstrapper {
    * @param cosConfig the chief of state config
    * @param interceptors gRPC client interceptors for remote calls
    */
-  private def startReadSides(
-      system: ActorSystem[_],
-      cosConfig: CosConfig,
-      interceptors: Seq[ClientInterceptor],
-      readSideManager: ReadSideManager): Unit = {
+  private def startReadSides(system: ActorSystem[_], cosConfig: CosConfig, readSideManager: ReadSideManager): Unit = {
     // if read side is enabled
     if (cosConfig.enableReadSide) {
       // instantiate a read side manager
       val readSideBootstrap: ReadSideBootstrap =
-        ReadSideBootstrap(
-          system = system,
-          interceptors = interceptors,
-          numShards = cosConfig.eventsConfig.numShards,
-          readSideManager)
+        ReadSideBootstrap(system = system, numShards = cosConfig.eventsConfig.numShards, readSideManager)
       // initialize all configured read sides
       readSideBootstrap.init()
     }
@@ -192,12 +174,6 @@ object ServiceBootstrapper {
    * @return a new ServerServiceDefinition with the various interceptors
    */
   private def setServiceWithInterceptors(serviceDefinition: ServerServiceDefinition): ServerServiceDefinition = {
-    val tracingServerInterceptor: ServerInterceptor =
-      GrpcTracing.create(GlobalOpenTelemetry.get()).newServerInterceptor()
-    ServerInterceptors.intercept(
-      serviceDefinition,
-      tracingServerInterceptor,
-      new StatusServerInterceptor(),
-      GrpcHeadersInterceptor)
+    ServerInterceptors.intercept(serviceDefinition, MetadataInterceptor)
   }
 }

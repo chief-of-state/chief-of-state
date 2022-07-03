@@ -11,6 +11,8 @@ import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
 import akka.util.Timeout
 import com.github.chiefofstate.AggregateRoot
 import com.github.chiefofstate.config.WriteSideConfig
+import com.github.chiefofstate.interceptors.MetadataInterceptor
+import com.github.chiefofstate.observability.Telemetry
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
 import com.github.chiefofstate.protobuf.v1.internal._
@@ -23,7 +25,6 @@ import com.google.rpc.status.Status.toJavaProto
 import io.grpc.protobuf.StatusProto
 import io.grpc.{ Metadata, Status, StatusException }
 import io.opentelemetry.context.Context
-import io.superflat.otel.tools.{ GrpcHeadersInterceptor, TracingHelpers }
 import org.slf4j.{ Logger, LoggerFactory }
 import scalapb.GeneratedMessage
 
@@ -31,8 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{ Failure, Success, Try }
 
-class CoSServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(
-    implicit val askTimeout: Timeout)
+class ServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(implicit val askTimeout: Timeout)
     extends ChiefOfStateServiceGrpc.ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -46,28 +46,26 @@ class CoSServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSid
     val entityId: String = request.entityId
 
     // fetch the gRPC metadata
-    val metadata: Metadata = GrpcHeadersInterceptor.REQUEST_META.get()
-
-    val tracingHeaders = TracingHelpers.getTracingHeaders(Context.current())
+    val metadata: Metadata = MetadataInterceptor.REQUEST_META.get()
+    val tracingHeaders = Telemetry.getTracingHeaders(Context.current())
 
     log.debug(s"Adding tracing headers to command $tracingHeaders")
 
     // ascertain the entity ID
-    CoSServiceImpl
+    ServiceImpl
       .requireEntityId(entityId)
       // run remote command
       .flatMap(_ => {
         val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
-
         val propagatedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.propagatedHeaders)
         val persistedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.persistedHeaders)
-
-        val remoteCommand: RemoteCommand = RemoteCommand(
-          entityId = request.entityId,
-          command = request.command,
-          propagatedHeaders = propagatedHeaders,
-          persistedHeaders = persistedHeaders,
-          data = Map.empty[String, any.Any])
+        val remoteCommand: RemoteCommand =
+          RemoteCommand(
+            entityId = request.entityId,
+            command = request.command,
+            propagatedHeaders = propagatedHeaders,
+            persistedHeaders = persistedHeaders,
+            data = Map.empty[String, any.Any])
 
         // ask entity for response to aggregate command
         entityRef ? ((replyTo: ActorRef[GeneratedMessage]) => {
@@ -79,7 +77,7 @@ class CoSServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSid
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
-      .flatMap((value: CommandReply) => Future.fromTry(CoSServiceImpl.handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(ServiceImpl.handleCommandReply(value)))
       .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
   }
 
@@ -91,10 +89,10 @@ class CoSServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSid
 
     val entityId: String = request.entityId
 
-    val tracingHeaders = TracingHelpers.getTracingHeaders(Context.current())
+    val tracingHeaders = Telemetry.getTracingHeaders(Context.current())
 
     // ascertain the entity id
-    CoSServiceImpl
+    ServiceImpl
       .requireEntityId(entityId)
       .flatMap(_ => {
         val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
@@ -111,12 +109,12 @@ class CoSServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSid
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
-      .flatMap((value: CommandReply) => Future.fromTry(CoSServiceImpl.handleCommandReply(value)))
+      .flatMap((value: CommandReply) => Future.fromTry(ServiceImpl.handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
   }
 }
 
-object CoSServiceImpl {
+object ServiceImpl {
 
   /**
    * checks whether an entity ID is empty or not

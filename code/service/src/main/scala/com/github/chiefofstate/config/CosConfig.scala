@@ -8,7 +8,6 @@ package com.github.chiefofstate.config
 
 import akka.util.Timeout
 import com.typesafe.config.Config
-import io.superflat.otel.tools.TelemetryConfig
 
 import scala.concurrent.duration.DurationInt
 
@@ -29,8 +28,7 @@ final case class CosConfig(
     eventsConfig: EventsConfig,
     grpcConfig: GrpcConfig,
     writeSideConfig: WriteSideConfig,
-    enableReadSide: Boolean,
-    telemetryConfig: TelemetryConfig)
+    enableReadSide: Boolean)
 
 object CosConfig {
   private val serviceNameKey: String = "chiefofstate.service-name"
@@ -51,7 +49,6 @@ object CosConfig {
       EventsConfig(config),
       GrpcConfig(config),
       WriteSideConfig(config),
-      config.getBoolean(enableReadSideKey),
-      TelemetryConfigFactory(config))
+      config.getBoolean(enableReadSideKey))
   }
 }

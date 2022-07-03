@@ -12,11 +12,9 @@ import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.R
 import com.github.chiefofstate.utils.NettyHelper
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
-import io.grpc.ClientInterceptor
 import org.slf4j.{ Logger, LoggerFactory }
 
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, ExecutionContextExecutor, Future }
+import scala.concurrent.ExecutionContextExecutor
 import scala.language.postfixOps
 import scala.util.{ Failure, Success, Try }
 
@@ -32,7 +30,6 @@ import scala.util.{ Failure, Success, Try }
  */
 class ReadSideBootstrap(
     system: ActorSystem[_],
-    interceptors: Seq[ClientInterceptor],
     dbConfig: ReadSideBootstrap.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
     numShards: Int,
@@ -55,8 +52,8 @@ class ReadSideBootstrap(
 
       // construct a remote gRPC read side client for this read side
       // and register interceptors
-      val rpcClient: ReadSideHandlerServiceBlockingStub = new ReadSideHandlerServiceBlockingStub(
-        NettyHelper.builder(config.host, config.port, config.useTls).build).withInterceptors(interceptors: _*)
+      val rpcClient: ReadSideHandlerServiceBlockingStub =
+        new ReadSideHandlerServiceBlockingStub(NettyHelper.builder(config.host, config.port, config.useTls).build)
       // instantiate a remote read side processor with the gRPC client
       val remoteReadSideProcessor: ReadSideHandlerImpl =
         new ReadSideHandlerImpl(config.readSideId, rpcClient)
@@ -94,11 +91,7 @@ class ReadSideBootstrap(
 
 object ReadSideBootstrap {
 
-  def apply(
-      system: ActorSystem[_],
-      interceptors: Seq[ClientInterceptor],
-      numShards: Int,
-      readSideManager: ReadSideManager): ReadSideBootstrap = {
+  def apply(system: ActorSystem[_], numShards: Int, readSideManager: ReadSideManager): ReadSideBootstrap = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
@@ -112,7 +105,6 @@ object ReadSideBootstrap {
     // make the manager
     new ReadSideBootstrap(
       system = system,
-      interceptors = interceptors,
       dbConfig = dbConfig,
       readSideConfigs = configs,
       numShards = numShards,

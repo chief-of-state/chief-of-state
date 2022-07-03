@@ -6,12 +6,24 @@ lazy val root: Project = project
   .enablePlugins(NoPublish)
   .enablePlugins(UniversalPlugin)
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(JavaAgent)
   .settings(
     headerLicense := None,
     Compile / mainClass := Some("com.github.chiefofstate.StartNode"),
     makeBatScripts := Seq(),
     executableScriptName := "entrypoint",
+    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "1.15.0" % "runtime",
     Universal / javaOptions ++= Seq(
+      // Setting the OpenTelemetry java agent options
+      // reference: https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters
+      "-Dotel.traces.exporter=otlp",
+      "-Dotel.metrics.exporter=otlp",
+      "-Dotel.exporter.otlp.protocol=grpc",
+      "-Dotel.logs.exporter=otlp",
+      "-Dotel.propagators=tracecontext,baggage,b3,b3multi,ottrace",
+      "-Dotel.traces.sampler=parentbased_always_on",
+      "-Dotel.javaagent.debug=false",
+      "-Dotel.instrumentation.[akka-actor].enabled=true",
       // -J params will be added as jvm parameters
       "-J-Xms256M",
       "-J-Xmx1G",
