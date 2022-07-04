@@ -21,7 +21,7 @@ class EventsConfigSpec extends BaseSpec {
 
     "fail when any of the settings is missing or not properly set" in {
       val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharting.number-of-poops = 2
+            akka.cluster.sharding.number-of-poops = 2
           """)
       an[ConfigException] shouldBe thrownBy(EventsConfig(config))
     }

@@ -21,9 +21,13 @@ object Dependencies {
 
     val JaninoVersion: String = "3.1.7"
     val LogstashLogbackVersion: String = "6.3"
-    val OpenTelemetryVersion: String = "1.12.0"
     val TestContainers: String = "0.40.7"
-    val OtelToolsVersion: String = "0.1.11+3-0a26eb8c-SNAPSHOT"
+    val OpenTelemetrySdkVersion: String = "1.15.0"
+    val OpenTelemetrySdkConfigVersion: String = "1.15.0-alpha"
+    val OpenTelemetryInstrumentationApiVersion: String = "1.15.0-alpha"
+    val OpenTelemetrySdkTestingVersion: String = "1.15.0"
+    val OpenTelemetryExtensionVersion: String = "1.15.0"
+    val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"
   }
 
   import Dependencies.Versions._
@@ -59,9 +63,11 @@ object Dependencies {
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
     // Opentelemetry
-    "io.opentelemetry" % "opentelemetry-sdk-testing" % OpenTelemetryVersion % Test,
-    // Otel tools
-    "io.superflat" % "otel-tools_2.13" % OtelToolsVersion)
+    "io.opentelemetry" % "opentelemetry-extension-trace-propagators" % OpenTelemetryExtensionVersion,
+    "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-api" % OpenTelemetryInstrumentationApiVersion,
+    "io.opentelemetry" % "opentelemetry-sdk-extension-autoconfigure" % OpenTelemetrySdkConfigVersion,
+    "io.opentelemetry.instrumentation" % "opentelemetry-grpc-1.5" % OpenTelemetryGRPCVersion,
+    "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetrySdkVersion)
 
   val testJars: Seq[ModuleID] = Seq(
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
@@ -71,6 +77,7 @@ object Dependencies {
     "org.scalatest" %% "scalatest" % ScalaTestVersion % Test,
     "org.scalamock" %% "scalamock" % ScalaMockVersion % Test,
     "io.grpc" % "grpc-testing" % grpcJavaVersion % Test,
+    "io.opentelemetry" % "opentelemetry-sdk-testing" % OpenTelemetrySdkTestingVersion,
     // test containers
     "com.dimafeng" %% "testcontainers-scala-scalatest" % Versions.TestContainers % Test,
     "com.dimafeng" %% "testcontainers-scala-postgresql" % Versions.TestContainers % Test)

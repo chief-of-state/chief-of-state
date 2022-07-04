@@ -37,10 +37,12 @@
         </appender>
     </appender>
 
-    <!-- Turn down Slick noise-->
+    <!-- Turn down noise-->
     <logger name="scala.slick" level="ERROR"/>
     <logger name="slick" level="ERROR"/>
-
+    <logger name="akka" level="INFO"/>
+    <logger name="io.scalac" level="INFO"/>
+    <logger name="io.opentelemetry.sdk.metrics.internal" level="ERROR"/>
     <root level="${LOG_LEVEL}">
         <appender-ref ref="${LOG_STYLE}"/>
     </root>

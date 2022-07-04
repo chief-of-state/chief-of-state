@@ -14,6 +14,7 @@ import akka.persistence.typed.scaladsl._
 import com.github.chiefofstate.WriteHandlerHelpers.{ NewState, NoOp }
 import com.github.chiefofstate.config.{ CosConfig, SnapshotConfig }
 import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
+import com.github.chiefofstate.observability.Telemetry
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.{ CommandReply, GetStateCommand, RemoteCommand, SendCommand }
 import com.github.chiefofstate.protobuf.v1.persistence.{ EventWrapper, StateWrapper }
@@ -26,7 +27,6 @@ import io.grpc.{ Status, StatusException }
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.{ Span, StatusCode }
 import io.opentelemetry.context.Context
-import io.superflat.otel.tools.TracingHelpers
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.time.Instant
@@ -102,7 +102,7 @@ object AggregateRoot {
     val headers = sendCommand.tracingHeaders
     log.trace(s"aggregate root headers $headers")
 
-    val ctx = TracingHelpers.getParentSpanContext(Context.current(), headers)
+    val ctx = Telemetry.getParentSpanContext(Context.current(), headers)
 
     val span: Span = GlobalOpenTelemetry
       .getTracer(getClass.getPackage.getName)
