@@ -21,7 +21,7 @@ object Dependencies {
 
     val JaninoVersion: String = "3.1.7"
     val LogstashLogbackVersion: String = "6.3"
-    val TestContainers: String = "0.40.7"
+    val TestContainers: String = "0.40.8"
     val OpenTelemetrySdkVersion: String = "1.15.0"
     val OpenTelemetrySdkConfigVersion: String = "1.15.0-alpha"
     val OpenTelemetryInstrumentationApiVersion: String = "1.15.0-alpha"
