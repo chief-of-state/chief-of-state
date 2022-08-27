@@ -64,8 +64,7 @@ The following options can be configured via environment variables.
 | OTEL_JAVAAGENT_ENABLED      | yes                                              | Set to `false` will disable the telemetry instrumentation                                                                                        |
 
 #### Advanced configuration
-The following [environment variables](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters) can help tweak the settings of the OpenTelemetry Agent.
-This is for advanced users.
+Advanced users can use any of the following [environment variables](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters) to tweak the OpenTelemetry Agent before starting CoS.
 
 ### Read side configurations
 The CoS can handle as many as read sides one desires. CoS read side are configured using environment variables.
