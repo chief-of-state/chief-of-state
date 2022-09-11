@@ -28,6 +28,7 @@ object Dependencies {
     val OpenTelemetrySdkTestingVersion: String = "1.18.0"
     val OpenTelemetryExtensionVersion: String = "1.18.0"
     val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"
+    val ScalaXmlVersion: String = "2.1.0"
   }
 
   import Dependencies.Versions._
@@ -62,6 +63,7 @@ object Dependencies {
     "net.logstash.logback" % "logstash-logback-encoder" % Versions.LogstashLogbackVersion,
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
+    "org.scala-lang.modules" %% "scala-xml" % Versions.ScalaXmlVersion,
     // Opentelemetry
     "io.opentelemetry" % "opentelemetry-extension-trace-propagators" % OpenTelemetryExtensionVersion,
     "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-api" % OpenTelemetryInstrumentationApiVersion,
