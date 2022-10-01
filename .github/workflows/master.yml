@@ -15,7 +15,7 @@ jobs:
         with:
           submodules: true
 
-      - uses: nelonoel/branch-name@v1.0.1
+      - uses: nelonoel/branch-readSideId@v1.0.1
 
       - name: Docker Login
         env:
@@ -25,7 +25,7 @@ jobs:
         run: docker login $DOCKER_REGISTRY --username "$DOCKER_USER" --password "$DOCKER_PASS"
 
       - name: Download latest earthly
-        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.6.14/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
+        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.6.24/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
 
       - name: Earthly Version
         run: earthly --version

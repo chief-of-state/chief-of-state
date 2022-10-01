@@ -6,88 +6,93 @@
 
 package com.github.chiefofstate.config
 
-import com.github.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
+import com.fasterxml.jackson.databind.exc.{ InvalidFormatException, MismatchedInputException }
+import com.github.chiefofstate.helper.BaseSpec
 
 class ReadSideConfigReaderSpec extends BaseSpec {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    EnvironmentHelper.clearEnv()
   }
 
   override protected def afterAll(): Unit = {
     super.afterAll()
-    EnvironmentHelper.clearEnv()
   }
 
   "ReadSideConfigFactory" should {
-    "help load all read side config" in {
+    "read configurations" in {
+      val readSide1 =
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, useTls = false, autoStart = false)
 
-      EnvironmentHelper.setEnv("control_config", "not-a-valid-config")
-      EnvironmentHelper.setEnv("cos_read_side_config__host__rs0", "not-a-valid-config")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS1", "host1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS1", "1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__GRPC_SOME_SETTING__RS1", "setting1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS2", "host2")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS2", "2")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__GRPC_SOME_SETTING__RS2", "setting2")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS3", "host3")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS3", "3")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__USE_TLS__RS3", "true")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__AUTO_START__RS3", "true")
+      val readSide2 =
+        ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200, useTls = true, autoStart = false)
 
-      val grpcReadSideSetting1: ReadSideConfig =
-        ReadSideConfig("RS1", "host1", 1).addSetting("GRPC_SOME_SETTING", "setting1")
-
-      val grpcReadSideSetting2: ReadSideConfig =
-        ReadSideConfig("RS2", "host2", 2).addSetting("GRPC_SOME_SETTING", "setting2")
-
-      val grpcReadSideSetting3: ReadSideConfig = ReadSideConfig("RS3", "host3", 3, useTls = true, autoStart = true)
-
-      val actual: Seq[ReadSideConfig] = ReadSideConfigReader.getReadSideSettings
-      val expected: Seq[ReadSideConfig] = Seq(grpcReadSideSetting1, grpcReadSideSetting2, grpcReadSideSetting3)
+      val configFile = getClass.getResource("/readside-config-testcase-1.yaml").getPath
+      val actual = ReadSideConfigReader.read(configFile)
+      val expected: Seq[ReadSideConfig] = Seq(readSide1, readSide2)
 
       actual.length should be(expected.length)
       actual should contain theSameElementsAs expected
     }
 
-    "throw no exception when there is no setting" in {
-      noException shouldBe thrownBy(ReadSideConfigReader.getReadSideSettings)
+    "read configurations with default values" in {
+      val readSide1 =
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, useTls = false, autoStart = false)
+
+      val readSide2 =
+        ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200)
+
+      val configFile = getClass.getResource("/readside-config-testcase-2.yaml").getPath
+      val actual = ReadSideConfigReader.read(configFile)
+      val expected: Seq[ReadSideConfig] = Seq(readSide1, readSide2)
+
+      actual.length should be(expected.length)
+      actual should contain theSameElementsAs expected
     }
 
-    "throw an exception if one or more of the read side configurations is invalid" in {
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__", "not-a-valid-config")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__", "0")
-
-      val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe "One or more of the read side configurations is invalid"
+    "throw an exception when file is not found" in {
+      val configFile = "some-path"
+      an[Exception] shouldBe thrownBy(ReadSideConfigReader.read(configFile))
     }
 
-    "throw an exception if one or more of the read side configurations does not contain a host" in {
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS1", "host1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS1", "1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS2", "2")
-
-      val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe "requirement failed: ProcessorId RS2 is missing a HOST"
+    "throw an exception when a readside setting is invalid" in {
+      val configFile = getClass.getResource("/readside-config-testcase-3.yaml").getPath
+      an[InvalidFormatException] shouldBe thrownBy(ReadSideConfigReader.read(configFile))
     }
 
     "throw an exception if one or more of the read side configurations does not contain a port" in {
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS1", "host1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS1", "1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS2", "host2")
+      val configFile = getClass.getResource("/readside-config-testcase-4.yaml").getPath
+      val exception: MismatchedInputException =
+        intercept[MismatchedInputException](ReadSideConfigReader.read(configFile))
 
-      val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe "requirement failed: ProcessorId RS2 is missing a PORT"
+      val msg = exception.getMessage
+      msg should include("Missing required creator property 'port'")
     }
 
-    "throw an exception on an invalid setting name" in {
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__HOST__RS1", "host1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG__PORT__RS1", "1")
-      EnvironmentHelper.setEnv("COS_READ_SIDE_CONFIG____RS1", "setting1")
+    "throw an exception if one or more of the read side configurations does not contain a host" in {
+      val configFile = getClass.getResource("/readside-config-testcase-5.yaml").getPath
+      val exception: MismatchedInputException =
+        intercept[MismatchedInputException](ReadSideConfigReader.read(configFile))
 
-      val exception: Exception = intercept[Exception](ReadSideConfigReader.getReadSideSettings)
-      exception.getMessage shouldBe "requirement failed: Setting must be defined in COS_READ_SIDE_CONFIG____RS1"
+      val msg = exception.getMessage
+      msg should include("Missing required creator property 'host'")
+    }
+
+    "throw an exception if one or more of the read side configurations does not contain a readSideId" in {
+      val configFile = getClass.getResource("/readside-config-testcase-6.yaml").getPath
+      val exception: MismatchedInputException =
+        intercept[MismatchedInputException](ReadSideConfigReader.read(configFile))
+
+      val msg = exception.getMessage
+      msg should include("Missing required creator property 'readSideId'")
+    }
+
+    "throw an exception if one or more of the read side configurations readSideId is invalid" in {
+      val configFile = getClass.getResource("/readside-config-testcase-7.yaml").getPath
+      val exception: Exception =
+        intercept[Exception](ReadSideConfigReader.read(configFile))
+
+      exception.getMessage shouldBe "invalid read side configuration"
     }
   }
 }

@@ -1,0 +1,11 @@
+readSideId: "read-side-1"
+host: "localhost"
+port: 100
+useTls: false
+autoStart: false
+---
+readSideId: "read-side-2"
+host: "localhost"
+port: 200
+useTls: true
+autoStart: false

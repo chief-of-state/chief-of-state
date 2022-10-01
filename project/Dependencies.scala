@@ -29,6 +29,7 @@ object Dependencies {
     val OpenTelemetryExtensionVersion: String = "1.18.0"
     val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"
     val ScalaXmlVersion: String = "2.1.0"
+    val JacksonVersion: String = "2.13.4"
   }
 
   import Dependencies.Versions._
@@ -64,6 +65,12 @@ object Dependencies {
     "org.codehaus.janino" % "janino" % Versions.JaninoVersion,
     "org.scala-lang" % "scala-reflect" % Versions.ScalaVersion,
     "org.scala-lang.modules" %% "scala-xml" % Versions.ScalaXmlVersion,
+    // Jackson
+    "com.fasterxml.jackson.core" % "jackson-core" % Versions.JacksonVersion,
+    "com.fasterxml.jackson.core" % "jackson-annotations" % Versions.JacksonVersion,
+    "com.fasterxml.jackson.core" % "jackson-databind" % Versions.JacksonVersion,
+    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % Versions.JacksonVersion,
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.JacksonVersion,
     // Opentelemetry
     "io.opentelemetry" % "opentelemetry-extension-trace-propagators" % OpenTelemetryExtensionVersion,
     "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-api" % OpenTelemetryInstrumentationApiVersion,

@@ -100,8 +100,10 @@ object ReadSideBootstrap {
       DbConfig(jdbcCfg)
     }
 
+    // get the readside config file
+    val readSidesConfigFile = system.settings.config.getString("chiefofstate.read-side.config-file")
     // get the individual read side configs
-    val configs: Seq[ReadSideConfig] = ReadSideConfigReader.getReadSideSettings
+    val configs: Seq[ReadSideConfig] = ReadSideConfigReader.read(readSidesConfigFile)
     // make the manager
     new ReadSideBootstrap(
       system = system,

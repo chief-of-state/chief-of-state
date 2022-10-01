@@ -21,6 +21,8 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
     .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
     .createContainer()
 
+  lazy val configFile: String = getClass.getResource("/readside-config-testcase-1.yaml").getPath
+
   lazy val config: Config = ConfigFactory
     .parseResources("test.conf")
     .withValue("jdbc-default.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
@@ -30,7 +32,8 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
     .withValue("jdbc-default.hikari-settings.min-idle-connections", ConfigValueFactory.fromAnyRef(1))
     .withValue("jdbc-default.hikari-settings.idle-timeout-ms", ConfigValueFactory.fromAnyRef(1000))
     .withValue("jdbc-default.hikari-settings.max-lifetime-ms", ConfigValueFactory.fromAnyRef(3000))
-    .withValue("chief-of-state.read-side.enabled", ConfigValueFactory.fromAnyRef(true))
+    .withValue("chiefofstate.read-side.enabled", ConfigValueFactory.fromAnyRef(true))
+    .withValue("chiefofstate.read-side.config-file", ConfigValueFactory.fromAnyRef(configFile))
     .resolve()
 
   lazy val testKit: ActorTestKit = ActorTestKit(config)
