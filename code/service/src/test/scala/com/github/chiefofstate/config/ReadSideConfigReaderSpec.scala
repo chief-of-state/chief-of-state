@@ -19,10 +19,10 @@ class ReadSideConfigReaderSpec extends BaseSpec {
     super.afterAll()
   }
 
-  "ReadSideConfigFactory" should {
+  "ReadSideConfigReader" should {
     "read configurations" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, useTls = false, autoStart = false)
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
 
       val readSide2 =
         ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200, useTls = true, autoStart = false)
@@ -37,7 +37,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
     "read configurations with default values" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, useTls = false, autoStart = false)
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
 
       val readSide2 =
         ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200)
