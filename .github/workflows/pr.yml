@@ -13,7 +13,7 @@ jobs:
         with:
           submodules: true
 
-      - uses: nelonoel/branch-readSideId@v1.0.1
+      - uses: nelonoel/branch-name@v1.0.1
 
       - name: Docker Login
         env:
