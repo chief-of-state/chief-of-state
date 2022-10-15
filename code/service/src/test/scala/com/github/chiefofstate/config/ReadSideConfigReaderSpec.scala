@@ -35,6 +35,21 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       actual should contain theSameElementsAs expected
     }
 
+    "read configurations from a directory" in {
+      val readSide1 =
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
+
+      val readSide2 =
+        ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200, useTls = true, autoStart = false)
+
+      val configFile = getClass.getResource("/readside-configs").getPath
+      val actual = ReadSideConfigReader.read(configFile)
+      val expected: Seq[ReadSideConfig] = Seq(readSide1, readSide2)
+
+      actual.length should be(expected.length)
+      actual should contain theSameElementsAs expected
+    }
+
     "read configurations with default values" in {
       val readSide1 =
         ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
