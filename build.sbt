@@ -24,8 +24,6 @@ lazy val root: Project = project
       "-Dotel.instrumentation.[akka-actor].enabled=true",
       "-Dio.opentelemetry.javaagent.slf4j.simpleLogger.defaultLogLevel=error",
       // -J params will be added as jvm parameters
-      "-J-Xms256M",
-      "-J-Xmx1G",
       "-J-XX:+UseG1GC"))
   .dependsOn(chiefofstate)
   .aggregate(protogen, chiefofstate, protogenTest, migration)
