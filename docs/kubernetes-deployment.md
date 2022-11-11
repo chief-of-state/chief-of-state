@@ -8,12 +8,12 @@ cluster bootstrap and node discovery. See below for common configuration.
 
 The following env vars can be set in addition to the [general configurations](./configuration.md).
 
-| environment variable | description |
-| --- | --- |
-| COS_DEPLOYMENT_MODE | set to "kubernetes" to instruct COS to leverage the k8s API |
-| POD_IP | IP of the pod running chief of state (see note below) |
+| environment variable     | description                                                                                            |
+|--------------------------|--------------------------------------------------------------------------------------------------------|
+| COS_DEPLOYMENT_MODE      | set to "kubernetes" to instruct COS to leverage the k8s API                                            |
+| POD_IP                   | IP of the pod running chief of state (see note below)                                                  |
 | COS_KUBERNETES_APP_LABEL | Set to the app label of the k8s pod, which Akka will use to discover all sibling nodes in the cluster. |
-| COS_REPLICA_COUNT | must match the replica count on your deployment. Defaults to "1" |
+| COS_REPLICA_COUNT        | must match the replica count on your deployment. Defaults to "1"                                       |
 
 `POD_IP` environment variable can be dynamically set with the following container environment instruction:
 
@@ -30,7 +30,7 @@ env:
 
 Akka leverages the K8s API to discover sibling nodes in your COS cluster.
 
-Your COS pod requires the following permisions for pods:
+Your COS pod requires the following permissions for pods:
 
 - get
 - watch
