@@ -5,11 +5,11 @@ object Dependencies {
 
   // Package versions
   object Versions {
-    val ScalaVersion: String = "2.13.8"
+    val ScalaVersion: String = "2.13.10"
     val AkkaVersion: String = "2.6.20"
     val ScalapbCommonProtoVersion: String = "2.9.6-0"
-    val SilencerVersion: String = "1.7.11"
-    val LogbackVersion: String = "1.4.4"
+    val SilencerVersion: String = "1.7.12"
+    val LogbackVersion: String = "1.2.11"
     val ScalapbValidationVersion: String = "0.1.4"
     val ScalaTestVersion: String = "3.2.14"
     val AkkaManagementVersion: String = "1.1.4"
@@ -24,7 +24,7 @@ object Dependencies {
     val OpenTelemetrySdkVersion: String = "1.19.0"
     val TestContainers: String = "0.40.11"
     val OpenTelemetrySdkConfigVersion: String = "1.15.0-alpha"
-    val OpenTelemetryInstrumentationApiVersion: String = "1.19.0"
+    val OpenTelemetryInstrumentationApiVersion: String = "1.19.2"
     val OpenTelemetrySdkTestingVersion: String = "1.19.0"
     val OpenTelemetryExtensionVersion: String = "1.19.0"
     val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"

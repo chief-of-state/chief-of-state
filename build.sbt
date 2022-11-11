@@ -12,21 +12,18 @@ lazy val root: Project = project
     Compile / mainClass := Some("com.github.chiefofstate.StartNode"),
     makeBatScripts := Seq(),
     executableScriptName := "entrypoint",
-    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "1.19.0" % "runtime",
+    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "1.19.2" % "runtime",
     Universal / javaOptions ++= Seq(
       // Setting the OpenTelemetry java agent options
       // reference: https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters
       "-Dotel.traces.exporter=otlp",
       "-Dotel.metrics.exporter=otlp",
       "-Dotel.exporter.otlp.protocol=grpc",
-      "-Dotel.propagators=tracecontext,baggage,b3,b3multi,ottrace",
       "-Dotel.traces.sampler=parentbased_always_on",
       "-Dotel.javaagent.debug=false",
       "-Dotel.instrumentation.[akka-actor].enabled=true",
       "-Dio.opentelemetry.javaagent.slf4j.simpleLogger.defaultLogLevel=error",
       // -J params will be added as jvm parameters
-      "-J-Xms256M",
-      "-J-Xmx1G",
       "-J-XX:+UseG1GC"))
   .dependsOn(chiefofstate)
   .aggregate(protogen, chiefofstate, protogenTest, migration)
