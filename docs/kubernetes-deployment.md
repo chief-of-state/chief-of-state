@@ -128,5 +128,29 @@ ports:
 ...
 ```
 
+### Resources allocations
+
+It is recommended to always set the kubernetes [resource](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) usage such as cpu and memory.
+Kindly note that it is best not to use `resources.limits.cpu` limits but use `resources.requests.cpu` configuration instead.
+By default, Chief Of State allocates a proportion of your container memory based upon the following jvm settings:
+- -XX:MinRAMPercentage 
+- -XX:MaxRAMPercentage
+
+However, for advanced usage, one can override the JVM options that by setting
+on the container the environment variable named `JAVA_OPTS`.
+
+Example:
+```yaml
+...
+env:
+- name: JAVA_OPTS
+  value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=90.0 -XX:+HeapDumpOnOutOfMemoryError"
+...
+resources: 
+    limits:
+        memory: 512Mi
+    requests:
+        memory: 256Mi
+```
 
 
