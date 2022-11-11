@@ -131,7 +131,6 @@ ports:
 ### Resources allocations
 
 It is recommended to always set the kubernetes [resource](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) usage such as cpu and memory.
-Kindly note that it is best not to use `resources.limits.cpu` limits but use `resources.requests.cpu` configuration instead.
 By default, Chief Of State allocates a proportion of your container memory based upon the following jvm settings:
 - -XX:MinRAMPercentage 
 - -XX:MaxRAMPercentage
