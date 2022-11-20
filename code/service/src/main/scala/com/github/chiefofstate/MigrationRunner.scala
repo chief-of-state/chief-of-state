@@ -11,7 +11,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import com.github.chiefofstate.migration.versions.v6.V6
 import com.github.chiefofstate.migration.{ JdbcConfig, Migrator }
 import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded, StartMigration }
-import com.github.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
+import com.github.chiefofstate.serialization.{ Message, SendReceive }
 import com.typesafe.config.Config
 import org.slf4j.{ Logger, LoggerFactory }
 import slick.basic.DatabaseConfig
@@ -35,12 +35,12 @@ import scala.util.{ Failure, Success, Try }
  *   </ol>
  * </p>
  */
-object ServiceMigrationRunner {
+object MigrationRunner {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def apply(config: Config): Behavior[ScalaMessage] = Behaviors.setup[ScalaMessage] { _ =>
-    Behaviors.receiveMessage[ScalaMessage] {
-      case MessageWithActorRef(message, replyTo) if message.isInstanceOf[StartMigration] =>
+  def apply(config: Config): Behavior[Message] = Behaviors.setup[Message] { _ =>
+    Behaviors.receiveMessage[Message] {
+      case SendReceive(message, replyTo) if message.isInstanceOf[StartMigration] =>
         val result: Try[Unit] = {
           // create and run the migrator
           val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
@@ -70,7 +70,7 @@ object ServiceMigrationRunner {
             Behaviors.same
         }
 
-      case MessageWithActorRef(message, _) =>
+      case SendReceive(message, _) =>
         log.warn(s"unhandled message ${message.companion.scalaDescriptor.fullName}")
         Behaviors.stopped
 

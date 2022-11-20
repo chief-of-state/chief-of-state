@@ -18,7 +18,7 @@ import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
 import com.github.chiefofstate.protobuf.v1.internal._
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
 import com.github.chiefofstate.protobuf.v1.service._
-import com.github.chiefofstate.serialization.MessageWithActorRef
+import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto
@@ -56,7 +56,7 @@ class ServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCo
       .requireEntityId(entityId)
       // run remote command
       .flatMap(_ => {
-        val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+        val entityRef: EntityRef[SendReceive] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
         val propagatedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.propagatedHeaders)
         val persistedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.persistedHeaders)
         val remoteCommand: RemoteCommand =
@@ -73,7 +73,7 @@ class ServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCo
           val sendCommand: SendCommand =
             SendCommand().withRemoteCommand(remoteCommand).withTracingHeaders(tracingHeaders)
 
-          MessageWithActorRef(message = sendCommand, actorRef = replyTo)
+          SendReceive(message = sendCommand, actorRef = replyTo)
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
@@ -95,7 +95,7 @@ class ServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCo
     ServiceImpl
       .requireEntityId(entityId)
       .flatMap(_ => {
-        val entityRef: EntityRef[MessageWithActorRef] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+        val entityRef: EntityRef[SendReceive] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
         val getCommand = GetStateCommand().withEntityId(entityId)
 
@@ -105,7 +105,7 @@ class ServiceImpl(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCo
           val sendCommand: SendCommand =
             SendCommand().withGetStateCommand(getCommand).withTracingHeaders(tracingHeaders)
 
-          MessageWithActorRef(message = sendCommand, actorRef = replyTo)
+          SendReceive(message = sendCommand, actorRef = replyTo)
         })
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
