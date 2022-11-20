@@ -19,7 +19,7 @@ import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServi
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.readside.{ ReadSideBootstrap, ReadSideManager }
-import com.github.chiefofstate.services.{ ReadManagerServiceImpl, ServiceImpl }
+import com.github.chiefofstate.services.{ ReadSideManagerServiceImpl, ServiceImpl }
 import com.github.chiefofstate.utils.{ NettyHelper, ProtosValidator, Util }
 import com.typesafe.config.Config
 import io.grpc._
@@ -126,7 +126,7 @@ object ServiceBootstrapper {
       new ServiceImpl(clusterSharding, cosConfig.writeSideConfig)
 
     // create an instance of the read side state manager service
-    val readSideStateServiceImpl = new ReadManagerServiceImpl(readSideManager)(grpcEc)
+    val readSideStateServiceImpl = new ReadSideManagerServiceImpl(readSideManager)(grpcEc)
 
     // create the server builder
     var builder = NettyServerBuilder
