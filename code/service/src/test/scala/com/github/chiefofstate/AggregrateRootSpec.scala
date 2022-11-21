@@ -19,7 +19,7 @@ import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
 import com.github.chiefofstate.protobuf.v1.tests.{ Account, AccountOpened, OpenAccount }
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.protobuf.v1.writeside._
-import com.github.chiefofstate.serialization.MessageWithActorRef
+import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.{ ProtosValidator, Util }
 import com.google.protobuf.any
 import com.google.protobuf.any.Any
@@ -189,14 +189,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteEventHandler,
         eventsAndStateProtosValidation)
 
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
+      aggregateRef ! SendReceive(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.State(value: StateWrapper), _) =>
@@ -254,14 +254,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteEventHandler,
         eventsAndStateProtosValidation)
 
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
+      aggregateRef ! SendReceive(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.State(value: StateWrapper), _) =>
@@ -308,9 +308,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteEventHandler,
         eventsAndStateProtosValidation)
 
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
-      aggregateRef ! MessageWithActorRef(
+      aggregateRef ! SendReceive(
         SendCommand().withMessage(SendCommand.Message.Empty), // empty message
         commandSender.ref)
 
@@ -363,14 +363,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteEventHandler,
         eventsAndStateProtosValidation)
 
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
+      aggregateRef ! SendReceive(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
@@ -423,14 +423,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteEventHandler,
         eventsAndStateProtosValidation)
 
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
+      aggregateRef ! SendReceive(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
@@ -486,14 +486,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteEventHandler,
         eventsAndStateProtosValidation)
 
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
+      aggregateRef ! SendReceive(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
@@ -559,14 +559,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteEventHandler,
         eventsAndStateProtosValidation)
 
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
+      aggregateRef ! SendReceive(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
@@ -624,14 +624,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteEventHandler,
         eventsAndStateProtosValidation)
 
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
+      aggregateRef ! SendReceive(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
@@ -691,14 +691,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteCommandHandler,
         remoteEventHandler,
         eventsAndStateProtosValidation)
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
         .withCommand(command)
         .addPropagatedHeaders(Header().withKey("header-1").withStringValue("header-value-1"))
         .withEntityId(aggregateId)
 
-      aggregateRef ! MessageWithActorRef(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
+      aggregateRef ! SendReceive(SendCommand().withRemoteCommand(remoteCommand), commandSender.ref)
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.State(value: StateWrapper), _) =>
           val account: Account = value.getState.unpack[Account]
@@ -709,7 +709,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
         case _ => fail("unexpected message type")
       }
-      aggregateRef ! MessageWithActorRef(
+      aggregateRef ! SendReceive(
         SendCommand().withGetStateCommand(GetStateCommand().withEntityId(aggregateId)),
         commandSender.ref)
 
@@ -762,9 +762,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         remoteCommandHandler,
         remoteEventHandler,
         eventsAndStateProtosValidation)
-      val aggregateRef: ActorRef[MessageWithActorRef] = spawn(aggregateRoot)
+      val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
-      aggregateRef ! MessageWithActorRef(
+      aggregateRef ! SendReceive(
         SendCommand().withGetStateCommand(GetStateCommand().withEntityId(aggregateId)),
         commandSender.ref)
 

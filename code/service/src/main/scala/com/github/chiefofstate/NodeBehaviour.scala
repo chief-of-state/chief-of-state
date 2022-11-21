@@ -13,18 +13,18 @@ import akka.cluster.typed.{ Cluster, ClusterSingleton, ClusterSingletonSettings,
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
 import com.github.chiefofstate.protobuf.v1.internal.StartMigration
-import com.github.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
+import com.github.chiefofstate.serialization.{ Message, SendReceive }
 import com.typesafe.config.Config
 import org.slf4j.{ Logger, LoggerFactory }
 
-object StartNodeBehaviour {
+object NodeBehaviour {
   final val log: Logger = LoggerFactory.getLogger(getClass)
   val COS_MIGRATION_RUNNER = "CosServiceMigrationRunner"
   val COS_SERVICE_BOOTSTRAPPER = "CosServiceBootstrapper"
 
   def apply(config: Config): Behavior[NotUsed] = {
     Behaviors.setup { context =>
-
+      // Grab the akka cluster instance
       val cluster: Cluster = Cluster(context.system)
       context.log.info(s"starting node with roles: ${cluster.selfMember.roles}")
 
@@ -41,20 +41,22 @@ object StartNodeBehaviour {
 
       // initialise the migration cluster singleton settings
       val singletonSettings = ClusterSingletonSettings(context.system)
+
       // create the migration cluster singleton
-      val migrationSingleton = SingletonActor(
-        Behaviors.supervise(ServiceMigrationRunner(config)).onFailure[Exception](SupervisorStrategy.stop),
+      val migrationRunner = SingletonActor(
+        Behaviors.supervise(MigrationRunner(config)).onFailure[Exception](SupervisorStrategy.stop),
         COS_MIGRATION_RUNNER).withSettings(singletonSettings)
+
       // initialise the migration runner in a singleton
-      val migrationProxy: ActorRef[ScalaMessage] = ClusterSingleton(context.system).init(migrationSingleton)
+      val migration: ActorRef[Message] = ClusterSingleton(context.system).init(migrationRunner)
       // tell the migrator to kickstart
-      migrationProxy ! MessageWithActorRef(StartMigration(), bootstrapper)
+      migration ! SendReceive(StartMigration(), bootstrapper)
 
       // let us watch both actors to handle any on them termination
       context.watch(bootstrapper)
 
       // let us handle the Terminated message received
-      Behaviors.receiveSignal[NotUsed] { case (context, Terminated(ref)) =>
+      Behaviors.receiveSignal[NotUsed] { case (_, Terminated(ref)) =>
         val actorName = ref.path.name
         log.info(s"Actor stopped: $actorName")
         // whenever the ServiceBootstrapper stop

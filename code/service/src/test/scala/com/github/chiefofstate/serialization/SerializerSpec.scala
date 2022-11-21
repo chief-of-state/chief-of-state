@@ -22,16 +22,16 @@ import com.google.protobuf.any.Any
 import com.google.protobuf.wrappers.StringValue
 import scalapb.GeneratedMessage
 
-class CosSerializerSpec extends BaseActorSpec(s"""
+class SerializerSpec extends BaseActorSpec(s"""
     akka {
       actor {
         serialize-messages = on
         serializers {
-          cosSerializer = "com.github.chiefofstate.serialization.CosSerializer"
+          cosSerializer = "com.github.chiefofstate.serialization.Serializer"
         }
         serialization-bindings {
           "scalapb.GeneratedMessage" = cosSerializer
-          "com.github.chiefofstate.serialization.ScalaMessage" = cosSerializer
+          "com.github.chiefofstate.serialization.Message" = cosSerializer
         }
       }
     }
@@ -50,31 +50,31 @@ class CosSerializerSpec extends BaseActorSpec(s"""
 
       val sendCommand = SendCommand().withRemoteCommand(remoteCommand)
 
-      val command: MessageWithActorRef = MessageWithActorRef(message = sendCommand, actorRef = probe.ref)
+      val command: SendReceive = SendReceive(message = sendCommand, actorRef = probe.ref)
 
       serializationTestKit.verifySerialization(command)
     }
   }
 
   ".manifest" should {
-    "recognize a MessageWithActorRef" in {
-      val msg = MessageWithActorRef(SendCommand(), null)
-      (new CosSerializer(extendedSystem)).manifest(msg).nonEmpty shouldBe true
+    "recognize a SendReceive" in {
+      val msg = SendReceive(SendCommand(), null)
+      (new Serializer(extendedSystem)).manifest(msg).nonEmpty shouldBe true
     }
     "recognize a GeneratedMessage" in {
       val msg = SendCommand.defaultInstance
-      (new CosSerializer(extendedSystem)).manifest(msg).nonEmpty shouldBe true
+      (new Serializer(extendedSystem)).manifest(msg).nonEmpty shouldBe true
     }
     "fail on unrecognized messages" in {
       assertThrows[IllegalArgumentException] {
-        (new CosSerializer(extendedSystem)).manifest(StringValue.defaultInstance)
+        (new Serializer(extendedSystem)).manifest(StringValue.defaultInstance)
       }
     }
   }
 
   ".fromBinary" should {
     "error for unrecognized type url" in {
-      val serializer = new CosSerializer(extendedSystem)
+      val serializer = new Serializer(extendedSystem)
       val err = intercept[IllegalArgumentException] {
         serializer.fromBinary(Array.emptyByteArray, "bad-url")
       }
@@ -82,12 +82,12 @@ class CosSerializerSpec extends BaseActorSpec(s"""
       err.getMessage() shouldBe "unrecognized manifest, bad-url"
     }
   }
-  "MessageWithActorRef" should {
+  "SendReceive" should {
     "successfully serialize and deserialize" in {
       val probe: TestProbe[GeneratedMessage] = createTestProbe[GeneratedMessage]()
-      val serializer = new CosSerializer(extendedSystem)
+      val serializer = new Serializer(extendedSystem)
       val innerMsg = SendCommand().withGetStateCommand(GetStateCommand().withEntityId("x"))
-      val outerMsg = MessageWithActorRef(innerMsg, probe.ref)
+      val outerMsg = SendReceive(innerMsg, probe.ref)
       // serialize the message
       val serialized: Array[Byte] = serializer.toBinary(outerMsg)
       // prove you can deserialize the byte array
@@ -95,15 +95,15 @@ class CosSerializerSpec extends BaseActorSpec(s"""
       // deserialize it
       val manifest = serializer.manifest(outerMsg)
       val actual = serializer.fromBinary(serialized, manifest)
-      actual.isInstanceOf[MessageWithActorRef] shouldBe true
+      actual.isInstanceOf[SendReceive] shouldBe true
       // assert unchanged
-      actual.asInstanceOf[MessageWithActorRef] shouldBe outerMsg
+      actual.asInstanceOf[SendReceive] shouldBe outerMsg
     }
     "fail to serialize with unknown child message" in {
       val probe: TestProbe[GeneratedMessage] = createTestProbe[GeneratedMessage]()
-      val serializer = new CosSerializer(extendedSystem)
+      val serializer = new Serializer(extendedSystem)
       // construct a message with an unregistered type
-      val outerMsg = MessageWithActorRef(StringValue("x"), probe.ref)
+      val outerMsg = SendReceive(StringValue("x"), probe.ref)
       // serialize the message
       val err = intercept[IllegalArgumentException] {
         serializer.toBinary(outerMsg)
@@ -115,7 +115,7 @@ class CosSerializerSpec extends BaseActorSpec(s"""
 
       val manifest = WireMessageWithActorRef.scalaDescriptor.fullName
 
-      val serializer = new CosSerializer(extendedSystem)
+      val serializer = new Serializer(extendedSystem)
       val err = intercept[IllegalArgumentException] {
         serializer.fromBinary(msg.toByteArray, manifest)
       }
@@ -125,7 +125,7 @@ class CosSerializerSpec extends BaseActorSpec(s"""
   }
   "scalapb GeneratedMessages" should {
     "successfully serialize and deserialize" in {
-      val serializer = new CosSerializer(extendedSystem)
+      val serializer = new Serializer(extendedSystem)
       val msg = SendCommand().withGetStateCommand(GetStateCommand().withEntityId("x"))
       val serialized: Array[Byte] = serializer.toBinary(msg)
       // check proto serialization
@@ -136,7 +136,7 @@ class CosSerializerSpec extends BaseActorSpec(s"""
     "fail to deserialize unknown messages" in {
       val msg = StringValue("x")
       val manifest = msg.companion.scalaDescriptor.fullName
-      val serializer = new CosSerializer(extendedSystem)
+      val serializer = new Serializer(extendedSystem)
       val err = intercept[IllegalArgumentException] {
         serializer.fromBinary(msg.toByteArray, manifest)
       }

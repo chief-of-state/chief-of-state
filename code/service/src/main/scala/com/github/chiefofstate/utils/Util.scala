@@ -123,7 +123,7 @@ object Util {
         e
 
       case e: StatusRuntimeException =>
-        new StatusException(e.getStatus(), e.getTrailers())
+        new StatusException(e.getStatus, e.getTrailers)
 
       case e: IllegalArgumentException =>
         // convert an illegal argument into an INVALID_ARGUMENT status
@@ -131,7 +131,7 @@ object Util {
         new StatusException(Status.INVALID_ARGUMENT.withDescription(errMsg))
 
       case e: Throwable =>
-        new StatusException(Status.INTERNAL.withDescription(e.getMessage()))
+        new StatusException(Status.INTERNAL.withDescription(e.getMessage))
     }
   }
 

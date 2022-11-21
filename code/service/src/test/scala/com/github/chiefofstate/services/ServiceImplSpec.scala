@@ -19,7 +19,7 @@ import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.{ CommandReply, RemoteCommand, SendCommand }
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
 import com.github.chiefofstate.protobuf.v1.service.{ ChiefOfStateServiceGrpc, GetStateRequest, ProcessCommandRequest }
-import com.github.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
+import com.github.chiefofstate.serialization.{ Message, SendReceive }
 import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
@@ -51,10 +51,10 @@ class ServiceImplSpec extends BaseActorSpec(s"""
   trait FakeClusterSharding extends ClusterShardingJava with ClusterSharding
 
   // creates a mock cluster sharding that returns a specific EntityRef
-  def getClusterShard(output: EntityRef[MessageWithActorRef]): ClusterSharding = {
+  def getClusterShard(output: EntityRef[SendReceive]): ClusterSharding = {
     val clusterSharding = mock[FakeClusterSharding]
 
-    ((a: EntityTypeKey[MessageWithActorRef], b: String) => clusterSharding.entityRefFor(a, b))
+    ((a: EntityTypeKey[SendReceive], b: String) => clusterSharding.entityRefFor(a, b))
       .expects(AggregateRoot.TypeKey, *)
       .returning(output)
       .repeat(1)
@@ -96,17 +96,17 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       val expectedState =
         StateWrapper().withState(any.Any.pack(StringValue("some state"))).withMeta(MetaData().withRevisionNumber(2))
       // create a behavior that returns a state
-      val mockedBehavior = Behaviors.receiveMessage[ScalaMessage] { case MessageWithActorRef(message, replyTo) =>
+      val mockedBehavior = Behaviors.receiveMessage[Message] { case SendReceive(message, replyTo) =>
         replyTo ! CommandReply().withState(expectedState)
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[ScalaMessage]()
+      val probe = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
       val entityId: String = "id-1"
-      val typeKey = EntityTypeKey[MessageWithActorRef](entityId)
-      val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
+      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new ServiceImpl(clusterSharding, writeSideConfig)
@@ -119,7 +119,7 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       val akkaReceived = probe.receiveMessage()
 
       val remoteCommand =
-        akkaReceived.asInstanceOf[MessageWithActorRef].message.asInstanceOf[SendCommand].getRemoteCommand
+        akkaReceived.asInstanceOf[SendReceive].message.asInstanceOf[SendCommand].getRemoteCommand
 
       remoteCommand.entityId shouldBe request.entityId
       remoteCommand.getCommand shouldBe request.getCommand
@@ -140,16 +140,16 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       val expectedState =
         StateWrapper().withState(any.Any.pack(StringValue("some state"))).withMeta(MetaData().withRevisionNumber(2))
       // create a behavior that returns the state
-      val mockedBehavior = Behaviors.receiveMessage[ScalaMessage] { case MessageWithActorRef(message, replyTo) =>
+      val mockedBehavior = Behaviors.receiveMessage[Message] { case SendReceive(message, replyTo) =>
         replyTo ! CommandReply().withState(expectedState)
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[ScalaMessage]()
+      val probe = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
-      val typeKey = EntityTypeKey[MessageWithActorRef](entityId)
-      val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
+      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new ServiceImpl(clusterSharding, customWriteConfig)
@@ -177,7 +177,7 @@ class ServiceImplSpec extends BaseActorSpec(s"""
 
       // assert headers sent to actor
       val remoteCommand: RemoteCommand =
-        probe.receiveMessage().asInstanceOf[MessageWithActorRef].message.asInstanceOf[SendCommand].getRemoteCommand
+        probe.receiveMessage().asInstanceOf[SendReceive].message.asInstanceOf[SendCommand].getRemoteCommand
 
       remoteCommand.persistedHeaders.map(_.key).toSeq shouldBe Seq(headerKey)
       remoteCommand.persistedHeaders.map(_.getStringValue).toSeq shouldBe Seq(headerValue)
@@ -186,17 +186,17 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       // create the expected error
       val errorStatus = Status().withCode(code.Code.NOT_FOUND.value)
       // create a behavior that returns a state
-      val mockedBehavior = Behaviors.receiveMessage[ScalaMessage] { case MessageWithActorRef(message, replyTo) =>
+      val mockedBehavior = Behaviors.receiveMessage[Message] { case SendReceive(message, replyTo) =>
         replyTo ! CommandReply().withError(errorStatus)
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[ScalaMessage]()
+      val probe = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
       val entityId: String = "id-1"
-      val typeKey = EntityTypeKey[MessageWithActorRef](entityId)
-      val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
+      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new ServiceImpl(clusterSharding, writeSideConfig)
@@ -205,13 +205,8 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       val sendFuture = impl.processCommand(request)
       // assert message sent to actor
       val akkaMsg = probe.receiveMessage()
-      akkaMsg.shouldBe(an[MessageWithActorRef])
-      akkaMsg
-        .asInstanceOf[MessageWithActorRef]
-        .message
-        .asInstanceOf[SendCommand]
-        .getRemoteCommand
-        .entityId shouldBe entityId
+      akkaMsg.shouldBe(an[SendReceive])
+      akkaMsg.asInstanceOf[SendReceive].message.asInstanceOf[SendCommand].getRemoteCommand.entityId shouldBe entityId
 
       // assert response
       val actualError = intercept[StatusException] {
@@ -239,17 +234,17 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       val expectedState =
         StateWrapper().withState(any.Any.pack(StringValue("some state"))).withMeta(MetaData().withRevisionNumber(2))
       // create a behavior that returns a state
-      val mockedBehavior = Behaviors.receiveMessage[ScalaMessage] { case MessageWithActorRef(message, replyTo) =>
+      val mockedBehavior = Behaviors.receiveMessage[Message] { case SendReceive(message, replyTo) =>
         replyTo ! CommandReply().withState(expectedState)
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[ScalaMessage]()
+      val probe = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
       val entityId: String = "id-1"
-      val typeKey = EntityTypeKey[MessageWithActorRef](entityId)
-      val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
+      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new ServiceImpl(clusterSharding, writeSideConfig)
@@ -258,9 +253,9 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       val sendFuture = impl.getState(request)
       // assert message sent to actor
       val akkaResponse = probe.receiveMessage()
-      akkaResponse.shouldBe(an[MessageWithActorRef])
+      akkaResponse.shouldBe(an[SendReceive])
       akkaResponse
-        .asInstanceOf[MessageWithActorRef]
+        .asInstanceOf[SendReceive]
         .message
         .asInstanceOf[SendCommand]
         .getGetStateCommand
@@ -275,17 +270,17 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       // create the expected error
       val errorStatus = Status().withCode(code.Code.NOT_FOUND.value)
       // create a behavior that returns a state
-      val mockedBehavior = Behaviors.receiveMessage[ScalaMessage] { case MessageWithActorRef(message, replyTo) =>
+      val mockedBehavior = Behaviors.receiveMessage[Message] { case SendReceive(message, replyTo) =>
         replyTo ! CommandReply().withError(errorStatus)
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[ScalaMessage]()
+      val probe = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
       val entityId: String = "id-1"
-      val typeKey = EntityTypeKey[MessageWithActorRef](entityId)
-      val testEntityRef: EntityRef[MessageWithActorRef] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
+      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new ServiceImpl(clusterSharding, writeSideConfig)
@@ -294,13 +289,8 @@ class ServiceImplSpec extends BaseActorSpec(s"""
       val sendFuture = impl.getState(request)
       // assert message sent to actor
       val akkaMsg = probe.receiveMessage()
-      akkaMsg.shouldBe(an[MessageWithActorRef])
-      akkaMsg
-        .asInstanceOf[MessageWithActorRef]
-        .message
-        .asInstanceOf[SendCommand]
-        .getGetStateCommand
-        .entityId shouldBe entityId
+      akkaMsg.shouldBe(an[SendReceive])
+      akkaMsg.asInstanceOf[SendReceive].message.asInstanceOf[SendCommand].getGetStateCommand.entityId shouldBe entityId
 
       // assert response
       val actualError = intercept[StatusException] {
