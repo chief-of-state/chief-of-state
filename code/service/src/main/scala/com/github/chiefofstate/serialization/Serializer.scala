@@ -16,16 +16,16 @@ import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
 
 import java.nio.charset.StandardCharsets
 
-class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStringManifest {
+class Serializer(val system: ExtendedActorSystem) extends SerializerWithStringManifest {
 
   private lazy val actorRefResolver: ActorRefResolver = ActorRefResolver(system.toTyped)
 
   // build a reverse lookup of type url's to companions
   private[serialization] lazy val companionMap: Map[String, GeneratedMessageCompanion[_ <: GeneratedMessage]] =
-    CosSerializer.companions.map(c => (CosSerializer.getTypeUrl(c) -> c)).toMap
+    Serializer.companions.map(c => (Serializer.getTypeUrl(c) -> c)).toMap
 
   // returns the unique ID for this serializer defined in the companion
-  override def identifier: Int = CosSerializer.IDENTIFIER
+  override def identifier: Int = Serializer.IDENTIFIER
 
   /**
    * Given a scalapb generated message, return the type URL
@@ -35,14 +35,14 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
    */
   override def manifest(o: AnyRef): String = {
     o match {
-      case m: MessageWithActorRef =>
-        CosSerializer.getTypeUrl(WireMessageWithActorRef)
+      case m: SendReceive =>
+        Serializer.getTypeUrl(WireMessageWithActorRef)
 
-      case e: GeneratedMessage if companionMap contains CosSerializer.getTypeUrl(e.companion) =>
-        CosSerializer.getTypeUrl(e.companion)
+      case e: GeneratedMessage if companionMap contains Serializer.getTypeUrl(e.companion) =>
+        Serializer.getTypeUrl(e.companion)
 
       case default =>
-        throw new IllegalArgumentException(s"cannot serialize type ${default.getClass().getName()}")
+        throw new IllegalArgumentException(s"cannot serialize type ${default.getClass.getName}")
     }
   }
 
@@ -64,7 +64,7 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
 
     parsed match {
       case m: WireMessageWithActorRef =>
-        val innerTypeUrl: String = CosSerializer.getTypeUrl(m.getMessage.typeUrl)
+        val innerTypeUrl: String = Serializer.getTypeUrl(m.getMessage.typeUrl)
         val innerCompanion = companionMap.get(innerTypeUrl) match {
           case Some(companion) =>
             companion
@@ -78,7 +78,7 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
         val ref: ActorRef[GeneratedMessage] =
           actorRefResolver.resolveActorRef[GeneratedMessage](actorRefStr)
 
-        MessageWithActorRef(message = m.getMessage.unpack(innerCompanion), actorRef = ref)
+        SendReceive(message = m.getMessage.unpack(innerCompanion), actorRef = ref)
 
       case default: GeneratedMessage =>
         default.asInstanceOf[AnyRef]
@@ -93,11 +93,11 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
    */
   override def toBinary(o: AnyRef): Array[Byte] = {
     o match {
-      case m: MessageWithActorRef =>
+      case m: SendReceive =>
         val actorBytes: Array[Byte] =
           actorRefResolver.toSerializationFormat(m.actorRef).getBytes(StandardCharsets.UTF_8)
 
-        if (!companionMap.contains(CosSerializer.getTypeUrl(m.message.companion))) {
+        if (!companionMap.contains(Serializer.getTypeUrl(m.message.companion))) {
           throw new IllegalArgumentException(s"cannot serialize ${m.message.companion.scalaDescriptor.fullName}")
         }
 
@@ -109,7 +109,7 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
         e.toByteArray
 
       case default =>
-        throw new IllegalArgumentException(s"cannot serialize ${o.getClass().getName()}")
+        throw new IllegalArgumentException(s"cannot serialize ${o.getClass.getName}")
     }
   }
 }
@@ -117,7 +117,7 @@ class CosSerializer(val system: ExtendedActorSystem) extends SerializerWithStrin
 /**
  * Companion object for the serializer
  */
-object CosSerializer {
+object Serializer {
   // unique ID for serializer
   private[serialization] val IDENTIFIER: Int = 5001
 

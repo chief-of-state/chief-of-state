@@ -11,16 +11,17 @@ import akka.actor.typed.{ ActorRef, Behavior, SupervisorStrategy }
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl._
-import com.github.chiefofstate.WriteHandlerHelpers.{ NewState, NoOp }
 import com.github.chiefofstate.config.{ CosConfig, SnapshotConfig }
 import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
 import com.github.chiefofstate.observability.Telemetry
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.{ CommandReply, GetStateCommand, RemoteCommand, SendCommand }
 import com.github.chiefofstate.protobuf.v1.persistence.{ EventWrapper, StateWrapper }
-import com.github.chiefofstate.serialization.MessageWithActorRef
+import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.ProtosValidator
 import com.github.chiefofstate.utils.Util.{ makeFailedStatusPf, toRpcStatus, Instants }
+import com.github.chiefofstate.writeside.ResponseType
+import com.github.chiefofstate.writeside.ResponseType._
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import io.grpc.{ Status, StatusException }
@@ -43,7 +44,7 @@ object AggregateRoot {
   /**
    * thee aggregate root type key
    */
-  val TypeKey: EntityTypeKey[MessageWithActorRef] = EntityTypeKey[MessageWithActorRef]("chiefOfState")
+  val TypeKey: EntityTypeKey[SendReceive] = EntityTypeKey[SendReceive]("chiefOfState")
 
   /**
    * creates a new instance of the aggregate root
@@ -61,11 +62,11 @@ object AggregateRoot {
       cosConfig: CosConfig,
       commandHandler: RemoteCommandHandler,
       eventHandler: RemoteEventHandler,
-      protosValidator: ProtosValidator): Behavior[MessageWithActorRef] = {
+      protosValidator: ProtosValidator): Behavior[SendReceive] = {
     Behaviors.setup { context =>
       {
         EventSourcedBehavior
-          .withEnforcedReplies[MessageWithActorRef, EventWrapper, StateWrapper](
+          .withEnforcedReplies[SendReceive, EventWrapper, StateWrapper](
             persistenceId,
             emptyState = initialState(persistenceId),
             (state, command) => handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
@@ -88,9 +89,9 @@ object AggregateRoot {
    * @return a side effect
    */
   private[chiefofstate] def handleCommand(
-      context: ActorContext[MessageWithActorRef],
+      context: ActorContext[SendReceive],
       aggregateState: StateWrapper,
-      aggregateCommand: MessageWithActorRef,
+      aggregateCommand: SendReceive,
       commandHandler: RemoteCommandHandler,
       eventHandler: RemoteEventHandler,
       protosValidator: ProtosValidator): ReplyEffect[EventWrapper, StateWrapper] = {
@@ -180,18 +181,18 @@ object AggregateRoot {
       protosValidator: ProtosValidator,
       data: Map[String, com.google.protobuf.any.Any]): ReplyEffect[EventWrapper, StateWrapper] = {
 
-    val handlerOutput: Try[WriteHandlerHelpers.WriteTransitions] = commandHandler
+    val handlerOutput: Try[Response] = commandHandler
       .handleCommand(command, priorState)
       .map(_.event match {
         case Some(newEvent) =>
           protosValidator.requireValidEvent(newEvent)
-          WriteHandlerHelpers.NewEvent(newEvent)
+          NewEvent(newEvent)
 
         case None =>
-          WriteHandlerHelpers.NoOp
+          NoOp
       })
       .flatMap {
-        case WriteHandlerHelpers.NewEvent(newEvent) =>
+        case NewEvent(newEvent) =>
           val newEventMeta: MetaData = MetaData()
             .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
             .withRevisionDate(Instant.now().toTimestamp)
@@ -206,11 +207,11 @@ object AggregateRoot {
             .map(response => {
               require(response.resultingState.isDefined, "event handler replied with empty state")
               protosValidator.requireValidState(response.getResultingState)
-              WriteHandlerHelpers.NewState(newEvent, response.getResultingState, newEventMeta)
+              NewState(newEvent, response.getResultingState, newEventMeta)
             })
 
-        case x =>
-          Success(x)
+        case unhandled =>
+          Success(unhandled)
       }
       .recoverWith(makeFailedStatusPf)
 
@@ -227,9 +228,9 @@ object AggregateRoot {
         // reply with the error status
         Effect.reply(replyTo)(CommandReply().withError(toRpcStatus(e.getStatus, e.getTrailers)))
 
-      case x =>
+      case unhandled =>
         // this should never happen, but here for code completeness
-        val errStatus = Status.INTERNAL.withDescription(s"write handler failure, ${x.getClass}")
+        val errStatus = Status.INTERNAL.withDescription(s"write handler failure, ${unhandled.getClass}")
 
         Span.current().recordException(errStatus.asException()).setStatus(StatusCode.ERROR)
         Effect.reply(replyTo)(CommandReply().withError(toRpcStatus(errStatus)))
@@ -299,13 +300,4 @@ object AggregateRoot {
       .withMeta(MetaData.defaultInstance.withEntityId(persistenceId.id))
       .withState(any.Any.pack(Empty.defaultInstance))
   }
-}
-
-object WriteHandlerHelpers {
-  sealed trait WriteTransitions
-  case object NoOp extends WriteTransitions
-  case class NewEvent(event: com.google.protobuf.any.Any) extends WriteTransitions
-
-  case class NewState(event: com.google.protobuf.any.Any, state: com.google.protobuf.any.Any, eventMeta: MetaData)
-      extends WriteTransitions
 }

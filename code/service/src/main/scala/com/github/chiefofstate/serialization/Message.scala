@@ -10,7 +10,7 @@ import akka.actor.typed.ActorRef
 import scalapb.GeneratedMessage
 
 // defines a trait that routes to the custom serializer
-sealed trait ScalaMessage
+sealed trait Message
 
 /**
  * wraps a generated message and an actor ref that the serializer
@@ -19,4 +19,4 @@ sealed trait ScalaMessage
  * @param message a generated message
  * @param actorRef an actor ref
  */
-case class MessageWithActorRef(message: GeneratedMessage, actorRef: ActorRef[GeneratedMessage]) extends ScalaMessage
+case class SendReceive(message: GeneratedMessage, actorRef: ActorRef[GeneratedMessage]) extends Message

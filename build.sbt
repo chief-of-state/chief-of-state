@@ -12,7 +12,7 @@ lazy val root: Project = project
     Compile / mainClass := Some("com.github.chiefofstate.StartNode"),
     makeBatScripts := Seq(),
     executableScriptName := "entrypoint",
-    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "1.19.2" % "runtime",
+    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "1.21.0" % "runtime",
     Universal / javaOptions ++= Seq(
       // Setting the OpenTelemetry java agent options
       // reference: https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters
@@ -24,6 +24,10 @@ lazy val root: Project = project
       "-Dotel.instrumentation.[akka-actor].enabled=true",
       "-Dio.opentelemetry.javaagent.slf4j.simpleLogger.defaultLogLevel=error",
       // -J params will be added as jvm parameters
+      "-J-XX:+UseContainerSupport",
+      "-J-XX:MinRAMPercentage=60.0",
+      "-J-XX:MaxRAMPercentage=90.0",
+      "-J-XX:+HeapDumpOnOutOfMemoryError",
       "-J-XX:+UseG1GC"))
   .dependsOn(chiefofstate)
   .aggregate(protogen, chiefofstate, protogenTest, migration)

@@ -57,11 +57,13 @@ _Note: By default, telemetry data will be collected so set this env var to `fals
 #### Basic configuration
 The following options can be configured via environment variables. 
 
-| Property                    | Required                                         | Description                                                                                                                                      |
-|-----------------------------|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| OTEL_SERVICE_NAME           | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | Name to be used to differentiate different chief of state deployments                                                                            |
-| OTEL_EXPORTER_OTLP_ENDPOINT | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317` |
-| OTEL_JAVAAGENT_ENABLED      | yes                                              | Set to `false` will disable the telemetry instrumentation                                                                                        |
+| Property                    | Required                                         | Description                                                                                                                                                                |
+|-----------------------------|--------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| OTEL_SERVICE_NAME           | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | Name to be used to differentiate different chief of state deployments                                                                                                      |
+| OTEL_EXPORTER_OTLP_ENDPOINT | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317`                           |
+| OTEL_JAVAAGENT_ENABLED      | yes                                              | Set to `false` will disable the telemetry instrumentation                                                                                                                  |
+| OTEL_PROPAGATORS            | no (default value is `tracecontext,baggage`)     | More information can be found [here](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#propagator) on how to set it up |
+  
 
 #### Advanced configuration
 Advanced users can use any of the following [environment variables](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters) to tweak the OpenTelemetry Agent before starting CoS.

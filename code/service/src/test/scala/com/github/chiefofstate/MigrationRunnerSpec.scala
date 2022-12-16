@@ -13,7 +13,7 @@ import com.github.chiefofstate
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.migration.{ JdbcConfig, Migrator }
 import com.github.chiefofstate.protobuf.v1.internal.{ MigrationSucceeded, StartMigration }
-import com.github.chiefofstate.serialization.{ MessageWithActorRef, ScalaMessage }
+import com.github.chiefofstate.serialization.{ Message, SendReceive }
 import com.google.protobuf.wrappers.StringValue
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.{ Duration, FiniteDuration }
 
-class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
+class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
@@ -71,16 +71,16 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
     testKit.shutdownTestKit()
   }
 
-  "ServiceMigrationRunner" should {
+  "MigrationRunner" should {
     "execute the migration request as expected" in {
-      // create an instance of ServiceMigrationRunner
-      val migrationRunnerRef: ActorRef[ScalaMessage] = testKit.spawn(ServiceMigrationRunner(config))
+      // create an instance of MigrationRunner
+      val migrationRunnerRef: ActorRef[Message] = testKit.spawn(MigrationRunner(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
 
       // send the migration command to the migrator
-      migrationRunnerRef ! MessageWithActorRef(StartMigration.defaultInstance, probe.ref)
+      migrationRunnerRef ! SendReceive(StartMigration.defaultInstance, probe.ref)
 
       probe.receiveMessage(replyTimeout) match {
         case _: MigrationSucceeded => succeed
@@ -98,14 +98,14 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
 
       Await.ready(dbConfig.db.run(stmt), Duration.Inf)
 
-      // create an instance of ServiceMigrationRunner
-      val migrationRunnerRef: ActorRef[ScalaMessage] = testKit.spawn(chiefofstate.ServiceMigrationRunner(config))
+      // create an instance of MigrationRunner
+      val migrationRunnerRef: ActorRef[Message] = testKit.spawn(chiefofstate.MigrationRunner(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
 
       // send the migration command to the migrator
-      migrationRunnerRef ! MessageWithActorRef(StartMigration.defaultInstance, probe.ref)
+      migrationRunnerRef ! SendReceive(StartMigration.defaultInstance, probe.ref)
 
       probe.receiveMessage(replyTimeout) match {
         case _: MigrationSucceeded => succeed
@@ -118,14 +118,14 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       // create the versions table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
 
-      // create an instance of ServiceMigrationRunner
-      val migrationRunnerRef: ActorRef[ScalaMessage] = testKit.spawn(chiefofstate.ServiceMigrationRunner(config))
+      // create an instance of MigrationRunner
+      val migrationRunnerRef: ActorRef[Message] = testKit.spawn(chiefofstate.MigrationRunner(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
 
       // send the migration command to the migrator
-      migrationRunnerRef ! MessageWithActorRef(StartMigration.defaultInstance, probe.ref)
+      migrationRunnerRef ! SendReceive(StartMigration.defaultInstance, probe.ref)
 
       probe.receiveMessage(replyTimeout) match {
         case _: MigrationSucceeded => succeed
@@ -134,15 +134,15 @@ class ServiceMigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
     }
 
     "stop because of unhandled scalapb GeneratedMessage" in {
-      // create an instance of ServiceMigrationRunner
-      val migrationRunnerRef: BehaviorTestKit[ScalaMessage] =
-        BehaviorTestKit(chiefofstate.ServiceMigrationRunner(config))
+      // create an instance of MigrationRunner
+      val migrationRunnerRef: BehaviorTestKit[Message] =
+        BehaviorTestKit(chiefofstate.MigrationRunner(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
 
       // send the migration command to the migrator
-      migrationRunnerRef.run(MessageWithActorRef(StringValue("x"), probe.ref))
+      migrationRunnerRef.run(SendReceive(StringValue("x"), probe.ref))
 
       // no message will be received by the receiving actor
       probe.expectNoMessage()
