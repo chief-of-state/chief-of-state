@@ -17,6 +17,6 @@ object StartNode extends App {
 
   // boot the actor system
   val actorSystem: ActorSystem[NotUsed] =
-    ActorSystem(StartNodeBehaviour(config), "ChiefOfStateSystem", config)
+    ActorSystem(NodeBehaviour(config), "ChiefOfStateSystem", config)
   actorSystem.whenTerminated // remove compiler warnings
 }
