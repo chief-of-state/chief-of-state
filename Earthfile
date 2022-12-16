@@ -4,7 +4,7 @@ FROM busybox:1.32
 
 test-and-build:
     # target running tests and building image
-    # BUILD +test-all # TODO run tests when https://github.com/testcontainers/testcontainers-scala/issues/241 is fixed
+    # BUILD +test-all # TODO enable tests when https://github.com/testcontainers/testcontainers-scala/issues/241 is fixed
     BUILD +prepare-image
 
 release:
