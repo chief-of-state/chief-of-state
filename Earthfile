@@ -9,7 +9,7 @@ test-and-build:
 
 release:
     # uploads the image to registry
-    BUILD +test-all
+     # BUILD +test-all # TODO run tests when https://github.com/testcontainers/testcontainers-scala/issues/241 is fixed
     BUILD +build-image
 
 dependencies:
