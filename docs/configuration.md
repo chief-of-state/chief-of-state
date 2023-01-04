@@ -70,7 +70,7 @@ Advanced users can use any of the following [environment variables](https://gith
 
 ### Read side configurations
 The CoS can handle as many as read sides one desires. CoS read side are configured using a readside configuration files.
-One can bundle all the readside configuration files into a _single yaml file_ or have them in a _folder_.
+One can bundle all the readside configuration files into a _single yaml file_ or in separate files and have them in a _folder_.
 The following settings are required to define a read side yaml configuration file:
 
 | Setting    | Required                      | Description                                                                                                                                                                                                                                               |
