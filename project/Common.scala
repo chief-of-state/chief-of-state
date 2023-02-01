@@ -36,6 +36,12 @@ object Common extends AutoPlugin {
 
   override def projectSettings =
     Seq(
+      javaOptions ++= Seq(
+        "--illegal-access=deny",
+        "--add-opens",
+        "java.base/java.util=ALL-UNNAMED",
+        "--add-opens",
+        "java.base/java.lang=ALL-UNNAMED"),
       scalacOptions ++= Seq(
         "-target:8",
         "-Xfatal-warnings",

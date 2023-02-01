@@ -6,8 +6,8 @@
 
 package com.github.chiefofstate.migration.versions.v6
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import com.github.chiefofstate.migration.{ BaseSpec, DbUtil }
 import com.github.chiefofstate.migration.helper.{ DbHelper, TestConfig }
+import com.github.chiefofstate.migration.{ BaseSpec, DbUtil }
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
