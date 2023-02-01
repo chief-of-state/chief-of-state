@@ -101,7 +101,7 @@ test-all:
 
 sbt:
     # TODO: move this to a central image
-    FROM sapmachine:lts
+    FROM eclipse-temurin:17
 
     USER root
 
