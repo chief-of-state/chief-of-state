@@ -147,4 +147,5 @@ sbt:
         $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
     RUN apt-get update
+    RUN apt-get upgrade
     RUN apt-get install -y docker-ce docker-ce-cli containerd.io
