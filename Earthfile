@@ -101,7 +101,7 @@ test-all:
 
 sbt:
     # TODO: move this to a central image
-    FROM eclipse-temurin:17
+    FROM eclipse-temurin:19.0.2_7-jdk-jammy
 
     USER root
 
