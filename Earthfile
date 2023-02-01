@@ -101,7 +101,7 @@ test-all:
 
 sbt:
     # TODO: move this to a central image
-    FROM openjdk:11-jdk-stretch
+    FROM openjdk:21-ea-jdk
 
     USER root
 
