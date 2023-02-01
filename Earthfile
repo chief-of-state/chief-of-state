@@ -50,7 +50,7 @@ compile:
 
 prepare-image:
     # bundle into a slimmer, runnable container
-    FROM openjdk:11-jre-slim
+    FROM eclipse-temurin:19.0.2_7-jre-jammy
 
     USER root
 
