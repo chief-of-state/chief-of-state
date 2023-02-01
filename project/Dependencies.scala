@@ -11,7 +11,7 @@ object Dependencies {
     val SilencerVersion: String = "1.7.12"
     val LogbackVersion: String = "1.4.5"
     val ScalapbValidationVersion: String = "0.1.4"
-    val ScalaTestVersion: String = "3.2.14"
+    val ScalaTestVersion: String = "3.2.15"
     val AkkaManagementVersion: String = "1.1.4"
     val AkkaProjectionVersion: String = "1.2.5"
     val PostgresDriverVersion: String = "42.5.1"
@@ -19,17 +19,17 @@ object Dependencies {
     val AkkaPersistenceJdbcVersion: String = "5.1.0"
     val ScalaMockVersion: String = "5.2.0"
 
-    val JaninoVersion: String = "3.1.8"
-    val LogstashLogbackVersion: String = "6.3"
-    val OpenTelemetrySdkVersion: String = "1.20.1"
-    val TestContainers: String = "0.40.11"
+    val JaninoVersion: String = "3.1.9"
+    val LogstashLogbackVersion: String = "7.2"
+    val OpenTelemetrySdkVersion: String = "1.22.0"
+    val TestContainers: String = "0.40.12"
     val OpenTelemetrySdkConfigVersion: String = "1.15.0-alpha"
     val OpenTelemetryInstrumentationApiVersion: String = "1.21.0"
-    val OpenTelemetrySdkTestingVersion: String = "1.21.0"
-    val OpenTelemetryExtensionVersion: String = "1.21.0"
+    val OpenTelemetrySdkTestingVersion: String = "1.22.0"
+    val OpenTelemetryExtensionVersion: String = "1.22.0"
     val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"
     val ScalaXmlVersion: String = "2.1.0"
-    val JacksonVersion: String = "2.14.1"
+    val JacksonVersion: String = "2.14.2"
   }
 
   import Dependencies.Versions._
