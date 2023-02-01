@@ -101,7 +101,7 @@ test-all:
 
 sbt:
     # TODO: move this to a central image
-    FROM openjdk:20-slim-bullseye
+    FROM sapmachine:lts
 
     USER root
 
