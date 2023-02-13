@@ -19,18 +19,18 @@ object Dependencies {
     val AkkaPersistenceJdbcVersion: String = "5.1.0"
     val ScalaMockVersion: String = "5.2.0"
 
-    val JaninoVersion: String = "3.1.9"
-    val LogstashLogbackVersion: String = "7.2"
-    val OpenTelemetrySdkVersion: String = "1.22.0"
-    val TestContainers: String = "0.40.12"
+    val JaninoVersion: String = "3.1.8"
+    val LogstashLogbackVersion: String = "6.3"
+    val OpenTelemetrySdkVersion: String = "1.23.0"
+    val TestContainers: String = "0.40.11"
     val OpenTelemetrySdkConfigVersion: String = "1.15.0-alpha"
-    val OpenTelemetryInstrumentationApiVersion: String = "1.21.0"
-    val OpenTelemetrySdkTestingVersion: String = "1.22.0"
-    val OpenTelemetryExtensionVersion: String = "1.22.0"
+    val OpenTelemetryInstrumentationApiVersion: String = "1.22.1"
+    val OpenTelemetrySdkTestingVersion: String = "1.23.0"
+    val OpenTelemetryExtensionVersion: String = "1.23.0"
     val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"
     val ScalaXmlVersion: String = "2.1.0"
     val JacksonVersion: String = "2.14.2"
-    }
+  }
 
   import Dependencies.Versions._
 
