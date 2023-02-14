@@ -21,9 +21,9 @@ final case class ReadSideConfig(
     @JsonProperty(required = true)
     readSideId: String,
     @JsonProperty(required = true)
-    host: String,
+    host: String = "",
     @JsonProperty(required = true)
-    port: Int,
+    port: Int = -1,
     @JsonProperty
     useTls: Boolean = false,
     @JsonProperty

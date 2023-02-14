@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.slf4j.{ Logger, LoggerFactory }
 
 import java.io.File
 import scala.jdk.CollectionConverters.CollectionHasAsScala;
@@ -18,6 +19,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala;
  * ReadSideConfigReader read side configuration from env vars
  */
 object ReadSideConfigReader {
+  val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   /**
    * reads the read side yaml configuration file
@@ -72,5 +74,70 @@ object ReadSideConfigReader {
       case _ => List.empty[File]
     }
     go(dir)
+  }
+
+  /**
+   * reads the read side from environment variables.
+   * This is to allow backward compatibility for older versions of CoS users
+   * @return a sequence of read side config
+   */
+  def readFromEnvVars: Seq[ReadSideConfig] = {
+    // define the various env vars settings to read
+    val READ_SIDE_HOST_KEY: String = "HOST"
+    val READ_SIDE_PORT_KEY: String = "PORT"
+    val READ_SIDE_TLS_KEY: String = "USE_TLS"
+    val READ_SIDE_AUTO_START: String = "AUTO_START"
+
+    // let us read the env vars
+    val envVars: Map[String, String] = sys.env.filter { pair =>
+      val (key, _) = pair
+      key.startsWith("COS_READ_SIDE_CONFIG__")
+    }
+
+    if (envVars.isEmpty) {
+      logger.warn("read sides are enabled but none are configured")
+    }
+
+    if (envVars.keySet.exists(v => v.split("__").length != 3)) {
+      throw new RuntimeException("One or more of the read side configurations is invalid")
+    }
+
+    val groupedEnvVars: Map[String, Iterable[(String, String)]] =
+      envVars.groupMap(_._1.split("__").last) { case (k, v) =>
+        val settingName: String = k.split("__").tail.head
+        require(settingName != "", s"Setting must be defined in $k")
+
+        settingName -> v
+      }
+
+    groupedEnvVars.map { case (readSideId, settings) =>
+      val readSideConfig: ReadSideConfig =
+        settings.foldLeft(ReadSideConfig(readSideId)) {
+
+          case (config, (READ_SIDE_HOST_KEY, value)) =>
+            config.copy(host = value)
+
+          case (config, (READ_SIDE_PORT_KEY, value)) =>
+            config.copy(port = value.toInt)
+
+          case (config, (READ_SIDE_TLS_KEY, value)) =>
+            config.copy(useTls = value.toBooleanOption.getOrElse(false))
+
+          case (config, (READ_SIDE_AUTO_START, value)) =>
+            config.copy(autoStart = value.toBooleanOption.getOrElse(false))
+
+          case (_, (key, _)) =>
+            throw new IllegalArgumentException(s"$key is a not valid read side env var key")
+        }
+
+      // Requires Host and Port to be defined per GrpcReadSideSetting
+      require(readSideConfig.host.nonEmpty, s"ProcessorId $readSideId is missing a HOST")
+      require(readSideConfig.port > 0, s"ProcessorId $readSideId is missing a PORT")
+
+      logger.info(
+        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}")
+
+      readSideConfig
+    }.toSeq
   }
 }
