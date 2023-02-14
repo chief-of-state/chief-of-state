@@ -24,17 +24,15 @@
         <appender-ref ref="STDOUT"/>
     </appender>
 
-    <appender name="JSON" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
-        <appender class="ch.qos.logback.core.ConsoleAppender">
-            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <timeZone>UTC</timeZone>
-                <customFields>{"service": "${COS_SERVICE_NAME}", "powered_by": "chiefofstate"}
-                </customFields>
-                <fieldNames>
-                    <timestamp>timestamp</timestamp>
-                </fieldNames>
-            </encoder>
-        </appender>
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <timeZone>UTC</timeZone>
+            <customFields>{"service": "${COS_SERVICE_NAME}", "powered_by": "chiefofstate"}
+            </customFields>
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+            </fieldNames>
+        </encoder>
     </appender>
 
     <!-- Turn down noise-->

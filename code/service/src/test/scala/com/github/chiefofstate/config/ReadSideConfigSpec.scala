@@ -6,37 +6,41 @@
 
 package com.github.chiefofstate.config
 
-import com.github.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
+import com.github.chiefofstate.helper.BaseSpec
 
 class ReadSideConfigSpec extends BaseSpec {
+  "read side config with alphanumeric read side id" should {
+    "valid" in {
+      // test case 1
+      var readSideConfig =
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 0)
+      readSideConfig.isValid should be(true)
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    EnvironmentHelper.clearEnv()
-  }
+      // test case 2
+      readSideConfig = ReadSideConfig(readSideId = "readSide23", host = "localhost", port = 0)
+      readSideConfig.isValid should be(true)
 
-  val settingName: String = "test"
+      // test case 3
+      readSideConfig = ReadSideConfig(readSideId = "read_side_23", host = "localhost", port = 0)
+      readSideConfig.isValid should be(true)
 
-  "ReadSide config" should {
-    "help set or retrieve value" in {
-      val value: String = "foo"
-      val config: ReadSideConfig = ReadSideConfig("test")
-      // Gets unset key
-      config.getSetting(settingName) shouldBe None
-      // Adds key
-      val addition: ReadSideConfig = config.addSetting(settingName, value)
-      // Gets new key value
-      addition.getSetting(settingName) shouldBe (Some(value))
-      // Removes key
-      val removed: ReadSideConfig = addition.removeSetting(settingName)
-      // Gets removed key
-      removed.getSetting(settingName) shouldBe None
+      // test case 4
+      readSideConfig = ReadSideConfig(readSideId = "read_side-23", host = "localhost", port = 0)
+      readSideConfig.isValid should be(true)
+
+      // test case 5
+      readSideConfig = ReadSideConfig(readSideId = "read__side--23", host = "localhost", port = 0)
+      readSideConfig.isValid should be(true)
     }
 
-    "return all settings" in {
-      val config: ReadSideConfig =
-        ReadSideConfig("test").addSetting("foo", "foo").addSetting("bar", "bar").addSetting("baz", "baz")
-      config.listSettings should contain theSameElementsAs Map("foo" -> "foo", "bar" -> "bar", "baz" -> "baz")
+    "invalid" in {
+      // test case 1
+      var readSideConfig = ReadSideConfig(readSideId = "read__", host = "localhost", port = 0)
+      readSideConfig.isValid should be(false)
+
+      // test case 2
+      readSideConfig = ReadSideConfig(readSideId = "read__side-", host = "localhost", port = 0)
+      readSideConfig.isValid should be(false)
     }
   }
 }

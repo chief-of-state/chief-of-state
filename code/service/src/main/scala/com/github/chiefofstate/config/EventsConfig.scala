@@ -10,8 +10,6 @@ import com.typesafe.config.Config
 
 /**
  * Events settings
- *
- * @param eventTag the event tag name
  */
 final case class EventsConfig(numShards: Int)
 object EventsConfig {

@@ -4,12 +4,12 @@ FROM busybox:1.32
 
 test-and-build:
     # target running tests and building image
-    # BUILD +test-all # TODO enable tests when https://github.com/testcontainers/testcontainers-scala/issues/241 is fixed
+    BUILD +test-all
     BUILD +prepare-image
 
 release:
     # uploads the image to registry
-     # BUILD +test-all # TODO run tests when https://github.com/testcontainers/testcontainers-scala/issues/241 is fixed
+    BUILD +test-all
     BUILD +build-image
 
 dependencies:
@@ -50,7 +50,7 @@ compile:
 
 prepare-image:
     # bundle into a slimmer, runnable container
-    FROM openjdk:11-jre-slim
+    FROM eclipse-temurin:19.0.2_7-jre-jammy
 
     USER root
 
@@ -101,7 +101,7 @@ test-all:
 
 sbt:
     # TODO: move this to a central image
-    FROM openjdk:11-jdk-stretch
+    FROM eclipse-temurin:19.0.2_7-jdk-jammy
 
     USER root
 
@@ -132,6 +132,7 @@ sbt:
     RUN apt-get remove -y docker docker-engine docker.io containerd runc || true
 
     RUN apt-get update
+    RUN apt-get upgrade -y
 
     RUN apt-get install -y \
         apt-transport-https \
@@ -139,12 +140,16 @@ sbt:
         curl \
         gnupg-agent \
         software-properties-common
-
-    RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    
+    RUN mkdir -p /etc/apt/keyrings
+    RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    
+    RUN chmod a+r /etc/apt/keyrings/docker.gpg
 
     RUN echo \
-        "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
-        $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+       
     RUN apt-get update
-    RUN apt-get install -y docker-ce docker-ce-cli containerd.io
+
+    RUN apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin

@@ -69,7 +69,67 @@ The following options can be configured via environment variables.
 Advanced users can use any of the following [environment variables](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters) to tweak the OpenTelemetry Agent before starting CoS.
 
 ### Read side configurations
-The CoS can handle as many as read sides one desires. CoS read side are configured using environment variables.
+The CoS can handle as many as read sides one desires. There are two ways to configure the read sides
+
+#### Via yaml configuration file(s) - Recommended
+CoS read side are configured using a readside configuration files.
+One can bundle all the readside configuration files into a _single yaml file_ or in separate files and have them in a _folder_.
+The following settings are required to define a read side yaml configuration file:
+
+| Setting    | Required                      | Description                                                                                                                                                                                                                                               |
+|------------|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| readSideId | yes                           | Specifies the read side unique identifier. The read side must only contain alphanumeric characters plus hyphens and underscores. No spacing is allowed.                                                                                                   |
+| host       | yes                           | Specifies the read side host address                                                                                                                                                                                                                      |
+| port       | yes                           | Specifies the read side port number                                                                                                                                                                                                                       |
+| useTls     | no (default value is `false`) | Specifies whether to use TLS to connect to the read side                                                                                                                                                                                                  |
+| autoStart  | no (default value is `true`)  | Set to `true` means that the Read side on start is ready to process events. However, when it set to `false` means that the Read side is paused on start or no not. One can use the [cli](https://github.com/chief-of-state/cos-cli) to resume processing. |
+
+##### Example: read-side-config.yml (multiple read side config in a single yaml file)
+```yaml
+readSideId: read-side-1
+host: read-handler
+port: 50053
+useTls: false
+autoStart: true
+---
+readSideId: read-side-2
+host: read-handler
+port: 50054
+useTls: false
+autoStart: true
+```
+
+###### Note
+As you can see in the sample read side config one can specify multiple read side in the yaml file using the `---` yaml
+separator.
+
+Once the read side configuration is defined one can set its path using the following environment variable.
+The following format defines how a CoS read side environment variable is configured:
+
+| environment variable | description                                                                                                          |
+|----------------------|----------------------------------------------------------------------------------------------------------------------|
+| COS_READ_SIDE_CONFIG | Specifies the read side config file path. This can also be a folder containing all the various readside yaml configs |
+
+##### Example
+
+###### Scenario 1
+Assuming the readside config file `read-side-config.yml` is saved in the `/etc` folder. So one can set it as follows:
+```shell
+COS_READ_SIDE_CONFIG=/etc/read-side-config.yml
+```
+###### Scenario 2
+Assuming the readside config files are saved in the `/etc` folder. So one can set it as follows:
+```shell
+COS_READ_SIDE_CONFIG=/etc
+```
+
+#### Via environment variables
+
+###### Note
+_This way of configuring read sides via environment variables is not scalable and can be error-prone. It is recommended to use
+the yaml configuration file(s) approach stated above._
+
+CoS read side are configured using environment variables.
 The following format defines how a CoS read side environment variable is configured:
 
 | environment variable                                | description                     | default |

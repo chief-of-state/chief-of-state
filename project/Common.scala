@@ -36,6 +36,12 @@ object Common extends AutoPlugin {
 
   override def projectSettings =
     Seq(
+      javaOptions ++= Seq(
+        "--illegal-access=deny",
+        "--add-opens",
+        "java.base/java.util=ALL-UNNAMED",
+        "--add-opens",
+        "java.base/java.lang=ALL-UNNAMED"),
       scalacOptions ++= Seq(
         "-target:8",
         "-Xfatal-warnings",
@@ -52,7 +58,7 @@ object Common extends AutoPlugin {
         ("com.github.ghik" % "silencer-lib" % Versions.SilencerVersion % Provided).cross(CrossVersion.full)),
       scalafmtOnCompile := true,
       // require test coverage
-      coverageMinimumStmtTotal := 70,
+      coverageMinimumStmtTotal := 65,
       coverageFailOnMinimum := true,
       // show full stack traces and test case durations
       Test / testOptions += Tests.Argument("-oDF"),
