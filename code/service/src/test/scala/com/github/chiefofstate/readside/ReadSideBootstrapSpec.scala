@@ -9,6 +9,7 @@ package com.github.chiefofstate.readside
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.ActorSystem
 import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.github.chiefofstate.config.GrpcConfig
 import com.github.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
 import org.testcontainers.utility.DockerImageName
@@ -48,7 +49,7 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
   ".apply" should {
     "construct without failure" in {
       val manager = new ReadSideManager(actorSystem, 1)
-      noException shouldBe thrownBy(ReadSideBootstrap(actorSystem, 2, manager))
+      noException shouldBe thrownBy(ReadSideBootstrap(actorSystem, 2, manager, GrpcConfig(config)))
     }
   }
   ".getDataSource" should {

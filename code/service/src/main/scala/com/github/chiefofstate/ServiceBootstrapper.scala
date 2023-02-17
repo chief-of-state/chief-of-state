@@ -161,7 +161,11 @@ object ServiceBootstrapper {
     if (cosConfig.enableReadSide) {
       // instantiate a read side manager
       val readSideBootstrap: ReadSideBootstrap =
-        ReadSideBootstrap(system = system, numShards = cosConfig.eventsConfig.numShards, readSideManager)
+        ReadSideBootstrap(
+          system = system,
+          numShards = cosConfig.eventsConfig.numShards,
+          readSideManager,
+          cosConfig.grpcConfig)
       // initialize all configured read sides
       readSideBootstrap.init()
     }

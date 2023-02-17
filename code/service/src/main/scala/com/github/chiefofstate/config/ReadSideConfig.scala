@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * @param port the read side server port
  * @param useTls specifies whether SSL is enabled on the read side server
  * @param autoStart specifies whether the read side should start processing messages or be in pause mode
+ * @param useStreaming specifies whether the processing of events should be streamed or not
  */
 final case class ReadSideConfig(
     @JsonProperty(required = true)
@@ -27,7 +28,9 @@ final case class ReadSideConfig(
     @JsonProperty
     useTls: Boolean = false,
     @JsonProperty
-    autoStart: Boolean = true) {
+    autoStart: Boolean = true,
+    @JsonProperty
+    useStreaming: Boolean = false) {
 
   /**
    *  check whether the read side config is valid or not

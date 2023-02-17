@@ -87,6 +87,7 @@ object ReadSideConfigReader {
     val READ_SIDE_PORT_KEY: String = "PORT"
     val READ_SIDE_TLS_KEY: String = "USE_TLS"
     val READ_SIDE_AUTO_START: String = "AUTO_START"
+    val READ_SIDE_USE_STREAMING_KEY: String = "USE_STREAMING"
 
     // let us read the env vars
     val envVars: Map[String, String] = sys.env.filter { pair =>
@@ -125,6 +126,9 @@ object ReadSideConfigReader {
 
           case (config, (READ_SIDE_AUTO_START, value)) =>
             config.copy(autoStart = value.toBooleanOption.getOrElse(false))
+
+          case (config, (READ_SIDE_USE_STREAMING_KEY, value)) =>
+            config.copy(useStreaming = value.toBooleanOption.getOrElse(false))
 
           case (_, (key, _)) =>
             throw new IllegalArgumentException(s"$key is a not valid read side env var key")

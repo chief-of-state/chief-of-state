@@ -7,8 +7,11 @@
 package com.github.chiefofstate.readside
 
 import akka.actor.typed.ActorSystem
-import com.github.chiefofstate.config.{ ReadSideConfig, ReadSideConfigReader }
-import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
+import com.github.chiefofstate.config.{ GrpcConfig, ReadSideConfig, ReadSideConfigReader }
+import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.{
+  ReadSideHandlerServiceBlockingStub,
+  ReadSideHandlerServiceStub
+}
 import com.github.chiefofstate.utils.NettyHelper
 import com.typesafe.config.Config
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
@@ -33,7 +36,8 @@ class ReadSideBootstrap(
     dbConfig: ReadSideBootstrap.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
     numShards: Int,
-    readSideManager: ReadSideManager) {
+    readSideManager: ReadSideManager,
+    grpcConfig: GrpcConfig) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -50,16 +54,29 @@ class ReadSideBootstrap(
     readSideConfigs.foreach { config =>
       logger.info(s"starting read side, id=${config.readSideId}")
 
-      // construct a remote gRPC read side client for this read side
-      // and register interceptors
-      val rpcClient: ReadSideHandlerServiceBlockingStub =
-        new ReadSideHandlerServiceBlockingStub(NettyHelper.builder(config.host, config.port, config.useTls).build)
-      // instantiate a remote read side processor with the gRPC client
-      val remoteReadSideProcessor: ReadSideHandlerImpl =
-        new ReadSideHandlerImpl(config.readSideId, rpcClient)
-      // instantiate the read side projection with the remote processor
-      val projection =
-        new ReadSideProjection(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards)
+      // define an instance of Projection
+      val projection: Projection = {
+        if (config.useStreaming) {
+          // construct a remote gRPC streaming read side client
+          val rpcStreamingClient =
+            new ReadSideHandlerServiceStub(NettyHelper.builder(config.host, config.port, config.useTls).build)
+          // instantiate a remote read side stream processor with the gRPC client
+          val remoteReadSideStreamProcessor: ReadSideStreamHandlerImpl =
+            ReadSideStreamHandlerImpl(config.readSideId, grpcConfig, rpcStreamingClient)
+          // instantiate the read side projection with the remote processor
+          new ReadSideStreamProjection(system, config.readSideId, dataSource, remoteReadSideStreamProcessor, numShards)
+        } else {
+          // construct a remote gRPC read side client for this read side
+          // and register interceptors
+          val rpcClient: ReadSideHandlerServiceBlockingStub =
+            new ReadSideHandlerServiceBlockingStub(NettyHelper.builder(config.host, config.port, config.useTls).build)
+          // instantiate a remote read side processor with the gRPC client
+          val remoteReadSideProcessor: ReadSideHandlerImpl =
+            new ReadSideHandlerImpl(config.readSideId, rpcClient)
+          // instantiate the read side projection with the remote processor
+          new ReadSideProjection(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards)
+        }
+      }
 
       Try {
         // start the projection
@@ -91,7 +108,11 @@ class ReadSideBootstrap(
 
 object ReadSideBootstrap {
 
-  def apply(system: ActorSystem[_], numShards: Int, readSideManager: ReadSideManager): ReadSideBootstrap = {
+  def apply(
+      system: ActorSystem[_],
+      numShards: Int,
+      readSideManager: ReadSideManager,
+      grpcConfig: GrpcConfig): ReadSideBootstrap = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
@@ -116,7 +137,8 @@ object ReadSideBootstrap {
       dbConfig = dbConfig,
       readSideConfigs = configs,
       numShards = numShards,
-      readSideManager)
+      readSideManager,
+      grpcConfig)
   }
 
   /**
