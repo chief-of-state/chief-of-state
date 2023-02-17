@@ -9,7 +9,7 @@ package com.github.chiefofstate.readside
 import com.github.chiefofstate.config.GrpcConfig
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceStub
-import com.github.chiefofstate.protobuf.v1.readside.{ HandleReadSideRequest, HandleReadSideResponse }
+import com.github.chiefofstate.protobuf.v1.readside.{ HandleReadSideStreamRequest, HandleReadSideStreamResponse }
 import com.google.protobuf.any
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
@@ -40,11 +40,11 @@ private[readside] trait ReadSideStreamHandler {
  * @param doneSignal the async signal notification
  */
 private[readside] case class HandleReadSideResponseStreamObserver(processorId: String, doneSignal: CountDownLatch)
-    extends StreamObserver[HandleReadSideResponse] {
+    extends StreamObserver[HandleReadSideStreamResponse] {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  override def onNext(response: HandleReadSideResponse): Unit = {
+  override def onNext(response: HandleReadSideStreamResponse): Unit = {
     // onNext will be called only once after the server has finished processing the messages
     logger.info("received a server response...")
     if (!response.successful) {
@@ -98,7 +98,7 @@ private[readside] case class ReadSideStreamHandlerImpl(
       HandleReadSideResponseStreamObserver(processorId = processorId, doneSignal = doneSignal)
 
     // create the readSide request observer
-    val readSideRequestObserver: StreamObserver[HandleReadSideRequest] =
+    val readSideRequestObserver: StreamObserver[HandleReadSideStreamRequest] =
       readSideHandlerServiceStub
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleReadSideStream(readSideResponseStreamObserver)
@@ -109,8 +109,8 @@ private[readside] case class ReadSideStreamHandlerImpl(
         breakable {
           val (event, resultingState, meta) = elt
           // build the gRPC request
-          val readSideRequest: HandleReadSideRequest =
-            HandleReadSideRequest()
+          val readSideRequest: HandleReadSideStreamRequest =
+            HandleReadSideStreamRequest()
               .withEvent(event)
               .withState(resultingState)
               .withMeta(meta)
