@@ -25,4 +25,18 @@ golang-base:
 
     # install linter
     # binary will be $(go env GOPATH)/bin/golangci-lint
-    RUN curl -sSfL https://raw.githubuse
+    RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.46.2
+    RUN ls -la $(which golangci-lint)
+
+protogen:
+    FROM +golang-base
+    # copy the proto files to generate
+    COPY --dir proto/ ./
+    COPY buf.work.yaml buf.gen.yaml ./
+    # generate the pbs
+    RUN buf generate \
+        --template buf.gen.yaml \
+        --path proto/internal/chief_of_state/internal \
+        --path proto/chief-of-state-protos/chief_of_state/v1
+    # save artifact to
+    SAVE ARTIFACT gen gen AS LOCAL gen

@@ -1,3 +1,6 @@
 [submodule "protos"]
 	path = proto/chief-of-state-protos
 	url =git@github.com:chief-of-state/chief-of-state-protos
+[submodule "proto/googleapis"]
+	path = proto/googleapis
+	url = git@github.com:googleapis/googleapis.git
