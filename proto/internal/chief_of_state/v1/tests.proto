@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package chief_of_state.internal;
+package chief_of_state.v1;
 
 message OpenAccount {
   string account_uuid = 1;
