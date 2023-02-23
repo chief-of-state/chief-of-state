@@ -3,4 +3,4 @@ directories:
   - proto/chief-of-state-protos
   - proto/internal
   - proto/test
-  - proto/googleapis
+  # - proto/googleapis

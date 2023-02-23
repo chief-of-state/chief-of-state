@@ -33,6 +33,7 @@ protogen:
     # copy the proto files to generate
     COPY --dir proto/ ./
     COPY buf.work.yaml buf.gen.yaml ./
+    # RUN buf build
     # generate the pbs
     RUN buf generate \
         --template buf.gen.yaml \
