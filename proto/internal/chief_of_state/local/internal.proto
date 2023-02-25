@@ -1,14 +1,10 @@
 syntax = "proto3";
 
-package chief_of_state.v1;
+package chief_of_state.local;
 
-option java_package = "com.github.chiefofstate.protobuf.v1";
-option java_multiple_files = true;
-option java_outer_classname = "CosInternalProto";
-
-import "google/protobuf/any.proto";
-import "chief_of_state/v1/persistence.proto";
+import "chief_of_state/local/persistence.proto";
 import "chief_of_state/v1/common.proto";
+import "google/protobuf/any.proto";
 import "google/rpc/status.proto";
 
 // THESE ARE INTERNAL MESSAGES FOR THE COS SERVICE
@@ -32,9 +28,9 @@ message RemoteCommand {
     string key = 1;
 
     oneof value {
-      string stringValue = 2;
-      bytes bytesValue = 3;
-    };
+      string string_value = 2;
+      bytes bytes_value = 3;
+    }
   }
   // the entity id
   string entity_id = 1;
@@ -75,14 +71,14 @@ message WireMessageWithActorRef {
 }
 
 // DoMigration used by the Migration Actor to kick-start the migration
-message StartMigration{}
+message StartMigration {}
 
 // MigrationDone used as a reply message by the Migration Actor when the migration
 // is successful
-message MigrationSucceeded{}
+message MigrationSucceeded {}
 
 // MigrationFailed is used as reply message by the Migration Actor when the migration has failed.
-message MigrationFailed{
+message MigrationFailed {
   // the failure error message
   string error_message = 1;
 }

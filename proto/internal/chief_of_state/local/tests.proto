@@ -1,10 +1,6 @@
 syntax = "proto3";
 
-package chief_of_state.v1;
-
-option java_package = "com.github.chiefofstate.protobuf.v1";
-option java_multiple_files = true;
-option java_outer_classname = "TestsProto";
+package chief_of_state.local;
 
 message OpenAccount {
   string account_uuid = 1;

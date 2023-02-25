@@ -1,0 +1,17 @@
+version: v1
+deps:
+  - buf.build/googleapis/googleapis
+lint:
+  use:
+    - DEFAULT
+    - UNARY_RPC
+  ignore:
+    - google/rpc/status.proto
+  except:
+    - ENUM_VALUE_PREFIX
+    - ENUM_ZERO_VALUE_SUFFIX
+  enum_zero_value_suffix: _NONE
+breaking:
+  use:
+    - FILE
+  ignore_unstable_packages: true
