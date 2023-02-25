@@ -10,8 +10,8 @@ protogen:
     # generate the pbs
     RUN buf generate \
         --template buf.gen.yaml \
-        --path proto/internal/chief_of_state/v1 \
+        --path proto/internal/chief_of_state/local \
         --path proto/chief-of-state-protos/chief_of_state/v1
-        
+
     # save artifact to
     SAVE ARTIFACT gen gen AS LOCAL gen
