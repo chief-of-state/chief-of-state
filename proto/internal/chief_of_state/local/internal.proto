@@ -7,6 +7,8 @@ import "chief_of_state/v1/common.proto";
 import "google/protobuf/any.proto";
 import "google/rpc/status.proto";
 
+option go_package = "chief_of_state/local;localpb";
+
 // THESE ARE INTERNAL MESSAGES FOR THE COS SERVICE
 
 // SendCommand is the type of commands received by the

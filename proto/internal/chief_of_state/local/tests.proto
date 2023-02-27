@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package chief_of_state.local;
 
+option go_package = "chief_of_state/local;localpb";
+
 message OpenAccount {
   string account_uuid = 1;
   string account_number = 2;
