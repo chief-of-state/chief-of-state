@@ -1,7 +1,7 @@
 package main
 
-// "github.com/chief-of-state/chief-of-state/cmd"
+import "github.com/chief-of-state/chief-of-state/app/cmd"
 
 func main() {
-	// cmd.Execute()
+	cmd.Execute()
 }

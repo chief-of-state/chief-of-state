@@ -5,6 +5,8 @@ package chief_of_state.local;
 import "chief_of_state/v1/common.proto";
 import "google/protobuf/any.proto";
 
+option go_package = "chief_of_state/local;localpb";
+
 // These protos are used by akka persistence to write to disk. They will
 // likely be offered as part of the open-source protos repo, but until
 // they are concrete/finalized, we are keeping them here.
