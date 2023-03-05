@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/chief-of-state/chief-of-state/app/node"
@@ -16,15 +17,11 @@ func init() {
 			ctx := cmd.Context()
 			partition := node.NewPartition(ctx)
 
-			outputs := make([]<-chan *local.CommandReply, 0, 3)
+			outputs := make([]<-chan *node.Response, 0, 3)
 
 			for i := 0; i < 3; i++ {
-				msg := &local.SendCommand{
-					Message: &local.SendCommand_GetStateCommand{
-						GetStateCommand: &local.GetStateCommand{
-							EntityId: "some-entity-id",
-						},
-					},
+				msg := &local.EntityMessage{
+					EntityId: fmt.Sprintf("entity-%d", i+1),
 				}
 
 				respChan := partition.Process(ctx, msg)
@@ -32,15 +29,15 @@ func init() {
 				outputs = append(outputs, respChan)
 			}
 
-			for _, respChan := range outputs {
+			for ix, respChan := range outputs {
+				log.Printf("handling output %d", ix)
 				resp := <-respChan
-				switch respType := resp.GetReply().(type) {
-				case *local.CommandReply_Error:
-					err := respType.Error
-					log.Printf("err -> code='%d', msg='%v'\n", err.GetCode(), err.GetMessage())
-				case *local.CommandReply_State:
-					out := respType.State
-					log.Printf("OK, state -> %s\n", out.GetState().GetTypeUrl())
+				if resp.Err != nil {
+					fmt.Printf("err %v", resp.Err)
+				} else if resp.Msg != nil {
+					fmt.Printf("resp!")
+				} else {
+					log.Printf("no message")
 				}
 			}
 

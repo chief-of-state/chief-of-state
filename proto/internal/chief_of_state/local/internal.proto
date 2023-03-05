@@ -11,65 +11,15 @@ option go_package = "chief_of_state/local;localpb";
 
 // THESE ARE INTERNAL MESSAGES FOR THE COS SERVICE
 
-// SendCommand is the type of commands received by the
-// AggregateRoot(aka persistence entity to handle)
-// There are internally used
-message SendCommand {
-  oneof message {
-    RemoteCommand remote_command = 1;
-    GetStateCommand get_state_command = 2;
-  }
-
-  map<string, string> tracing_headers = 3;
+enum EntityMessageType {
+  GET_STATE = 0;
+  PUT_COMMAND = 1;
 }
 
-// a wrapper message for forwarding headers to the remote writeside handler
-message RemoteCommand {
-  // a helper messsage for gRPC metadata
-  message Header {
-    string key = 1;
-
-    oneof value {
-      string string_value = 2;
-      bytes bytes_value = 3;
-    }
-  }
-  // the entity id
+message EntityMessage {
   string entity_id = 1;
-  // the message to send
-  google.protobuf.Any command = 2;
-  // the grpc headers/metadata to propagate to the command handler
-  repeated chief_of_state.v1.Header propagated_headers = 3;
-  // the grpc headers/metadata to persist to journal metadata
-  repeated chief_of_state.v1.Header persisted_headers = 4;
-  // additional data to be added to the state meta
-  map<string, google.protobuf.Any> data = 5;
-}
-
-// GetStateCommand returns the current state of a
-// persistence entity
-message GetStateCommand {
-  // the entity unique id
-  string entity_id = 1;
-}
-
-// For returning a command reply whether it is successful or failed
-// This is used internally by lagom-pb
-message CommandReply {
-  // the actual command reply
-  oneof reply {
-    // actual state is wrapped with meta data
-    StateWrapper state = 1;
-    // gRPC failure
-    google.rpc.Status error = 2;
-  }
-}
-
-message WireMessageWithActorRef {
-  // the wrapped message
-  google.protobuf.Any message = 1;
-  // the sending actor ref
-  bytes actor_ref = 2;
+  EntityMessageType message_type = 2;
+  google.protobuf.Any put_command = 3;
 }
 
 // DoMigration used by the Migration Actor to kick-start the migration

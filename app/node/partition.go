@@ -2,20 +2,26 @@ package node
 
 import (
 	"context"
+	"errors"
 	"log"
 	"sync"
 
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	grpcstatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
 )
 
+type Response struct {
+	Msg proto.Message
+	Err error
+}
+
 type PartitionMsg struct {
+	ctx      context.Context // the context for this message
 	id       string
-	msg      *local.SendCommand
-	response chan<- *local.CommandReply
+	msg      *local.EntityMessage
+	response chan<- *Response
 }
 
 // Partition manages messages and entities for a single partition
@@ -66,9 +72,10 @@ func (p *Partition) Stop(ctx context.Context) error {
 }
 
 // Process enqueues a message to be processed
-func (p *Partition) Process(ctx context.Context, msg *local.SendCommand) <-chan *local.CommandReply {
-	responseChan := make(chan *local.CommandReply)
+func (p *Partition) Process(ctx context.Context, msg *local.EntityMessage) <-chan *Response {
+	responseChan := make(chan *Response, 1)
 	partitionMsg := PartitionMsg{
+		ctx:      ctx,
 		id:       uuid.New().String(),
 		msg:      msg,
 		response: responseChan,
@@ -77,43 +84,39 @@ func (p *Partition) Process(ctx context.Context, msg *local.SendCommand) <-chan 
 	return responseChan
 }
 
-func (p *Partition) receive(ctx context.Context, msg *local.SendCommand) *local.CommandReply {
-	var entityID string = ""
-	// switch on message type
-	switch typedMsg := msg.GetMessage().(type) {
-	case *local.SendCommand_RemoteCommand:
-		entityID = typedMsg.RemoteCommand.GetEntityId()
-	case *local.SendCommand_GetStateCommand:
-		entityID = typedMsg.GetStateCommand.GetEntityId()
-	default:
-		return &local.CommandReply{
-			Reply: &local.CommandReply_Error{
-				Error: grpcstatus.New(codes.Internal, "unrecognized command type").Proto(),
-			},
+func (p *Partition) receive(partitionMsg PartitionMsg) *Response {
+	if partitionMsg.msg.GetEntityId() == "" {
+		return &Response{
+			Err: errors.New("missing entity ID"),
 		}
 	}
-
-	entity := p.entities.GetOrCreate(ctx, entityID)
-
-	state, err := entity.Receive(ctx, msg)
+	// get or create the entity
+	entity := p.entities.GetOrCreate(partitionMsg.ctx, partitionMsg.msg.GetEntityId())
+	// make entity process the message
+	state, err := entity.Process(partitionMsg.ctx, partitionMsg.msg)
 	if err != nil {
-		return &local.CommandReply{
-			Reply: &local.CommandReply_Error{
-				Error: grpcstatus.New(codes.Internal, err.Error()).Proto(),
-			},
+		return &Response{
+			Err: err,
 		}
 	}
-	return &local.CommandReply{Reply: &local.CommandReply_State{State: state}}
+	log.Printf("entity %s returned a state", entity.entityID)
+	return &Response{
+		Msg: state,
+	}
 }
 
 func (p *Partition) processAll(ctx context.Context) {
+	log.Printf("partition is receiving messages")
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case msg := <-p.messages:
 			log.Printf("received message '%s'\n", msg.id)
-			msg.response <- p.receive(ctx, msg.msg)
+			entityResp := p.receive(msg)
+			log.Printf("entity responded %v", entityResp)
+			msg.response <- entityResp
+			close(msg.response)
 		}
 	}
 }
