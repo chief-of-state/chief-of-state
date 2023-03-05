@@ -6,6 +6,7 @@ import (
 
 	"github.com/chief-of-state/chief-of-state/app/node"
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
+	chief_of_statev1 "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +16,9 @@ func init() {
 		Use: "test",
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
-			partition := node.NewPartition(ctx)
+			var writeClient chief_of_statev1.WriteSideHandlerServiceClient
+
+			partition := node.NewPartition(ctx, writeClient)
 
 			outputs := make([]<-chan *node.Response, 0, 3)
 
@@ -33,12 +36,13 @@ func init() {
 				log.Printf("handling output %d", ix)
 				resp := <-respChan
 				if resp.Err != nil {
-					fmt.Printf("err %v", resp.Err)
+					log.Printf("err %v", resp.Err)
 				} else if resp.Msg != nil {
-					fmt.Printf("resp!")
+					log.Printf("resp!")
 				} else {
 					log.Printf("no message")
 				}
+				log.Printf("done output %d", ix)
 			}
 
 			partition.Stop(ctx)

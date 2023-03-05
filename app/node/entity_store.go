@@ -58,6 +58,6 @@ func (e *EntityStore) Shutdown(ctx context.Context) error {
 	e.mtx.Lock()
 	defer e.mtx.Unlock()
 	e.entities.Flush()
-	// TODO
+	// TODO run "shutdown" on each entity
 	return nil
 }

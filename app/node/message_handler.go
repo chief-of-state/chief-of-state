@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
+	chief_of_statev1 "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
 	"github.com/super-flat/parti/cluster"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -17,14 +18,16 @@ func Run() {
 }
 
 type MessageHandler struct {
-	mtx        sync.Mutex
-	partitions map[uint32]*Partition
+	mtx         sync.Mutex
+	partitions  map[uint32]*Partition
+	writeClient chief_of_statev1.WriteSideHandlerServiceClient
 }
 
-func NewMessageHandler() *MessageHandler {
+func NewMessageHandler(writeClient chief_of_statev1.WriteSideHandlerServiceClient) *MessageHandler {
 	return &MessageHandler{
-		mtx:        sync.Mutex{},
-		partitions: make(map[uint32]*Partition),
+		mtx:         sync.Mutex{},
+		partitions:  make(map[uint32]*Partition),
+		writeClient: writeClient,
 	}
 }
 
@@ -64,7 +67,7 @@ func (e *MessageHandler) StartPartition(ctx context.Context, partitionID uint32)
 	if _, found := e.partitions[partitionID]; found {
 		return nil
 	}
-	e.partitions[partitionID] = NewPartition(ctx)
+	e.partitions[partitionID] = NewPartition(ctx, e.writeClient)
 	return nil
 }
 

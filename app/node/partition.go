@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
+	chief_of_statev1 "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
 )
 
 type Response struct {
@@ -33,9 +34,14 @@ type Partition struct {
 }
 
 // NewPartition returns a new partition
-func NewPartition(ctx context.Context) *Partition {
+func NewPartition(ctx context.Context, writeClient chief_of_statev1.WriteSideHandlerServiceClient) *Partition {
+
+	entityFactory := func(entityID string) *Entity {
+		return NewEntity(entityID, writeClient)
+	}
+
 	// create entity store
-	entityStore := NewEntityStore(NewEntity)
+	entityStore := NewEntityStore(entityFactory)
 	// create partition
 	p := &Partition{
 		messages: make(chan PartitionMsg, 100),
