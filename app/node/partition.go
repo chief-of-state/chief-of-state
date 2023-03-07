@@ -6,11 +6,12 @@ import (
 	"log"
 	"sync"
 
-	"github.com/google/uuid"
-	"google.golang.org/protobuf/proto"
+	"github.com/chief-of-state/chief-of-state/app/storage"
 
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
-	chief_of_statev1 "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
+	cospb "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 type Response struct {
@@ -34,10 +35,10 @@ type Partition struct {
 }
 
 // NewPartition returns a new partition
-func NewPartition(ctx context.Context, writeClient chief_of_statev1.WriteSideHandlerServiceClient) *Partition {
+func NewPartition(ctx context.Context, writeClient cospb.WriteSideHandlerServiceClient, journalStore storage.JournalStore) *Partition {
 
 	entityFactory := func(entityID string) *Entity {
-		return NewEntity(entityID, writeClient)
+		return NewEntity(entityID, writeClient, journalStore)
 	}
 
 	// create entity store

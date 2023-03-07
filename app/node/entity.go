@@ -6,27 +6,28 @@ import (
 	"log"
 	"sync"
 
+	"github.com/chief-of-state/chief-of-state/app/storage"
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
+	cospb "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
-
-	chief_of_statev1 "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
 )
 
 type Entity struct {
-	mtx         sync.Mutex
-	entityID    string
-	state       *anypb.Any
-	meta        *chief_of_statev1.MetaData
-	writeClient chief_of_statev1.WriteSideHandlerServiceClient
+	mtx          sync.Mutex
+	entityID     string
+	state        *anypb.Any
+	meta         *cospb.MetaData
+	writeClient  cospb.WriteSideHandlerServiceClient
+	journalStore storage.JournalStore
 }
 
-func NewEntity(entityID string, writeClient chief_of_statev1.WriteSideHandlerServiceClient) *Entity {
+func NewEntity(entityID string, writeClient cospb.WriteSideHandlerServiceClient, journalStore storage.JournalStore) *Entity {
 	log.Printf("spinning up entity '%s'\n", entityID)
 
-	meta := &chief_of_statev1.MetaData{
+	meta := &cospb.MetaData{
 		EntityId:       entityID,
 		RevisionNumber: 0,
 	}
@@ -36,11 +37,12 @@ func NewEntity(entityID string, writeClient chief_of_statev1.WriteSideHandlerSer
 	stateAny, _ := anypb.New(initialState)
 
 	return &Entity{
-		entityID:    entityID,
-		state:       stateAny,
-		meta:        meta,
-		mtx:         sync.Mutex{},
-		writeClient: writeClient,
+		entityID:     entityID,
+		state:        stateAny,
+		meta:         meta,
+		mtx:          sync.Mutex{},
+		writeClient:  writeClient,
+		journalStore: journalStore,
 	}
 }
 
@@ -64,7 +66,7 @@ func (e *Entity) Process(ctx context.Context, msg *local.EntityMessage) (resp *l
 func (e *Entity) put(ctx context.Context, msg *anypb.Any) (*local.StateWrapper, error) {
 	log.Printf("entity '%s', received put\n", e.entityID)
 
-	cmdResp, err := e.writeClient.HandleCommand(ctx, &chief_of_statev1.HandleCommandRequest{
+	cmdResp, err := e.writeClient.HandleCommand(ctx, &cospb.HandleCommandRequest{
 		Command:        msg,
 		PriorState:     e.state,
 		PriorEventMeta: e.meta,
@@ -78,12 +80,12 @@ func (e *Entity) put(ctx context.Context, msg *anypb.Any) (*local.StateWrapper, 
 		return &local.StateWrapper{State: e.state, Meta: e.meta}, nil
 	}
 
-	// compute the new meta data for this event
-	newMeta := proto.Clone(e.meta).(*chief_of_statev1.MetaData)
+	// compute the new metadata for this event
+	newMeta := proto.Clone(e.meta).(*cospb.MetaData)
 	newMeta.RevisionNumber += 1
 	newMeta.RevisionDate = timestamppb.Now()
 
-	evtResp, err := e.writeClient.HandleEvent(ctx, &chief_of_statev1.HandleEventRequest{
+	evtResp, err := e.writeClient.HandleEvent(ctx, &cospb.HandleEventRequest{
 		Event:      cmdResp.GetEvent(),
 		PriorState: e.state,
 		EventMeta:  newMeta,
@@ -96,8 +98,24 @@ func (e *Entity) put(ctx context.Context, msg *anypb.Any) (*local.StateWrapper, 
 		return nil, errors.New("missing state from event handler!")
 	}
 
-	// persist event and state to journal
-	// TODO
+	// persist event and state to journal only when the journal store is defined
+	// TODO we can cache the event on the entity and with some worker push them to the journal store at some given interval. For now it is ok to persist it directly
+	if e.journalStore != nil {
+		// create an instance of the journal
+		journal := &local.Journal{
+			PersistenceId:  e.entityID,
+			SequenceNumber: uint64(newMeta.GetRevisionNumber()),
+			IsDeleted:      false,
+			Event:          cmdResp.GetEvent(),
+			ResultingState: evtResp.GetResultingState(),
+			Timestamp:      newMeta.GetRevisionDate(),
+		}
+		// persist the journal to the journal store
+		if err := e.journalStore.PersistJournals(ctx, []*local.Journal{journal}); err != nil {
+			// TODO add logging and rich error message
+			return nil, err
+		}
+	}
 
 	// set the state locally
 	e.state = evtResp.GetResultingState()

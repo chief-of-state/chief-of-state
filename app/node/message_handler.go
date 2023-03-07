@@ -7,27 +7,27 @@ import (
 	"log"
 	"sync"
 
+	"github.com/chief-of-state/chief-of-state/app/storage"
+
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
-	chief_of_statev1 "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
+	cospb "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
 	"github.com/super-flat/parti/cluster"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func Run() {
-
-}
-
 type MessageHandler struct {
-	mtx         sync.Mutex
-	partitions  map[uint32]*Partition
-	writeClient chief_of_statev1.WriteSideHandlerServiceClient
+	mtx          sync.Mutex
+	partitions   map[uint32]*Partition
+	writeClient  cospb.WriteSideHandlerServiceClient
+	journalStore storage.JournalStore
 }
 
-func NewMessageHandler(writeClient chief_of_statev1.WriteSideHandlerServiceClient) *MessageHandler {
+func NewMessageHandler(writeClient cospb.WriteSideHandlerServiceClient, journalStore storage.JournalStore) *MessageHandler {
 	return &MessageHandler{
-		mtx:         sync.Mutex{},
-		partitions:  make(map[uint32]*Partition),
-		writeClient: writeClient,
+		mtx:          sync.Mutex{},
+		partitions:   make(map[uint32]*Partition),
+		writeClient:  writeClient,
+		journalStore: journalStore,
 	}
 }
 
@@ -67,7 +67,7 @@ func (e *MessageHandler) StartPartition(ctx context.Context, partitionID uint32)
 	if _, found := e.partitions[partitionID]; found {
 		return nil
 	}
-	e.partitions[partitionID] = NewPartition(ctx, e.writeClient)
+	e.partitions[partitionID] = NewPartition(ctx, e.writeClient, e.journalStore)
 	return nil
 }
 

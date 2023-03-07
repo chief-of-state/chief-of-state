@@ -4,6 +4,7 @@ package chief_of_state.local;
 
 import "chief_of_state/v1/common.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "chief_of_state/local;localpb";
 
@@ -28,4 +29,19 @@ message EventWrapper {
   google.protobuf.Any resulting_state = 2;
   // meta data
   chief_of_state.v1.MetaData meta = 3;
+}
+
+message Journal {
+  // Specifies the persistence unique identifier
+  string persistence_id = 1;
+  // Specifies the sequence number
+  uint64 sequence_number = 2;
+  // Specifies the deletion state
+  bool is_deleted = 3;
+  // the event emitted
+  google.protobuf.Any event = 4;
+  // the state obtained from processing the event
+  google.protobuf.Any resulting_state = 5;
+  // Specifies the timestamp
+  google.protobuf.Timestamp timestamp = 6;
 }

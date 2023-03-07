@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/chief-of-state/chief-of-state/app/storage"
+
 	"github.com/chief-of-state/chief-of-state/app/node"
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
 	chief_of_statev1 "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
@@ -17,8 +19,9 @@ func init() {
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 			var writeClient chief_of_statev1.WriteSideHandlerServiceClient
+			var journalStore storage.JournalStore
 
-			partition := node.NewPartition(ctx, writeClient)
+			partition := node.NewPartition(ctx, writeClient, journalStore)
 
 			outputs := make([]<-chan *node.Response, 0, 3)
 
