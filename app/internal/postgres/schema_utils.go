@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/pkg/errors"
 )
 
@@ -12,6 +13,15 @@ import (
 // and perform some postgres DDL task
 type SchemaUtils struct {
 	DBConn
+	sb sq.StatementBuilderType
+}
+
+// NewSchemaUtils returns an instance of SchemaUtils
+func NewSchemaUtils(db DBConn) *SchemaUtils {
+	return &SchemaUtils{
+		DBConn: db,
+		sb:     sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+	}
 }
 
 // CreateSchema helps create a test schema in a Postgres database
@@ -25,9 +35,20 @@ func (s SchemaUtils) CreateSchema(ctx context.Context, schemaName string) error 
 
 // SchemaExists helps check the existence of a Postgres schema.
 func (s SchemaUtils) SchemaExists(ctx context.Context, schemaName string) (bool, error) {
-	stmt := fmt.Sprintf("SELECT schema_name FROM information_schema.schemata WHERE schema_name = '%s';", schemaName)
+	// create the statement
+	stmt := s.sb.
+		Select("schema_name").
+		From("information_schema.schemata").
+		Where(sq.Eq{"schema_name": schemaName})
+	// get the SQL statement
+	query, args, err := stmt.ToSql()
+	// handle the error
+	if err != nil {
+		return false, err
+	}
+
 	var check string
-	if err := s.Select(ctx, &check, stmt); err != nil {
+	if err := s.Select(ctx, &check, query, args...); err != nil {
 		return false, err
 	}
 
@@ -55,15 +76,29 @@ func (s SchemaUtils) DropTable(ctx context.Context, tableName string) error {
 
 // TableExists utility function to help check the existence of table in Postgres
 // tableName is in the format: <schemaName.tableName>. e.g: public.users
-func (s SchemaUtils) TableExists(ctx context.Context, tableName string) error {
-	var stmt = fmt.Sprintf("SELECT to_regclass('%s');", tableName)
-	_, err := s.Exec(ctx, stmt)
+func (s SchemaUtils) TableExists(ctx context.Context, schema, tableName string) (bool, error) {
+	// build the statement
+	stmt := s.sb.
+		Select("COUNT(table_name) as count").
+		From("information_schema.tables").
+		Where(sq.Like{"table_schema": schema}).
+		Where(sq.Eq{"table_name": tableName}).
+		Where(sq.Like{"table_type": "BASE TABLE"})
+
+	// grab the SQL
+	query, args, err := stmt.ToSql()
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return err
+		return false, err
 	}
 
-	return nil
+	// execute the SQL
+	var count int
+	if err = s.Select(ctx, &count, query, args...); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return count == 1, nil
 }

@@ -36,7 +36,6 @@ type Partition struct {
 
 // NewPartition returns a new partition
 func NewPartition(ctx context.Context, writeClient cospb.WriteSideHandlerServiceClient, journalStore storage.JournalStore) *Partition {
-
 	entityFactory := func(entityID string) *Entity {
 		return NewEntity(entityID, writeClient, journalStore)
 	}

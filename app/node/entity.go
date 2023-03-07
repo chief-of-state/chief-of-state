@@ -15,6 +15,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// Entity represents each persistence entity
 type Entity struct {
 	mtx          sync.Mutex
 	entityID     string
@@ -24,6 +25,7 @@ type Entity struct {
 	journalStore storage.JournalStore
 }
 
+// NewEntity creates an instance of Entity
 func NewEntity(entityID string, writeClient cospb.WriteSideHandlerServiceClient, journalStore storage.JournalStore) *Entity {
 	log.Printf("spinning up entity '%s'\n", entityID)
 
@@ -82,7 +84,7 @@ func (e *Entity) put(ctx context.Context, msg *anypb.Any) (*local.StateWrapper, 
 
 	// compute the new metadata for this event
 	newMeta := proto.Clone(e.meta).(*cospb.MetaData)
-	newMeta.RevisionNumber += 1
+	newMeta.RevisionNumber++
 	newMeta.RevisionDate = timestamppb.Now()
 
 	evtResp, err := e.writeClient.HandleEvent(ctx, &cospb.HandleEventRequest{
@@ -95,7 +97,7 @@ func (e *Entity) put(ctx context.Context, msg *anypb.Any) (*local.StateWrapper, 
 	}
 	// enforce event must be set
 	if evtResp.GetResultingState() == nil {
-		return nil, errors.New("missing state from event handler!")
+		return nil, errors.New("missing state from event handler")
 	}
 
 	// persist event and state to journal only when the journal store is defined
@@ -108,7 +110,7 @@ func (e *Entity) put(ctx context.Context, msg *anypb.Any) (*local.StateWrapper, 
 			IsDeleted:      false,
 			Event:          cmdResp.GetEvent(),
 			ResultingState: evtResp.GetResultingState(),
-			Timestamp:      newMeta.GetRevisionDate(),
+			Timestamp:      newMeta.GetRevisionDate().AsTime().Unix(),
 		}
 		// persist the journal to the journal store
 		if err := e.journalStore.PersistJournals(ctx, []*local.Journal{journal}); err != nil {

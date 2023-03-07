@@ -44,12 +44,11 @@ func (e *EntityStore) GetOrCreate(ctx context.Context, entityID string) *Entity 
 	if val, found := e.entities.Get(entityID); found {
 		entity := val.(*Entity)
 		return entity
-	} else {
-		// create new entity
-		entity := e.factory(entityID)
-		e.entities.Set(entityID, entity, cache.DefaultExpiration)
-		return entity
 	}
+	// create new entity
+	entity := e.factory(entityID)
+	e.entities.Set(entityID, entity, cache.DefaultExpiration)
+	return entity
 }
 
 // Shutdown all entities in this store

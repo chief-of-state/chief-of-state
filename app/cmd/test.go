@@ -13,7 +13,6 @@ import (
 )
 
 func init() {
-
 	var testCMD = &cobra.Command{
 		Use: "test",
 		Run: func(cmd *cobra.Command, args []string) {

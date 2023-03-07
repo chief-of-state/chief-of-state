@@ -7,23 +7,30 @@ import (
 	"log"
 	"sync"
 
+	"github.com/super-flat/parti/cluster"
+
 	"github.com/chief-of-state/chief-of-state/app/storage"
 
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
 	cospb "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
-	"github.com/super-flat/parti/cluster"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-type MessageHandler struct {
+// Handler handles the lifecycle of a given partition and how the given partition
+// processes messages sent to it
+type Handler struct {
 	mtx          sync.Mutex
 	partitions   map[uint32]*Partition
 	writeClient  cospb.WriteSideHandlerServiceClient
 	journalStore storage.JournalStore
 }
 
-func NewMessageHandler(writeClient cospb.WriteSideHandlerServiceClient, journalStore storage.JournalStore) *MessageHandler {
-	return &MessageHandler{
+// make sure we implement the parti message handler
+var _ cluster.Handler = &Handler{}
+
+// NewHandler creates an instance of Handler
+func NewHandler(writeClient cospb.WriteSideHandlerServiceClient, journalStore storage.JournalStore) *Handler {
+	return &Handler{
 		mtx:          sync.Mutex{},
 		partitions:   make(map[uint32]*Partition),
 		writeClient:  writeClient,
@@ -32,7 +39,7 @@ func NewMessageHandler(writeClient cospb.WriteSideHandlerServiceClient, journalS
 }
 
 // Handle a message for a given partition
-func (e *MessageHandler) Handle(ctx context.Context, partitionID uint32, msg *anypb.Any) (*anypb.Any, error) {
+func (e *Handler) Handle(ctx context.Context, partitionID uint32, msg *anypb.Any) (*anypb.Any, error) {
 	// unpack inner msg
 	innerMsg, err := msg.UnmarshalNew()
 	if err != nil {
@@ -60,7 +67,7 @@ func (e *MessageHandler) Handle(ctx context.Context, partitionID uint32, msg *an
 }
 
 // StartPartition boots a given partition on this node
-func (e *MessageHandler) StartPartition(ctx context.Context, partitionID uint32) error {
+func (e *Handler) StartPartition(ctx context.Context, partitionID uint32) error {
 	e.mtx.Lock()
 	defer e.mtx.Unlock()
 	log.Printf("starting partition (%d)", partitionID)
@@ -72,7 +79,7 @@ func (e *MessageHandler) StartPartition(ctx context.Context, partitionID uint32)
 }
 
 // ShutdownPartition shuts down the partition on this node
-func (e *MessageHandler) ShutdownPartition(ctx context.Context, partitionID uint32) error {
+func (e *Handler) ShutdownPartition(ctx context.Context, partitionID uint32) error {
 	log.Printf("shutting down partition (%d)", partitionID)
 	if partition, found := e.partitions[partitionID]; found {
 		return partition.entities.Shutdown(ctx)
@@ -80,6 +87,3 @@ func (e *MessageHandler) ShutdownPartition(ctx context.Context, partitionID uint
 	log.Printf("partition %d not found", partitionID)
 	return nil
 }
-
-// make sure we implement the parti message handler
-var _ cluster.Handler = &MessageHandler{}

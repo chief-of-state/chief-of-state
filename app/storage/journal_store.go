@@ -8,6 +8,7 @@ import (
 
 // JournalStore represents the persistence store.
 // This helps implement any persistence storage whether it is an RDBMS or No-SQL database
+// The implementation should be done in a singleton pattern.
 type JournalStore interface {
 	// Connect connects to the journal store
 	Connect(ctx context.Context) error
@@ -20,7 +21,9 @@ type JournalStore interface {
 	// DeleteJournals deletes journals from the store upt to a given sequence number (inclusive)
 	DeleteJournals(ctx context.Context, persistenceID string, toSequenceNumber uint64) error
 	// ReplayJournals fetches journals for a given persistence ID from a given sequence number(inclusive) to a given sequence number(inclusive)
-	ReplayJournals(ctx context.Context, persistenceID string, fromSequenceNumber, toSequenceNumber uint64) ([]*local.Journal, error)
+	ReplayJournals(ctx context.Context, persistenceID string, fromSequenceNumber, toSequenceNumber uint64, max uint64) ([]*local.Journal, error)
 	// GetLatestJournal fetches the latest journal
 	GetLatestJournal(ctx context.Context, persistenceID string) (*local.Journal, error)
+	// PersistenceIDs returns the distinct list of all the persistence ids in the journal store
+	PersistenceIDs(ctx context.Context) (persistenceIDs []string, err error)
 }

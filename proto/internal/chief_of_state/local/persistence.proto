@@ -43,5 +43,5 @@ message Journal {
   // the state obtained from processing the event
   google.protobuf.Any resulting_state = 5;
   // Specifies the timestamp
-  google.protobuf.Timestamp timestamp = 6;
+  int64 timestamp = 6;
 }
