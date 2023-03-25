@@ -7,12 +7,10 @@ import (
 	"log"
 	"sync"
 
-	"github.com/super-flat/parti/cluster"
-
 	"github.com/chief-of-state/chief-of-state/app/storage"
-
 	"github.com/chief-of-state/chief-of-state/gen/chief_of_state/local"
 	cospb "github.com/chief-of-state/chief-of-state/gen/chief_of_state/v1"
+	"github.com/super-flat/parti/cluster"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
