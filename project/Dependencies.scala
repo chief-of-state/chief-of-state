@@ -24,7 +24,7 @@ object Dependencies {
     val OpenTelemetrySdkVersion: String = "1.25.0"
     val TestContainers: String = "0.40.15"
     val OpenTelemetrySdkConfigVersion: String = "1.15.0-alpha"
-    val OpenTelemetryInstrumentationApiVersion: String = "1.25.1"
+    val OpenTelemetryInstrumentationApiVersion: String = "1.26.0"
     val OpenTelemetrySdkTestingVersion: String = "1.25.0"
     val OpenTelemetryExtensionVersion: String = "1.25.0"
     val OpenTelemetryGRPCVersion: String = "1.0.1-alpha"
