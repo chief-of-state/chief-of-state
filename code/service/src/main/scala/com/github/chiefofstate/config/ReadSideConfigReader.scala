@@ -87,6 +87,7 @@ object ReadSideConfigReader {
     val READ_SIDE_PORT_KEY: String = "PORT"
     val READ_SIDE_TLS_KEY: String = "USE_TLS"
     val READ_SIDE_AUTO_START: String = "AUTO_START"
+    val READ_SIDE_ENABLED: String = "ENABLED"
 
     // let us read the env vars
     val envVars: Map[String, String] = sys.env.filter { pair =>
@@ -126,6 +127,9 @@ object ReadSideConfigReader {
           case (config, (READ_SIDE_AUTO_START, value)) =>
             config.copy(autoStart = value.toBooleanOption.getOrElse(false))
 
+          case (config, (READ_SIDE_ENABLED, value)) =>
+            config.copy(enabled = value.toBooleanOption.getOrElse(true))
+
           case (_, (key, _)) =>
             throw new IllegalArgumentException(s"$key is a not valid read side env var key")
         }
@@ -135,7 +139,7 @@ object ReadSideConfigReader {
       require(readSideConfig.port > 0, s"ProcessorId $readSideId is missing a PORT")
 
       logger.info(
-        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}")
+        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}, enabled")
 
       readSideConfig
     }.toSeq

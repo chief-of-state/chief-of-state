@@ -12,10 +12,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * ReadSideConfig defines the configuration of CoS readside
  *
  * @param readSideId the readSide ID
- * @param host the read side server host to receive read side requests
- * @param port the read side server port
- * @param useTls specifies whether SSL is enabled on the read side server
- * @param autoStart specifies whether the read side should start processing messages or be in pause mode
+ * @param host       the read side server host to receive read side requests
+ * @param port       the read side server port
+ * @param useTls     specifies whether SSL is enabled on the read side server
+ * @param autoStart  specifies whether the read side should start processing messages or be in pause mode
  */
 final case class ReadSideConfig(
     @JsonProperty(required = true)
@@ -27,10 +27,13 @@ final case class ReadSideConfig(
     @JsonProperty
     useTls: Boolean = false,
     @JsonProperty
-    autoStart: Boolean = true) {
+    autoStart: Boolean = true,
+    @JsonProperty
+    enabled: Boolean = true) {
 
   /**
-   *  check whether the read side config is valid or not
+   * check whether the read side config is valid or not
+   *
    * @return true when the read side config is valid and false on the contrary
    */
   def isValid: Boolean = {

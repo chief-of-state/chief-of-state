@@ -21,11 +21,10 @@ import scala.util.{ Failure, Success, Try }
 /**
  * Used to configure and start all read side processors
  *
- * @param system actor system
- * @param interceptors sequence of interceptors for the gRPC client
- * @param dbConfig the DB config for creating a hikari data source
+ * @param system          actor system
+ * @param dbConfig        the DB config for creating a hikari data source
  * @param readSideConfigs sequence of configs for specific read sides
- * @param numShards number of shards for projections/tags
+ * @param numShards       number of shards for projections/tags
  * @param readSideManager specifies the readSide manager
  */
 class ReadSideBootstrap(
@@ -46,8 +45,8 @@ class ReadSideBootstrap(
   def init(): Unit = {
     logger.info(s"initializing read sides, count=${readSideConfigs.size}")
 
-    // configure each read side
-    readSideConfigs.foreach { config =>
+    // configure enabled read sides
+    readSideConfigs.filter(c => c.enabled).foreach { config =>
       logger.info(s"starting read side, id=${config.readSideId}")
 
       // construct a remote gRPC read side client for this read side

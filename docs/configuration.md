@@ -9,38 +9,40 @@ See the following deployment-specific guides for relevant configurations:
 
 ### Global environment variables
 
-| environment variable              | description                                                                                                                                            | default                      |
-|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------|
-| LOG_LEVEL                         | The possible values are: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_                                                                              | DEBUG                        |
-| LOG_STYLE                         | Logging format: _**STANDARD**_, _**SIMPLE**_, _**JSON**_                                                                                               | _**JSON**_                   |
-| COS_ADDRESS                       | container host                                                                                                                                         | 0.0.0.0                      |
-| COS_PORT                          | container port                                                                                                                                         | 9000                         |
-| COS_DEPLOYMENT_MODE               | "docker" or "kubernetes"                                                                                                                               | "docker"                     |
-| COS_DB_USER                       | journal, snapshot and read side offsets store username                                                                                                 | postgres                     |
-| COS_DB_PASSWORD                   | journal, snapshot and read side offsets store password                                                                                                 | changeme                     |
-| COS_DB_HOST                       | journal, snapshot and read side offsets store host                                                                                                     | localhost                    |
-| COS_DB_PORT                       | journal, snapshot and read side offsets store port                                                                                                     | 5432                         |
-| COS_DB_NAME                       | journal, snapshot and read side offsets store db name                                                                                                  | postgres                     |
-| COS_DB_SCHEMA                     | journal, snapshot and read side offsets store db schema                                                                                                | public                       |
-| COS_DB_POOL_MAX_SIZE              | controls the maximum size that the pool is allowed to reach, including both idle and in-use connections. The default value should be ok for most apps. | 10                           |
-| COS_DB_POOL_MIN_IDLE_CONNECTIONS  | controls the minimum number of idle connections to maintain in the pool. The default value should be ok for most apps.                                 | 3                            |
-| COS_DB_POOL_IDLE_TIMEOUT_MS       | controls the maximum amount of time in milliseconds that a connection is allowed to sit idle in the pool. The default value should be ok for most apps | 30000                        |
-| COS_DB_POOL_MAX_LIFETIME_MS       | controls the maximum lifetime of a connection in the pool. The default value should be ok for most apps.                                               | 60000                        |
-| COS_SNAPSHOT_FREQUENCY            | Save snapshots automatically every Number of Events                                                                                                    | 100                          |
-| COS_NUM_SNAPSHOTS_TO_RETAIN       | Number of Aggregate Snapshot to persist to disk for swift recovery                                                                                     | 2                            |
-| COS_READ_SIDE_ENABLED             | turn on readside or not                                                                                                                                | false                        |
-| COS_ENCRYPTION_CLASS              | java class to use for encryption                                                                                                                       | <none>                       |
-| COS_WRITE_SIDE_HOST               | address of the gRPC writeSide handler service                                                                                                          | <none>                       |
-| COS_WRITE_SIDE_PORT               | port for the gRPC writeSide handler service                                                                                                            | <none>                       |
-| COS_WRITE_SIDE_USE_TLS            | use TLS for outbound gRPC calls to write side                                                                                                          | false                        |
-| COS_WRITE_SIDE_PROTO_VALIDATION   | enable validation of the handler service states and events proto message FQN. If not set to `true` the validation will be skipped.                     | false                        |
-| COS_WRITE_SIDE_STATE_PROTOS       | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values   | <none>                       |
-| COS_WRITE_SIDE_EVENT_PROTOS       | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values   | <none>                       |
-| COS_SERVICE_NAME                  | service name                                                                                                                                           | chiefofstate                 |
-| COS_WRITE_SIDE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler                                                                                                 | <none>                       |
-| COS_WRITE_PERSISTED_HEADERS       | CSV of gRPC headers to persist to journal (experimental)                                                                                               | <none>                       |
-| COS_JOURNAL_LOGICAL_DELETION      | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted.                             | false                        |
-| COS_COMMAND_HANDLER_TIMEOUT       | Timeout required for the Aggregate to process command and reply. The value is in seconds.                                                              | 5                            |
+| environment variable              | description                                                                                                                                                       | default      |
+|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| LOG_LEVEL                         | The possible values are: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_                                                                                         | DEBUG        |
+| LOG_STYLE                         | Logging format: _**STANDARD**_, _**SIMPLE**_, _**JSON**_                                                                                                          | _**JSON**_   |
+| COS_ADDRESS                       | container host                                                                                                                                                    | 0.0.0.0      |
+| COS_PORT                          | container port                                                                                                                                                    | 9000         |
+| COS_DEPLOYMENT_MODE               | "docker" or "kubernetes"                                                                                                                                          | "docker"     |
+| COS_DB_USER                       | journal, snapshot and read side offsets store username                                                                                                            | postgres     |
+| COS_DB_PASSWORD                   | journal, snapshot and read side offsets store password                                                                                                            | changeme     |
+| COS_DB_HOST                       | journal, snapshot and read side offsets store host                                                                                                                | localhost    |
+| COS_DB_PORT                       | journal, snapshot and read side offsets store port                                                                                                                | 5432         |
+| COS_DB_NAME                       | journal, snapshot and read side offsets store db name                                                                                                             | postgres     |
+| COS_DB_SCHEMA                     | journal, snapshot and read side offsets store db schema                                                                                                           | public       |
+| COS_DB_POOL_MAX_SIZE              | controls the maximum size that the pool is allowed to reach, including both idle and in-use connections. The default value should be ok for most apps.            | 10           |
+| COS_DB_POOL_MIN_IDLE_CONNECTIONS  | controls the minimum number of idle connections to maintain in the pool. The default value should be ok for most apps.                                            | 3            |
+| COS_DB_POOL_IDLE_TIMEOUT_MS       | controls the maximum amount of time in milliseconds that a connection is allowed to sit idle in the pool. The default value should be ok for most apps            | 30000        |
+| COS_DB_POOL_MAX_LIFETIME_MS       | controls the maximum lifetime of a connection in the pool. The default value should be ok for most apps.                                                          | 60000        |
+| COS_SNAPSHOT_FREQUENCY            | Save snapshots automatically every Number of Events                                                                                                               | 100          |
+| COS_DISABLE_SNAPSHOT              | Disable snapshots. The default value is `false`. Use this setting with care                                                                                       | false        |
+| COS_NUM_SNAPSHOTS_TO_RETAIN       | Number of Aggregate Snapshot to persist to disk for swift recovery                                                                                                | 2            |
+| COS_READ_SIDE_ENABLED             | turn on readside or not                                                                                                                                           | false        |
+| COS_ENCRYPTION_CLASS              | java class to use for encryption                                                                                                                                  | <none>       |
+| COS_WRITE_SIDE_HOST               | address of the gRPC writeSide handler service                                                                                                                     | <none>       |
+| COS_WRITE_SIDE_PORT               | port for the gRPC writeSide handler service                                                                                                                       | <none>       |
+| COS_WRITE_SIDE_USE_TLS            | use TLS for outbound gRPC calls to write side                                                                                                                     | false        |
+| COS_WRITE_SIDE_PROTO_VALIDATION   | enable validation of the handler service states and events proto message FQN. If not set to `true` the validation will be skipped.                                | false        |
+| COS_WRITE_SIDE_STATE_PROTOS       | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values              | <none>       |
+| COS_WRITE_SIDE_EVENT_PROTOS       | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values              | <none>       |
+| COS_SERVICE_NAME                  | service name                                                                                                                                                      | chiefofstate |
+| COS_WRITE_SIDE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler                                                                                                            | <none>       |
+| COS_WRITE_PERSISTED_HEADERS       | CSV of gRPC headers to persist to journal (experimental)                                                                                                          | <none>       |
+| COS_JOURNAL_LOGICAL_DELETION      | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted.                                        | false        |
+| COS_COMMAND_HANDLER_TIMEOUT       | Timeout required for the Aggregate to process command and reply. The value is in seconds.                                                                         | 5            |
+| COS_GRPC_CALLS_TIMEOUT            | The deadline timeout, a duration of time after which the RPC times out. It is expressed in milliseconds. Fail to accomplish this will result in timeout exception | 1mn          |
 
 ### Telemetry configuration
 
@@ -49,13 +51,16 @@ instrumentation. We only bundle in
 the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) gRPC
 exporter which should be used to push metrics and traces to
 an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
-that should then propagate the same to desired monitoring services. Collection of telemetry data will be enabled when the 
-`OTEL_JAVAAGENT_ENABLED` is set to `true`. 
+that should then propagate the same to desired monitoring services. Collection of telemetry data will be enabled when
+the
+`OTEL_JAVAAGENT_ENABLED` is set to `true`.
 
-_Note: By default, telemetry data will be collected so set this env var to `false` when there is no need for telemetry data._
+_Note: By default, telemetry data will be collected so set this env var to `false` when there is no need for telemetry
+data._
 
 #### Basic configuration
-The following options can be configured via environment variables. 
+
+The following options can be configured via environment variables.
 
 | Property                    | Required                                         | Description                                                                                                                                                                |
 |-----------------------------|--------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -63,17 +68,22 @@ The following options can be configured via environment variables.
 | OTEL_EXPORTER_OTLP_ENDPOINT | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317`                           |
 | OTEL_JAVAAGENT_ENABLED      | yes                                              | Set to `false` will disable the telemetry instrumentation                                                                                                                  |
 | OTEL_PROPAGATORS            | no (default value is `tracecontext,baggage`)     | More information can be found [here](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#propagator) on how to set it up |
-  
 
 #### Advanced configuration
-Advanced users can use any of the following [environment variables](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters) to tweak the OpenTelemetry Agent before starting CoS.
+
+Advanced users can use any of the
+following [environment variables](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters)
+to tweak the OpenTelemetry Agent before starting CoS.
 
 ### Read side configurations
+
 The CoS can handle as many as read sides one desires. There are two ways to configure the read sides
 
 #### Via yaml configuration file(s) - Recommended
+
 CoS read side are configured using a readside configuration files.
-One can bundle all the readside configuration files into a _single yaml file_ or in separate files and have them in a _folder_.
+One can bundle all the readside configuration files into a _single yaml file_ or in separate files and have them in a
+_folder_.
 The following settings are required to define a read side yaml configuration file:
 
 | Setting    | Required                      | Description                                                                                                                                                                                                                                               |
@@ -83,23 +93,28 @@ The following settings are required to define a read side yaml configuration fil
 | port       | yes                           | Specifies the read side port number                                                                                                                                                                                                                       |
 | useTls     | no (default value is `false`) | Specifies whether to use TLS to connect to the read side                                                                                                                                                                                                  |
 | autoStart  | no (default value is `true`)  | Set to `true` means that the Read side on start is ready to process events. However, when it set to `false` means that the Read side is paused on start or no not. One can use the [cli](https://github.com/chief-of-state/cos-cli) to resume processing. |
+| enabled    | no (default value is `true`)  | Specifies whether the read side is enabled or not. The default value is `true`                                                                                                                                                                            |
 
 ##### Example: read-side-config.yml (multiple read side config in a single yaml file)
+
 ```yaml
 readSideId: read-side-1
 host: read-handler
 port: 50053
 useTls: false
 autoStart: true
+enabled: true
 ---
 readSideId: read-side-2
 host: read-handler
 port: 50054
 useTls: false
 autoStart: true
+enabled: false
 ```
 
 ###### Note
+
 As you can see in the sample read side config one can specify multiple read side in the yaml file using the `---` yaml
 separator.
 
@@ -113,12 +128,17 @@ The following format defines how a CoS read side environment variable is configu
 ##### Example
 
 ###### Scenario 1
+
 Assuming the readside config file `read-side-config.yml` is saved in the `/etc` folder. So one can set it as follows:
+
 ```shell
 COS_READ_SIDE_CONFIG=/etc/read-side-config.yml
 ```
+
 ###### Scenario 2
+
 Assuming the readside config files are saved in the `/etc` folder. So one can set it as follows:
+
 ```shell
 COS_READ_SIDE_CONFIG=/etc
 ```
@@ -126,7 +146,9 @@ COS_READ_SIDE_CONFIG=/etc
 #### Via environment variables
 
 ###### Note
-_This way of configuring read sides via environment variables is not scalable and can be error-prone. It is recommended to use
+
+_This way of configuring read sides via environment variables is not scalable and can be error-prone. It is recommended
+to use
 the yaml configuration file(s) approach stated above._
 
 CoS read side are configured using environment variables.
@@ -140,8 +162,11 @@ The following format defines how a CoS read side environment variable is configu
     - **HOST** - Read side host
     - **PORT** - Read side port
     - **USE_TLS** - Use TLS for read side calls. The default value is set to `false`
-    - **AUTO_START** - Set to `true` means that the Read side on start is ready to process events. However, when it set to `false` means that the Read side is paused on start or no not. One can use
+    - **AUTO_START** - Set to `true` means that the Read side on start is ready to process events. However, when it set
+      to `false` means that the Read side is paused on start or no not. One can use
       the [cli](https://github.com/chief-of-state/cos-cli) to resume processing. The default value is set to `true`
+    - **ENABLED** - Set to `true` means that the given Read side is enabled and `false` means that the read side is
+      disabled. The default value is set to `true`
 - <READSIDE_ID> - Unique id for the read side instance. Replace this placeholder with your actual ID.
 
 #### Example
@@ -151,4 +176,5 @@ COS_READ_SIDE_CONFIG__HOST__DB_WRITER=db-writer
 COS_READ_SIDE_CONFIG__PORT__DB_WRITER=50053
 COS_READ_SIDE_CONFIG__USE_TLS__DB_WRITER=false
 COS_READ_SIDE_CONFIG__AUTO_START__DB_WRITER=false
+COS_READ_SIDE_CONFIG__ENABLED__DB_WRITER=false
 ```

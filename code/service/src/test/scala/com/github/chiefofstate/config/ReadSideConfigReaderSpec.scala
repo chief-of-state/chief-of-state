@@ -23,10 +23,16 @@ class ReadSideConfigReaderSpec extends BaseSpec {
   "ReadSideConfigReader" should {
     "read configurations" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false, enabled = true)
 
       val readSide2 =
-        ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200, useTls = true, autoStart = false)
+        ReadSideConfig(
+          readSideId = "read-side-2",
+          host = "localhost",
+          port = 200,
+          useTls = true,
+          autoStart = false,
+          enabled = false)
 
       val configFile = getClass.getResource("/readside-config-testcase-1.yaml").getPath
       val actual = ReadSideConfigReader.read(configFile)
@@ -38,10 +44,16 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
     "read configurations from a directory" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false, enabled = true)
 
       val readSide2 =
-        ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200, useTls = true, autoStart = false)
+        ReadSideConfig(
+          readSideId = "read-side-2",
+          host = "localhost",
+          port = 200,
+          useTls = true,
+          autoStart = false,
+          enabled = true)
 
       val configFile = getClass.getResource("/readside-configs").getPath
       val actual = ReadSideConfigReader.read(configFile)
@@ -53,7 +65,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
     "read configurations with default values" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false, enabled = true)
 
       val readSide2 =
         ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200)
