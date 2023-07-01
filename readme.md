@@ -87,7 +87,7 @@ The following docs are available:
 
 You can join these groups and chat to discuss and ask Chief Of State related questions on:
 
-![GitHub Discussions](https://img.shields.io/github/discussions/chief-of-state/chief-of-state?style=flat-square)
+[![GitHub Discussions](https://img.shields.io/github/discussions/chief-of-state/chief-of-state?style=flat-square)](https://github.com/chief-of-state/chief-of-state/discussions)
 
 ## Contribution
 
