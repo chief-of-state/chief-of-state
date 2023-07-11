@@ -16,6 +16,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * @param port       the read side server port
  * @param useTls     specifies whether SSL is enabled on the read side server
  * @param autoStart  specifies whether the read side should start processing messages or be in pause mode
+ * @param enabled specifies whether the read side is enabled or not. This means that the readside will not be added at runtime to the list of
+ *                read sides that need to run. This is useful when deactivating a faulty read side
  */
 final case class ReadSideConfig(
     @JsonProperty(required = true)
