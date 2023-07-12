@@ -10,7 +10,7 @@ import akka.actor.typed.ActorSystem
 import com.github.chiefofstate.config.{ ReadSideConfig, ReadSideConfigReader }
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.github.chiefofstate.utils.NettyHelper
-import com.typesafe.config.Config
+import com.typesafe.config.{ Config, ConfigException }
 import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
 import org.slf4j.{ Logger, LoggerFactory }
 
@@ -47,7 +47,7 @@ class ReadSideBootstrap(
 
     // configure enabled read sides
     readSideConfigs.filter(c => c.enabled).foreach { config =>
-      logger.info(s"starting read side, id=${config.readSideId}")
+      logger.info(s"starting read side: ${config.toString}")
 
       // construct a remote gRPC read side client for this read side
       // and register interceptors
@@ -58,7 +58,7 @@ class ReadSideBootstrap(
         new ReadSideHandlerImpl(config.readSideId, rpcClient)
       // instantiate the read side projection with the remote processor
       val projection =
-        new ReadSideProjection(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards)
+        new ReadSide(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards, config.failurePolicy)
 
       Try {
         // start the projection
@@ -95,17 +95,18 @@ object ReadSideBootstrap {
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
       val jdbcCfg: Config = system.settings.config.getConfig("jdbc-default")
-
       DbConfig(jdbcCfg)
     }
 
     // fetch the read side config
     val configs: Seq[ReadSideConfig] = {
       // get the readside config file
-      Option(system.settings.config.getString("chiefofstate.read-side.config-file")) match {
-        case Some(fh) if fh.nonEmpty => ReadSideConfigReader.read(fh)
-        case Some(_)                 => ReadSideConfigReader.readFromEnvVars
-        case None                    => ReadSideConfigReader.readFromEnvVars
+      Try {
+        system.settings.config.getString("chiefofstate.read-side.config-file")
+      } match {
+        case Success(fh) => if (fh.nonEmpty) ReadSideConfigReader.read(fh) else ReadSideConfigReader.readFromEnvVars
+        case Failure(_: ConfigException.Missing) => ReadSideConfigReader.readFromEnvVars
+        case Failure(exception)                  => throw exception
       }
     }
 

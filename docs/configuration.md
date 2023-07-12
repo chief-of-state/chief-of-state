@@ -86,14 +86,21 @@ One can bundle all the readside configuration files into a _single yaml file_ or
 _folder_.
 The following settings are required to define a read side yaml configuration file:
 
-| Setting    | Required                      | Description                                                                                                                                                                                                                                                        |
-|------------|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| readSideId | yes                           | Specifies the read side unique identifier. The read side must only contain alphanumeric characters plus hyphens and underscores. No spacing is allowed.                                                                                                            |
-| host       | yes                           | Specifies the read side host address                                                                                                                                                                                                                               |
-| port       | yes                           | Specifies the read side port number                                                                                                                                                                                                                                |
-| useTls     | no (default value is `false`) | Specifies whether to use TLS to connect to the read side                                                                                                                                                                                                           |
-| autoStart  | no (default value is `true`)  | Set to `true` means that the Read side on start is ready to process events. However, when it set to `false` means that the Read side is paused on start. One can use the [cli](https://github.com/chief-of-state/cos-cli) to resume processing.                    |
-| enabled    | no (default value is `true`)  | Specifies whether the read side is enabled (`true`) or not (`false`). The default value is `true`. The difference with `autoStart` is to enable the read side one needs to set this setting and restart CoS while `autoStart` starts the read side in paused mode. |
+| Setting       | Required                      | Description                                                                                                                                                                                                                                                        |
+|---------------|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| readSideId    | yes                           | Specifies the read side unique identifier. The read side must only contain alphanumeric characters plus hyphens and underscores. No spacing is allowed.                                                                                                            |
+| host          | yes                           | Specifies the read side host address                                                                                                                                                                                                                               |
+| port          | yes                           | Specifies the read side port number                                                                                                                                                                                                                                |
+| useTls        | no (default value is `false`) | Specifies whether to use TLS to connect to the read side                                                                                                                                                                                                           |
+| autoStart     | no (default value is `true`)  | Set to `true` means that the Read side on start is ready to process events. However, when it set to `false` means that the Read side is paused on start. One can use the [cli](https://github.com/chief-of-state/cos-cli) to resume processing.                    |
+| enabled       | no (default value is `true`)  | Specifies whether the read side is enabled (`true`) or not (`false`). The default value is `true`. The difference with `autoStart` is to enable the read side one needs to set this setting and restart CoS while `autoStart` starts the read side in paused mode. |
+| failurePolicy | no                            | Specifies the failure policy. The possible values are: `STOP`, `SKIP`, `REPLAY_SKIP`, `REPLAY_STOP`                                                                                                                                                                |
+
+###### Failure Policy
+- `STOP`: this will completely stop the given readside when the processing of an event failed
+- `SKIP`: this will skip the failed processed event and advanced the offset to continue to the next event.
+- `REPLAY_SKIP`: this will attempt to replay the failed processed event five times and skip to the next event
+- `REPLAY_STOP`: this will attempt to replay the failed processed event five times and stop the given readside
 
 ##### Example: read-side-config.yml (multiple read side config in a single yaml file)
 
@@ -104,6 +111,7 @@ port: 50053
 useTls: false
 autoStart: true
 enabled: true
+failurePolicy: SKIP
 ---
 readSideId: read-side-2
 host: read-handler
@@ -167,6 +175,7 @@ The following format defines how a CoS read side environment variable is configu
       the [cli](https://github.com/chief-of-state/cos-cli) to resume processing. The default value is set to `true`
     - **ENABLED** - Set to `true` means that the given Read side is enabled and `false` means that the read side is
       disabled. The default value is set to `true`. The difference with `autoStart` is to enable the read side one needs to set this setting and restart CoS while `autoStart` starts the read side in paused mode.
+    - **FAILURE_POLICY** - Set the failure policy. The various policies can be found [here](#failure-policy)
 - <READSIDE_ID> - Unique id for the read side instance. Replace this placeholder with your actual ID.
 
 #### Example
@@ -177,4 +186,5 @@ COS_READ_SIDE_CONFIG__PORT__DB_WRITER=50053
 COS_READ_SIDE_CONFIG__USE_TLS__DB_WRITER=false
 COS_READ_SIDE_CONFIG__AUTO_START__DB_WRITER=false
 COS_READ_SIDE_CONFIG__ENABLED__DB_WRITER=false
+COS_READ_SIDE_CONFIG__FAILURE_POLICY__DB_WRITER: REPLAY_SKIP
 ```

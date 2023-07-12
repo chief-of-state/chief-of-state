@@ -4,6 +4,7 @@ port: 100
 useTls: false
 autoStart: false
 enabled: true
+failurePolicy: "STOP"
 ---
 readSideId: "read-side-2"
 host: "localhost"

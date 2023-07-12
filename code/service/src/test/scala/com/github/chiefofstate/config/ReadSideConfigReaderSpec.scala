@@ -23,7 +23,12 @@ class ReadSideConfigReaderSpec extends BaseSpec {
   "ReadSideConfigReader" should {
     "read configurations" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false, enabled = true)
+        ReadSideConfig(
+          readSideId = "read-side-1",
+          host = "localhost",
+          port = 100,
+          autoStart = false,
+          failurePolicy = ReadSideFailurePolicy.StopDirective)
 
       val readSide2 =
         ReadSideConfig(
@@ -65,7 +70,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
     "read configurations with default values" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false, enabled = true)
+        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
 
       val readSide2 =
         ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200)
@@ -172,7 +177,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       EnvironmentHelper.setEnv(envs.asJava)
 
       val exception: Exception = intercept[Exception](ReadSideConfigReader.readFromEnvVars)
-      exception.getMessage shouldBe "requirement failed: ProcessorId RS2 is missing a HOST"
+      exception.getMessage shouldBe "requirement failed: readside RS2 is missing a HOST"
 
       EnvironmentHelper.clearEnv()
     }
@@ -186,7 +191,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       EnvironmentHelper.setEnv(envs.asJava)
 
       val exception: Exception = intercept[Exception](ReadSideConfigReader.readFromEnvVars)
-      exception.getMessage shouldBe "requirement failed: ProcessorId RS2 is missing a PORT"
+      exception.getMessage shouldBe "requirement failed: readside RS2 is missing a PORT"
 
       EnvironmentHelper.clearEnv()
     }

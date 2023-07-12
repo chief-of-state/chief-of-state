@@ -88,6 +88,7 @@ object ReadSideConfigReader {
     val READ_SIDE_TLS_KEY: String = "USE_TLS"
     val READ_SIDE_AUTO_START: String = "AUTO_START"
     val READ_SIDE_ENABLED: String = "ENABLED"
+    val READ_SIDE_FAILURE_POLICY: String = "FAILURE_POLICY"
 
     // let us read the env vars
     val envVars: Map[String, String] = sys.env.filter { pair =>
@@ -130,16 +131,24 @@ object ReadSideConfigReader {
           case (config, (READ_SIDE_ENABLED, value)) =>
             config.copy(enabled = value.toBooleanOption.getOrElse(true))
 
+          case (config, (READ_SIDE_FAILURE_POLICY, value)) =>
+            config.copy(failurePolicy = value)
+
           case (_, (key, _)) =>
             throw new IllegalArgumentException(s"$key is a not valid read side env var key")
         }
 
       // Requires Host and Port to be defined per GrpcReadSideSetting
-      require(readSideConfig.host.nonEmpty, s"ProcessorId $readSideId is missing a HOST")
-      require(readSideConfig.port > 0, s"ProcessorId $readSideId is missing a PORT")
+      require(readSideConfig.host.nonEmpty, s"readside $readSideId is missing a HOST")
+      require(readSideConfig.port > 0, s"readside $readSideId is missing a PORT")
+
+      // Validate the failure policy
+      require(readSideConfig.isFailurePolicyValid, s"readside $readSideId failurePolicy is invalid.")
 
       logger.info(
-        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}, enabled")
+        s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, " +
+        s"useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}, " +
+        s"enabled=${readSideConfig.enabled}, failurePolicy=${readSideConfig.failurePolicy}")
 
       readSideConfig
     }.toSeq
