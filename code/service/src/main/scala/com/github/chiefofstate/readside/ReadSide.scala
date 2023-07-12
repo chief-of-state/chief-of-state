@@ -72,10 +72,24 @@ private[readside] class ReadSide(
 
     // let us set the failure policy
     failurePolicy.toUpperCase match {
-      case ReadSideFailurePolicy.StopDirective => projection.withRecoveryStrategy(HandlerRecoveryStrategy.fail)
+      // this will completely stop the given readside when the processing of an event failed
+      case ReadSideFailurePolicy.StopDirective =>
+        // here we disable restart because we are stopping the readside
+        projection
+          .withRecoveryStrategy(HandlerRecoveryStrategy.fail)
+          .withRestartBackoff(minBackoff = 3.seconds, maxBackoff = 30.seconds, randomFactor = 0.2, maxRestarts = 0)
+
+      // this will skip the failed processed event and advanced the offset to continue to the next event.
       case ReadSideFailurePolicy.SkipDirective => projection.withRecoveryStrategy(HandlerRecoveryStrategy.skip)
+
+      // this will attempt to replay the failed processed event five times and stop the given readside
       case ReadSideFailurePolicy.ReplayStopDirective =>
-        projection.withRecoveryStrategy(HandlerRecoveryStrategy.retryAndFail(5, 5.seconds))
+        // here we disable restart because we are stopping the readside
+        projection
+          .withRecoveryStrategy(HandlerRecoveryStrategy.retryAndFail(5, 5.seconds))
+          .withRestartBackoff(minBackoff = 3.seconds, maxBackoff = 30.seconds, randomFactor = 0.2, maxRestarts = 0)
+
+      // this will attempt to replay the failed processed event five times and skip to the next event
       case ReadSideFailurePolicy.ReplaySkipDirective =>
         projection.withRecoveryStrategy(HandlerRecoveryStrategy.retryAndSkip(5, 5.seconds))
       case _ => () // we do nothing. Just use the default settings in the application.conf file
