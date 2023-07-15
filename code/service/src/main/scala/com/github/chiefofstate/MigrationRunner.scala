@@ -41,11 +41,16 @@ object MigrationRunner {
   def apply(config: Config): Behavior[Message] = Behaviors.setup[Message] { _ =>
     Behaviors.receiveMessage[Message] {
       case SendReceive(message, replyTo) if message.isInstanceOf[StartMigration] =>
+        // get the underlying database
+        val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+          JdbcConfig.journalConfig(config)
+
+        // get the database schema to use
+        val schema: String = config.getString("jdbc-default.schema")
+
+        // run the migration
         val result: Try[Unit] = {
-          // create and run the migrator
-          val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
-            JdbcConfig.journalConfig(config)
-          val schema: String = config.getString("jdbc-default.schema")
+          // create an instance of the v6 migration
           val v6: V6 = V6(journalJdbcConfig)
           // instance of the migrator
           val migrator: Migrator =
@@ -53,9 +58,11 @@ object MigrationRunner {
           // run the migration
           migrator.run()
         }
-
         result match {
           case Failure(exception) =>
+            // close the underlying database connection to avoid memory-leak
+            journalJdbcConfig.db.close()
+
             // notify the bootstrapper actor that the migration has failed
             replyTo ! MigrationFailed().withErrorMessage(exception.getMessage)
 
@@ -63,6 +70,9 @@ object MigrationRunner {
             Behaviors.stopped
 
           case Success(_) =>
+            // close the underlying database connection to avoid memory-leak
+            journalJdbcConfig.db.close()
+
             log.info("ChiefOfState migration successfully done...")
 
             replyTo ! MigrationSucceeded()
