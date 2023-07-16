@@ -116,4 +116,5 @@ earthly -P --no-output +test-local
 
 ## Sample Projects
 
-[Python](https://github.com/chief-of-state/cos-python-sample)
+- [Python](https://github.com/chief-of-state/cos-python-sample)
+- [Go](https://github.com/Tochemey/cos-go-sample)
