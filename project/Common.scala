@@ -65,8 +65,8 @@ object Common extends AutoPlugin {
       Test / logBuffered := false,
       coverageExcludedPackages := "<empty>;com.github.chiefofstate.protobuf.*;" +
       "com.github.chiefofstate.test.helloworld.*;" +
-      "com.github.chiefofstate.StartNodeBehaviour;" +
-      "com.github.chiefofstate.ServiceBootstrapper;" +
-      "com.github.chiefofstate.StartNode;",
+      "com.github.chiefofstate.NodeBehaviour;" +
+      "com.github.chiefofstate.Bootstrapper;" +
+      "com.github.chiefofstate.Node;",
       Test / fork := true)
 }
