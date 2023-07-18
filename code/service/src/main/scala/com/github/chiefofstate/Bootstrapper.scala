@@ -19,7 +19,7 @@ import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServi
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.readside.{ ReadSideBootstrap, ReadSideManager }
-import com.github.chiefofstate.services.{ ReadSideManagerServiceImpl, ServiceImpl }
+import com.github.chiefofstate.services.{ CoSReadSideManagerService, CoSService }
 import com.github.chiefofstate.utils.{ NettyHelper, ProtosValidator, Util }
 import com.typesafe.config.Config
 import io.grpc._
@@ -40,7 +40,7 @@ import scala.sys.ShutdownHookThread
  *   <li> the gRPC service
  * </ul>
  */
-object ServiceBootstrapper {
+object Bootstrapper {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   def apply(config: Config): Behavior[scalapb.GeneratedMessage] = Behaviors.setup[scalapb.GeneratedMessage] { context =>
@@ -122,21 +122,21 @@ object ServiceBootstrapper {
     val grpcEc: ExecutionContext = system.executionContext
 
     // instantiate the grpc service, bind to the execution context
-    val serviceImpl: ServiceImpl =
-      new ServiceImpl(clusterSharding, cosConfig.writeSideConfig)
+    val coSService: CoSService =
+      new CoSService(clusterSharding, cosConfig.writeSideConfig)
 
     // create an instance of the read side state manager service
-    val readSideStateServiceImpl = new ReadSideManagerServiceImpl(readSideManager)(grpcEc)
+    val readSideManagerService = new CoSReadSideManagerService(readSideManager)(grpcEc)
 
     // create the server builder
     var builder = NettyServerBuilder
       .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
-      .addService(setServiceWithInterceptors(ChiefOfStateService.bindService(serviceImpl, grpcEc)))
+      .addService(setServiceWithInterceptors(ChiefOfStateService.bindService(coSService, grpcEc)))
 
     // only start the read side manager if readSide is enabled
     if (cosConfig.enableReadSide)
       builder = builder.addService(
-        setServiceWithInterceptors(ReadSideManagerService.bindService(readSideStateServiceImpl, grpcEc)))
+        setServiceWithInterceptors(ReadSideManagerService.bindService(readSideManagerService, grpcEc)))
 
     // attach service to netty server
     val server: Server = builder.build().start()

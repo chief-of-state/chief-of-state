@@ -11,7 +11,7 @@ import akka.actor.typed.ActorSystem
 import com.github.chiefofstate.config.BootConfig
 import com.typesafe.config.Config
 
-object StartNode extends App {
+object Node extends App {
   // Application config
   val config: Config = BootConfig.get()
 

@@ -36,7 +36,7 @@ object NodeBehaviour {
       // initialize the service bootstrapper
       val bootstrapper: ActorRef[scalapb.GeneratedMessage] =
         context.spawn(
-          Behaviors.supervise(ServiceBootstrapper(config)).onFailure[Exception](SupervisorStrategy.restart),
+          Behaviors.supervise(Bootstrapper(config)).onFailure[Exception](SupervisorStrategy.restart),
           COS_SERVICE_BOOTSTRAPPER)
 
       // initialise the migration cluster singleton settings

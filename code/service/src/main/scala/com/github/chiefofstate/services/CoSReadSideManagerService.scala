@@ -15,7 +15,7 @@ import org.slf4j.{ Logger, LoggerFactory }
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.{ Failure, Success, Try }
 
-class ReadSideManagerServiceImpl(readSideManager: ReadSideManager)(implicit ec: ExecutionContext)
+class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionContext)
     extends ReadSideManagerService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
