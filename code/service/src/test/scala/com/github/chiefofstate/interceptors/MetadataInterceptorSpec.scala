@@ -11,8 +11,8 @@ import com.github.chiefofstate.helper.{ BaseSpec, GrpcHelpers }
 import com.github.chiefofstate.test.helloworld.GreeterGrpc.{ Greeter, GreeterBlockingStub }
 import com.github.chiefofstate.test.helloworld.{ GreeterGrpc, HelloReply, HelloRequest }
 import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
-import io.grpc.{ ManagedChannel, Metadata, ServerServiceDefinition }
 import io.grpc.stub.MetadataUtils
+import io.grpc.{ ManagedChannel, Metadata, ServerServiceDefinition }
 
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future

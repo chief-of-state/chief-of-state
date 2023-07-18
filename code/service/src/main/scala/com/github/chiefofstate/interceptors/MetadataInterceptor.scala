@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.interceptors
 
-import io.grpc.{ Context, Contexts, Metadata, ServerCall, ServerCallHandler, ServerInterceptor }
+import io.grpc._
 
 /**
  * Intercepts gRPC headers and propagate them downstream via the gRPC context

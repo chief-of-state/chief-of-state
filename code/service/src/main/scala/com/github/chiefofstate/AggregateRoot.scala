@@ -12,7 +12,6 @@ import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl._
 import com.github.chiefofstate.config.{ CosConfig, SnapshotConfig }
-import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
 import com.github.chiefofstate.observability.Telemetry
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.{ CommandReply, GetStateCommand, RemoteCommand, SendCommand }
@@ -20,8 +19,8 @@ import com.github.chiefofstate.protobuf.v1.persistence.{ EventWrapper, StateWrap
 import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.ProtosValidator
 import com.github.chiefofstate.utils.Util.{ makeFailedStatusPf, toRpcStatus, Instants }
-import com.github.chiefofstate.writeside.ResponseType
 import com.github.chiefofstate.writeside.ResponseType._
+import com.github.chiefofstate.writeside.{ RemoteCommandHandler, RemoteEventHandler }
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import io.grpc.{ Status, StatusException }

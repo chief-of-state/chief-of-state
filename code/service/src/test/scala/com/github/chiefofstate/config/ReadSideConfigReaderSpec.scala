@@ -8,6 +8,7 @@ package com.github.chiefofstate.config
 
 import com.fasterxml.jackson.databind.exc.{ InvalidFormatException, MismatchedInputException }
 import com.github.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
+
 import scala.jdk.CollectionConverters._
 
 class ReadSideConfigReaderSpec extends BaseSpec {

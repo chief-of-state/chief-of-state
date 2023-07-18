@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate.handlers
+package com.github.chiefofstate.writeside
 
 import com.github.chiefofstate.config.{ GrpcClient, GrpcConfig, GrpcServer }
-import com.github.chiefofstate.handlers
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.common.Header.Value
@@ -108,7 +107,7 @@ class RemoteCommandHandlerSpec extends BaseSpec {
           Header().withKey("header-2-bin").withBytesValue(ByteString.copyFrom("header-value-2".getBytes))))
 
       val remoteCommandHandler: RemoteCommandHandler =
-        handlers.RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
+        RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
       (triedHandleCommandResponse.failure.exception should have).message("INTERNAL")

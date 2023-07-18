@@ -4,10 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate.handlers
+package com.github.chiefofstate.writeside
 
 import com.github.chiefofstate.config.{ GrpcClient, GrpcConfig, GrpcServer }
-import com.github.chiefofstate.handlers
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
@@ -98,7 +97,7 @@ class RemoteEventHandlerSpec extends BaseSpec {
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
-      val remoteEventHandler: RemoteEventHandler = handlers.RemoteEventHandler(grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleEventResponse: Try[HandleEventResponse] =
         remoteEventHandler.handleEvent(event, stateAny, eventMeta)
       (triedHandleEventResponse.failure.exception should have).message("UNKNOWN")

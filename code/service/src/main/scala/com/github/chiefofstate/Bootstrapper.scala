@@ -12,7 +12,6 @@ import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.github.chiefofstate.config.CosConfig
-import com.github.chiefofstate.handlers.{ RemoteCommandHandler, RemoteEventHandler }
 import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded }
 import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
@@ -21,6 +20,7 @@ import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc
 import com.github.chiefofstate.readside.{ ReadSideBootstrap, ReadSideManager }
 import com.github.chiefofstate.services.{ CoSReadSideManagerService, CoSService }
 import com.github.chiefofstate.utils.{ NettyHelper, ProtosValidator, Util }
+import com.github.chiefofstate.writeside.{ RemoteCommandHandler, RemoteEventHandler }
 import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder

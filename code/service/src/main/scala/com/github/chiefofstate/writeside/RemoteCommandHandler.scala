@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate.handlers
+package com.github.chiefofstate.writeside
 
 import com.github.chiefofstate.config.GrpcConfig
 import com.github.chiefofstate.protobuf.v1.common.Header.Value

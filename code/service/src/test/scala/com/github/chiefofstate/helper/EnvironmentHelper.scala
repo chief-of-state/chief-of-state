@@ -7,8 +7,8 @@
 package com.github.chiefofstate.helper
 
 import java.util.Collections
-import scala.util.{ Failure, Success, Try }
 import scala.util.control.NonFatal
+import scala.util.{ Failure, Success, Try }
 
 object EnvironmentHelper {
   def setEnv(newEnv: java.util.Map[String, String]): Unit = {
