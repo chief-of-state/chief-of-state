@@ -106,7 +106,7 @@ object AggregateRoot {
 
     val span: Span = GlobalOpenTelemetry
       .getTracer(getClass.getPackage.getName)
-      .spanBuilder("AggregateRoot.handleCommand")
+      .spanBuilder("AggregateRoot.HandleCommand")
       .setAttribute("component", this.getClass.getName)
       .setParent(ctx)
       .startSpan()

@@ -9,7 +9,7 @@ lazy val root: Project = project
   .enablePlugins(JavaAgent)
   .settings(
     headerLicense := None,
-    Compile / mainClass := Some("com.github.chiefofstate.StartNode"),
+    Compile / mainClass := Some("com.github.chiefofstate.Node"),
     makeBatScripts := Seq(),
     executableScriptName := "entrypoint",
     javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "1.28.0" % "runtime",
@@ -21,9 +21,6 @@ lazy val root: Project = project
       "-Dotel.exporter.otlp.protocol=grpc",
       "-Dotel.traces.sampler=parentbased_always_on",
       "-Dotel.javaagent.debug=false",
-      "-Dotel.instrumentation.[akka-actor].enabled=true",
-      "-Dotel.instrumentation.[hikaricp].enabled=false",
-      "-Dotel.instrumentation.[jdbc].enabled=false",
       "-Dio.opentelemetry.javaagent.slf4j.simpleLogger.defaultLogLevel=error",
       // -J params will be added as jvm parameters
       "-J-XX:+UseContainerSupport",
