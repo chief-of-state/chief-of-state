@@ -19,6 +19,13 @@ jobs:
 
       - uses: nelonoel/branch-name@v1.0.1
 
+      - name: Set up QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
+
       - name: Docker Login
         env:
           DOCKER_REGISTRY: ghcr.io
@@ -26,8 +33,9 @@ jobs:
           DOCKER_PASS: ${{ secrets.GITHUB_TOKEN }}
         run: docker login $DOCKER_REGISTRY --username "$DOCKER_USER" --password "$DOCKER_PASS"
 
-      - name: Download latest earthly
-        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.6.29/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
+      - uses: earthly/actions/setup-earthly@v1
+        with:
+          version: v0.7.12
 
       - name: Earthly Version
         run: earthly --version
@@ -51,4 +59,4 @@ jobs:
           FORCE_COLOR: 1
           COMMIT_HASH: ${{ github.sha }}
           VERSION: ${{ steps.version.outputs.VERSION }}
-        run: earthly -P --ci --push +release
+        run: earthly -P --ci --push +all

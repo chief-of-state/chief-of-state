@@ -27,6 +27,7 @@ import io.grpc.{ Status, StatusException }
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.{ Span, StatusCode }
 import io.opentelemetry.context.Context
+import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.time.Instant
@@ -94,24 +95,12 @@ object AggregateRoot {
       commandHandler: RemoteCommandHandler,
       eventHandler: RemoteEventHandler,
       protosValidator: ProtosValidator): ReplyEffect[EventWrapper, StateWrapper] = {
-
     log.debug("begin handle command")
 
     val sendCommand: SendCommand = aggregateCommand.message.asInstanceOf[SendCommand]
 
     val headers = sendCommand.tracingHeaders
     log.trace(s"aggregate root headers $headers")
-
-    val ctx = Telemetry.getParentSpanContext(Context.current(), headers)
-
-    val span: Span = GlobalOpenTelemetry
-      .getTracer(getClass.getPackage.getName)
-      .spanBuilder("AggregateRoot.HandleCommand")
-      .setAttribute("component", this.getClass.getName)
-      .setParent(ctx)
-      .startSpan()
-
-    val scope = span.makeCurrent()
 
     val output: ReplyEffect[EventWrapper, StateWrapper] = sendCommand.message match {
       case SendCommand.Message.RemoteCommand(remoteCommand) =>
@@ -129,13 +118,8 @@ object AggregateRoot {
 
       case SendCommand.Message.Empty =>
         val errStatus = Status.INTERNAL.withDescription("no command sent")
-        span.recordException(errStatus.asException()).setStatus(StatusCode.ERROR)
         Effect.reply(aggregateCommand.actorRef)(CommandReply().withError(toRpcStatus(errStatus)))
     }
-
-    span.end()
-    scope.close()
-
     output
   }
 
@@ -147,6 +131,7 @@ object AggregateRoot {
    * @param replyTo address to reply to
    * @return a reply effect returning the state or an error
    */
+  @WithSpan(value = "AggregateRoot.HandleGetStateCommand")
   def handleGetStateCommand(
       cmd: GetStateCommand,
       state: StateWrapper,
@@ -160,7 +145,7 @@ object AggregateRoot {
   }
 
   /**
-   * hanlder for remote commands
+   * handler for remote commands
    *
    * @param priorState the prior state of the entity
    * @param command the command to handle
@@ -171,6 +156,7 @@ object AggregateRoot {
    * @param data COS plugin data
    * @return a reply effect
    */
+  @WithSpan(value = "AggregateRoot.HandleRemoteCommandsAndEvents")
   def handleRemoteCommand(
       priorState: StateWrapper,
       command: RemoteCommand,
@@ -222,16 +208,12 @@ object AggregateRoot {
         persistEventAndReply(event, newState, eventMeta, replyTo)
 
       case Failure(e: StatusException) =>
-        // record the exception on the current span
-        Span.current().recordException(e).setStatus(StatusCode.ERROR)
         // reply with the error status
         Effect.reply(replyTo)(CommandReply().withError(toRpcStatus(e.getStatus, e.getTrailers)))
 
       case unhandled =>
         // this should never happen, but here for code completeness
         val errStatus = Status.INTERNAL.withDescription(s"write handler failure, ${unhandled.getClass}")
-
-        Span.current().recordException(errStatus.asException()).setStatus(StatusCode.ERROR)
         Effect.reply(replyTo)(CommandReply().withError(toRpcStatus(errStatus)))
     }
   }
@@ -251,7 +233,7 @@ object AggregateRoot {
   /**
    * sets the snapshot retention criteria
    *
-   * @param snapshotConfig the snapshot configt
+   * @param snapshotConfig the snapshot config
    * @return the snapshot retention criteria
    */
   private[chiefofstate] def setSnapshotRetentionCriteria(snapshotConfig: SnapshotConfig): RetentionCriteria = {
@@ -269,7 +251,7 @@ object AggregateRoot {
   }
 
   /**
-   * perists an event and the resulting state and reply to the caller
+   * persists an event and the resulting state and reply to the caller
    *
    * @param event the event to persist
    * @param resultingState the resulting state to persist

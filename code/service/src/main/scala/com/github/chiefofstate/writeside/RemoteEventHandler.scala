@@ -11,6 +11,7 @@ import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.protobuf.v1.writeside.{ HandleEventRequest, HandleEventResponse }
 import com.google.protobuf.any
+import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.util.concurrent.TimeUnit
@@ -33,6 +34,7 @@ case class RemoteEventHandler(grpcConfig: GrpcConfig, writeHandlerServiceStub: W
    * @param priorState the aggregate prior state
    * @return the eventual HandleEventResponse
    */
+  @WithSpan(value = "RemoteCommandHandler.HandleEvent")
   def handleEvent(event: any.Any, priorState: any.Any, eventMeta: MetaData): Try[HandleEventResponse] = {
     Try {
       log.debug(s"sending request to the event handler, ${event.typeUrl}")

@@ -14,6 +14,7 @@ import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc
 import com.github.chiefofstate.protobuf.v1.writeside.{ HandleCommandRequest, HandleCommandResponse }
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
+import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.slf4j.{ Logger, LoggerFactory }
 
 import java.util.concurrent.TimeUnit
@@ -36,6 +37,7 @@ case class RemoteCommandHandler(grpcConfig: GrpcConfig, writeHandlerServiceStub:
    * @param priorState the aggregate state before the command to handle
    * @return an eventual HandleCommandResponse
    */
+  @WithSpan(value = "RemoteCommandHandler.HandleCommand")
   def handleCommand(remoteCommand: RemoteCommand, priorState: StateWrapper): Try[HandleCommandResponse] = {
     log.debug(s"sending request to the command handler, ${remoteCommand.getCommand.typeUrl}")
 

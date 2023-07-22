@@ -13,6 +13,7 @@ import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
+import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.slf4j.{ Logger, LoggerFactory }
 
 import scala.util.{ Failure, Success, Try }
@@ -31,7 +32,6 @@ private[readside] class ReadSideHandlerImpl(
 
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
   private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
-  private[readside] val spanName: String = "ReadSideHandler.ProcessEvent"
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -44,22 +44,12 @@ private[readside] class ReadSideHandlerImpl(
    * @param meta           the additional meta data
    * @return an eventual HandleReadSideResponse
    */
+  @WithSpan(value = "ReadSideHandler.HandleEvent")
   def processEvent(
       event: com.google.protobuf.any.Any,
       eventTag: String,
       resultingState: com.google.protobuf.any.Any,
       meta: MetaData): Boolean = {
-
-    // start the span
-    val span: Span =
-      GlobalOpenTelemetry
-        .getTracer(getClass.getPackage.getName)
-        .spanBuilder(spanName)
-        .setAttribute("component", this.getClass.getName)
-        .startSpan()
-
-    val scope = span.makeCurrent()
-
     val response: Try[HandleReadSideResponse] = Try {
       val headers = new Metadata()
       headers.put(Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER), meta.entityId)
@@ -70,10 +60,6 @@ private[readside] class ReadSideHandlerImpl(
         .handleReadSide(
           HandleReadSideRequest().withEvent(event).withState(resultingState).withMeta(meta).withReadSideId(processorId))
     }
-
-    // finish the span
-    scope.close()
-    span.end()
 
     // return the response
     response match {

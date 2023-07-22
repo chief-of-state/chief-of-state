@@ -76,6 +76,7 @@ object Dependencies {
     "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-api" % OpenTelemetryInstrumentationApiVersion,
     "io.opentelemetry" % "opentelemetry-sdk-extension-autoconfigure" % OpenTelemetrySdkConfigVersion,
     "io.opentelemetry.instrumentation" % "opentelemetry-grpc-1.5" % OpenTelemetryGRPCVersion,
+    "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-annotations" % OpenTelemetryInstrumentationApiVersion,
     "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetrySdkVersion)
 
   val testJars: Seq[ModuleID] = Seq(
