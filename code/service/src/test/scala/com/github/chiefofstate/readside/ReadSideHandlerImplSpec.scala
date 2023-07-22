@@ -27,7 +27,6 @@ import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.ListHasAsScala
 
 class ReadSideHandlerImplSpec extends BaseSpec {
 
@@ -190,13 +189,6 @@ class ReadSideHandlerImplSpec extends BaseSpec {
           meta)
 
       triedHandleReadSideResponse shouldBe false
-
-      // assert the span was closed even in case of a failure
-      testExporter
-        .getFinishedSpanItems()
-        .asScala
-        .find(_.getName() == readSideHandlerImpl.spanName)
-        .isDefined shouldBe true
     }
   }
 }

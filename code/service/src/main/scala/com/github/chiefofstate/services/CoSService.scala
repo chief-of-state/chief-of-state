@@ -12,7 +12,6 @@ import akka.util.Timeout
 import com.github.chiefofstate.AggregateRoot
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.interceptors.MetadataInterceptor
-import com.github.chiefofstate.observability.Telemetry
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
 import com.github.chiefofstate.protobuf.v1.internal._
@@ -47,9 +46,6 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
 
     // fetch the gRPC metadata
     val metadata: Metadata = MetadataInterceptor.REQUEST_META.get()
-    val tracingHeaders = Telemetry.getTracingHeaders(Context.current())
-
-    log.debug(s"Adding tracing headers to command $tracingHeaders")
 
     // ascertain the entity ID
     CoSService
@@ -71,7 +67,7 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
         entityRef ? ((replyTo: ActorRef[GeneratedMessage]) => {
 
           val sendCommand: SendCommand =
-            SendCommand().withRemoteCommand(remoteCommand).withTracingHeaders(tracingHeaders)
+            SendCommand().withRemoteCommand(remoteCommand)
 
           SendReceive(message = sendCommand, actorRef = replyTo)
         })
@@ -89,8 +85,6 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
 
     val entityId: String = request.entityId
 
-    val tracingHeaders = Telemetry.getTracingHeaders(Context.current())
-
     // ascertain the entity id
     CoSService
       .requireEntityId(entityId)
@@ -103,7 +97,7 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
         entityRef ? ((replyTo: ActorRef[GeneratedMessage]) => {
 
           val sendCommand: SendCommand =
-            SendCommand().withGetStateCommand(getCommand).withTracingHeaders(tracingHeaders)
+            SendCommand().withGetStateCommand(getCommand)
 
           SendReceive(message = sendCommand, actorRef = replyTo)
         })

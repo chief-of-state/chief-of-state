@@ -12,7 +12,6 @@ import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl._
 import com.github.chiefofstate.config.{ CosConfig, SnapshotConfig }
-import com.github.chiefofstate.observability.Telemetry
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.{ CommandReply, GetStateCommand, RemoteCommand, SendCommand }
 import com.github.chiefofstate.protobuf.v1.persistence.{ EventWrapper, StateWrapper }
@@ -24,9 +23,6 @@ import com.github.chiefofstate.writeside.{ RemoteCommandHandler, RemoteEventHand
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import io.grpc.{ Status, StatusException }
-import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.api.trace.{ Span, StatusCode }
-import io.opentelemetry.context.Context
 import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.slf4j.{ Logger, LoggerFactory }
 

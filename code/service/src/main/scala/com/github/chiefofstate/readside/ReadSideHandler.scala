@@ -11,8 +11,6 @@ import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.R
 import com.github.chiefofstate.protobuf.v1.readside.{ HandleReadSideRequest, HandleReadSideResponse }
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
-import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.slf4j.{ Logger, LoggerFactory }
 
