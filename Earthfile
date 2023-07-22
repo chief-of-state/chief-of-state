@@ -7,8 +7,6 @@ all:
         --platform=linux/amd64 \
         --platform=linux/arm64/v8 \
         --platform=linux/arm/v7 \
-        --platform=linux/ppc64le \
-        --platform=linux/s390x \
         +release
 
 test-and-build:
