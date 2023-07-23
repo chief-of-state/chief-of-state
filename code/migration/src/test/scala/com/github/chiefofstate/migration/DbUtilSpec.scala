@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.migration
 
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.migration.helper.TestConfig
 import org.postgresql.PGProperty
 import org.testcontainers.utility.DockerImageName
@@ -15,7 +15,9 @@ import java.sql.DriverManager
 
 class DbUtilSpec extends BaseSpec with ForAllTestContainer {
   override val container: PostgreSQLContainer =
-    PostgreSQLContainer.Def(dockerImageName = DockerImageName.parse("postgres:11")).createContainer()
+    PostgreSQLContainer
+      .Def(dockerImageName = DockerImageName.parse("postgres:11"))
+      .createContainer()
 
   def connection = {
     // load the driver
@@ -24,7 +26,8 @@ class DbUtilSpec extends BaseSpec with ForAllTestContainer {
     DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
   }
 
-  def dbConfig = TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+  def dbConfig =
+    TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
   ".tableExists" should {
     "return true if table exists" in {
@@ -50,8 +53,8 @@ class DbUtilSpec extends BaseSpec with ForAllTestContainer {
       online shouldBe true
     }
     "return false when the database is not online" in {
-      val host = "localhost"
-      val port = 2000
+      val host   = "localhost"
+      val port   = 2000
       val online = DbUtil.isDatabaseOnline(host, port)
       online shouldBe false
     }

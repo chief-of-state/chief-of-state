@@ -19,4 +19,5 @@ sealed trait Message
  * @param message a generated message
  * @param actorRef an actor ref
  */
-case class SendReceive(message: GeneratedMessage, actorRef: ActorRef[GeneratedMessage]) extends Message
+case class SendReceive(message: GeneratedMessage, actorRef: ActorRef[GeneratedMessage])
+    extends Message

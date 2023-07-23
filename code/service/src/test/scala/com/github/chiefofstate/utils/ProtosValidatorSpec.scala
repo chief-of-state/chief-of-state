@@ -8,7 +8,7 @@ package com.github.chiefofstate.utils
 
 import com.github.chiefofstate.config._
 import com.github.chiefofstate.helper.BaseSpec
-import com.github.chiefofstate.protobuf.v1.tests.{ Account, AccountOpened }
+import com.github.chiefofstate.protobuf.v1.tests.{Account, AccountOpened}
 import com.github.chiefofstate.utils
 import com.google.protobuf.any.Any
 
@@ -22,7 +22,8 @@ class ProtosValidatorSpec extends BaseSpec {
     eventsProtos = Seq(),
     statesProtos = Seq(),
     propagatedHeaders = Seq(),
-    persistedHeaders = Seq())
+    persistedHeaders = Seq()
+  )
 
   "Events and State protos validation" should {
     "pass through successfully when validation is disabled" in {
@@ -31,8 +32,8 @@ class ProtosValidatorSpec extends BaseSpec {
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(writeSideConfig)
 
-      val event = AccountOpened()
-      val state = Account()
+      val event   = AccountOpened()
+      val state   = Account()
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
       isValid shouldBe true
       isValid = eventsAndStateProtosValidation.validateState(Any.pack(state))
@@ -47,7 +48,11 @@ class ProtosValidatorSpec extends BaseSpec {
       val eventUrl = event.companion.scalaDescriptor.fullName
 
       val writeSideConfig =
-        sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(eventUrl), statesProtos = Seq(stateUrl))
+        sharedConfig.copy(
+          enableProtoValidation = true,
+          eventsProtos = Seq(eventUrl),
+          statesProtos = Seq(stateUrl)
+        )
 
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(writeSideConfig)
@@ -59,12 +64,13 @@ class ProtosValidatorSpec extends BaseSpec {
     }
 
     "invalidate events and state proto successfully" in {
-      val writeSideConfig = sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
+      val writeSideConfig =
+        sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
 
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(writeSideConfig)
-      val event = AccountOpened()
-      val state = Account()
+      val event   = AccountOpened()
+      val state   = Account()
       var isValid = eventsAndStateProtosValidation.validateEvent(Any.pack(event))
       isValid shouldBe false
       isValid = eventsAndStateProtosValidation.validateState(Any.pack(state))
@@ -72,13 +78,14 @@ class ProtosValidatorSpec extends BaseSpec {
     }
 
     "throws when an event or state is invalid" in {
-      val writeSideConfig = sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
+      val writeSideConfig =
+        sharedConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
 
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(writeSideConfig)
 
       val event: AccountOpened = AccountOpened()
-      val state: Account = Account()
+      val state: Account       = Account()
 
       assertThrows[IllegalArgumentException] {
         eventsAndStateProtosValidation.requireValidEvent(Any.pack(event))

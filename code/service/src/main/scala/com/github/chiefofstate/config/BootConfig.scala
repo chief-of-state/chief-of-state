@@ -6,8 +6,8 @@
 
 package com.github.chiefofstate.config
 
-import com.typesafe.config.{ Config, ConfigFactory }
-import org.slf4j.{ Logger, LoggerFactory }
+import com.typesafe.config.{Config, ConfigFactory}
+import org.slf4j.{Logger, LoggerFactory}
 
 object BootConfig {
 
@@ -18,7 +18,7 @@ object BootConfig {
   case class DeploymentMode(key: String, file: String)
 
   val DEPLOYMENT_MODE_DOCKER: DeploymentMode = DeploymentMode("docker", "docker.conf")
-  val DEPLOYMENT_MODE_K8S: DeploymentMode = DeploymentMode("kubernetes", "kubernetes.conf")
+  val DEPLOYMENT_MODE_K8S: DeploymentMode    = DeploymentMode("kubernetes", "kubernetes.conf")
 
   def get(): Config = {
     val mode: DeploymentMode = getDeploymentMode

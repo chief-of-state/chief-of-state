@@ -8,16 +8,16 @@ package com.github.chiefofstate.utils
 
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.protobuf.v1.common.Header
-import com.github.chiefofstate.protobuf.v1.common.Header.Value.{ BytesValue, StringValue }
+import com.github.chiefofstate.protobuf.v1.common.Header.Value.{BytesValue, StringValue}
 import com.github.chiefofstate.protobuf.v1.tests.AccountOpened
-import com.github.chiefofstate.utils.Util.{ Instants, Timestamps }
+import com.github.chiefofstate.utils.Util.{Instants, Timestamps}
 import com.google.protobuf.ByteString
 import com.google.protobuf.timestamp.Timestamp
 import com.google.rpc.error_details.BadRequest
 import io.grpc.protobuf.StatusProto
-import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
+import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
 
-import java.time.{ Instant, ZoneId }
+import java.time.{Instant, ZoneId}
 import scala.util.Failure
 
 class UtilSpec extends BaseSpec {
@@ -30,9 +30,11 @@ class UtilSpec extends BaseSpec {
     }
 
     "be converted successfully to java Instant given the Timezone" in {
-      ts.toInstant(ZoneId.of("America/Los_Angeles")).compareTo(Instant.ofEpochSecond(1582879956, 704545000)) shouldBe 0
+      ts.toInstant(ZoneId.of("America/Los_Angeles"))
+        .compareTo(Instant.ofEpochSecond(1582879956, 704545000)) shouldBe 0
 
-      ts.toInstant(ZoneId.of("GMT+01:00")).compareTo(Instant.ofEpochSecond(1582879956, 704545000)) shouldBe 0
+      ts.toInstant(ZoneId.of("GMT+01:00"))
+        .compareTo(Instant.ofEpochSecond(1582879956, 704545000)) shouldBe 0
     }
 
     "be converted successfully to LocalDate given the Timezone" in {
@@ -52,30 +54,33 @@ class UtilSpec extends BaseSpec {
   "Extraction of proto package name" should {
     "be successful" in {
       val accountOpened: AccountOpened = AccountOpened()
-      val packageName: String = Util.getProtoFullyQualifiedName(com.google.protobuf.any.Any.pack(accountOpened))
+      val packageName: String =
+        Util.getProtoFullyQualifiedName(com.google.protobuf.any.Any.pack(accountOpened))
       packageName shouldBe "chief_of_state.v1.AccountOpened"
     }
   }
   ".extractHeaders" should {
     "successfully parse gRPC headers" in {
       val fooKeyName: String = "foo"
-      val fooKey: Metadata.Key[String] = Metadata.Key.of(fooKeyName, Metadata.ASCII_STRING_MARSHALLER)
+      val fooKey: Metadata.Key[String] =
+        Metadata.Key.of(fooKeyName, Metadata.ASCII_STRING_MARSHALLER)
 
-      val foo1: String = "foo"
+      val foo1: String                 = "foo"
       val fooStringValue1: StringValue = StringValue(foo1)
-      val fooHeader1: Header = Header(fooKeyName, fooStringValue1)
+      val fooHeader1: Header           = Header(fooKeyName, fooStringValue1)
 
-      val foo2: String = "someOtherFoo"
+      val foo2: String                 = "someOtherFoo"
       val fooStringValue2: StringValue = StringValue(foo2)
-      val fooHeader2: Header = Header(fooKeyName, fooStringValue2)
+      val fooHeader2: Header           = Header(fooKeyName, fooStringValue2)
 
       val barKeyName: String = "bar-bin"
-      val bar: Array[Byte] = "bar".getBytes
-      val barKey: Metadata.Key[Array[Byte]] = Metadata.Key.of(barKeyName, Metadata.BINARY_BYTE_MARSHALLER)
+      val bar: Array[Byte]   = "bar".getBytes
+      val barKey: Metadata.Key[Array[Byte]] =
+        Metadata.Key.of(barKeyName, Metadata.BINARY_BYTE_MARSHALLER)
       val barBytesValue: BytesValue = BytesValue(ByteString.copyFrom(bar))
-      val barHeader: Header = Header(barKeyName, barBytesValue)
+      val barHeader: Header         = Header(barKeyName, barBytesValue)
 
-      val baz: String = "baz"
+      val baz: String                  = "baz"
       val bazKey: Metadata.Key[String] = Metadata.Key.of(baz, Metadata.ASCII_STRING_MARSHALLER)
 
       val metadata: Metadata = new Metadata()
@@ -85,8 +90,8 @@ class UtilSpec extends BaseSpec {
       metadata.put(bazKey, baz)
 
       val desiredHeaders: Seq[String] = Seq("foo", "bar-bin", "not-a-key")
-      val actual: Seq[Header] = Util.extractHeaders(metadata, desiredHeaders)
-      val expected: Seq[Header] = Seq(fooHeader1, fooHeader2, barHeader)
+      val actual: Seq[Header]         = Util.extractHeaders(metadata, desiredHeaders)
+      val expected: Seq[Header]       = Seq(fooHeader1, fooHeader2, barHeader)
       actual should contain theSameElementsAs expected
     }
   }
@@ -94,7 +99,7 @@ class UtilSpec extends BaseSpec {
   ".makeFailedStatusPf" should {
     "invoke makeStatusException" in {
       val status: Status = Status.ABORTED.withDescription("abort!")
-      val exc = new StatusRuntimeException(status)
+      val exc            = new StatusRuntimeException(status)
 
       val actual = intercept[StatusException] {
         Failure(exc).recoverWith(Util.makeFailedStatusPf).get
@@ -108,7 +113,7 @@ class UtilSpec extends BaseSpec {
     "pass through status exceptions" in {
       // define an illegal arg exception
       val status: Status = Status.ABORTED.withDescription("abort!")
-      val exc = new StatusException(status)
+      val exc            = new StatusException(status)
       // convert to a status exception of INVALID ARGUMENT
       val actual: StatusException = Util.makeStatusException(exc)
       actual shouldBe exc
@@ -116,7 +121,7 @@ class UtilSpec extends BaseSpec {
     "transform status runtime exceptions" in {
       // define an illegal arg exception
       val status: Status = Status.ABORTED.withDescription("abort!")
-      val exc = new StatusRuntimeException(status)
+      val exc            = new StatusRuntimeException(status)
       // convert to a status exception of INVALID ARGUMENT
       val actual: StatusException = Util.makeStatusException(exc)
 
@@ -132,7 +137,7 @@ class UtilSpec extends BaseSpec {
       actual.getStatus.getDescription shouldBe "some illegal thing"
     }
     "convert general throwables to INTERNAL status" in {
-      val exc = new Exception("boom")
+      val exc                     = new Exception("boom")
       val actual: StatusException = Util.makeStatusException(exc)
 
       actual.getStatus.getCode shouldBe (io.grpc.Status.Code.INTERNAL)
@@ -145,14 +150,16 @@ class UtilSpec extends BaseSpec {
       val status = io.grpc.Status.INVALID_ARGUMENT.withDescription("whoops")
       val actual = Util.toRpcStatus(status)
       val expected =
-        com.google.rpc.status.Status(code = io.grpc.Status.Code.INVALID_ARGUMENT.value(), message = "whoops")
+        com.google.rpc.status
+          .Status(code = io.grpc.Status.Code.INVALID_ARGUMENT.value(), message = "whoops")
       actual shouldBe expected
     }
 
     "handles null status messages" in {
       val status = io.grpc.Status.INVALID_ARGUMENT
       val actual = Util.toRpcStatus(status)
-      val expected = com.google.rpc.status.Status(code = io.grpc.Status.Code.INVALID_ARGUMENT.value(), message = "")
+      val expected = com.google.rpc.status
+        .Status(code = io.grpc.Status.Code.INVALID_ARGUMENT.value(), message = "")
       actual shouldBe expected
     }
 
@@ -195,7 +202,8 @@ class UtilSpec extends BaseSpec {
     "be backwards compatible" in {
       // define pairs as they were in 0.5.1
       // these were pulled directly from the journal
-      val expectedPairs = Map(0 -> 5, 1 -> 4, 2 -> 3, 3 -> 2, 4 -> 1, 5 -> 0, 6 -> 8, 7 -> 7, 8 -> 6, 9 -> 5)
+      val expectedPairs =
+        Map(0 -> 5, 1 -> 4, 2 -> 3, 3 -> 2, 4 -> 1, 5 -> 0, 6 -> 8, 7 -> 7, 8 -> 6, 9 -> 5)
 
       val actual = expectedPairs.toSeq
         .sortBy(_._1)

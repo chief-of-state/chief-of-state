@@ -5,9 +5,9 @@
  */
 
 package com.github.chiefofstate.migration.versions.v6
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
-import com.github.chiefofstate.migration.helper.{ DbHelper, TestConfig }
-import com.github.chiefofstate.migration.{ BaseSpec, DbUtil }
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
+import com.github.chiefofstate.migration.helper.{DbHelper, TestConfig}
+import com.github.chiefofstate.migration.{BaseSpec, DbUtil}
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -19,7 +19,10 @@ class V6Spec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
+    .Def(
+      dockerImageName = DockerImageName.parse("postgres:11"),
+      urlParams = Map("currentSchema" -> cosSchema)
+    )
     .createContainer()
 
   lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =

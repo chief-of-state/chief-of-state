@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.config
 
-import com.github.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
+import com.github.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
 import com.typesafe.config.Config
 
 import scala.jdk.CollectionConverters._

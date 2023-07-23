@@ -31,7 +31,10 @@ object ResponseType {
    * @param state the state
    * @param eventMeta the event meta
    */
-  case class NewState(event: com.google.protobuf.any.Any, state: com.google.protobuf.any.Any, eventMeta: MetaData)
-      extends Response
+  case class NewState(
+      event: com.google.protobuf.any.Any,
+      state: com.google.protobuf.any.Any,
+      eventMeta: MetaData
+  ) extends Response
 
 }

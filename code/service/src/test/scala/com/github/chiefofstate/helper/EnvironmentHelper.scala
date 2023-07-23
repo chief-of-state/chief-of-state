@@ -8,7 +8,7 @@ package com.github.chiefofstate.helper
 
 import java.util.Collections
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 object EnvironmentHelper {
   def setEnv(newEnv: java.util.Map[String, String]): Unit = {
@@ -19,20 +19,25 @@ object EnvironmentHelper {
       val theEnvironmentField =
         processEnvironmentClass.getDeclaredField("theEnvironment")
       theEnvironmentField.setAccessible(true)
-      val env = theEnvironmentField.get(null).asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
+      val env =
+        theEnvironmentField
+          .get(null)
+          .asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
       env.putAll(newEnv)
 
       val theCaseInsensitiveEnvironmentField =
         processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment")
       theCaseInsensitiveEnvironmentField.setAccessible(true)
       val ciEnv =
-        theCaseInsensitiveEnvironmentField.get(null).asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
+        theCaseInsensitiveEnvironmentField
+          .get(null)
+          .asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
       ciEnv.putAll(newEnv)
     } match {
       case Failure(_: NoSuchFieldException) =>
         Try {
           val classes = classOf[Collections].getDeclaredClasses
-          val env = System.getenv
+          val env     = System.getenv
           classes
             .filter(_.getName == "java.util.Collections$UnmodifiableMap")
             .foreach(cl => {

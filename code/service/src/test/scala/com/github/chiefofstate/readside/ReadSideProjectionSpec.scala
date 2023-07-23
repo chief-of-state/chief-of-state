@@ -9,7 +9,7 @@ package com.github.chiefofstate.readside
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import com.github.chiefofstate.config.ReadSideFailurePolicy
 import com.github.chiefofstate.helper.BaseSpec
-import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 
 import javax.sql.DataSource
 
@@ -34,11 +34,11 @@ class ReadSideProjectionSpec extends BaseSpec {
 
   ".jdbcProjection" should {
     "run without failure" in {
-      val projectionId = "some-projection"
-      val dataSource: DataSource = mock[DataSource]
+      val projectionId                 = "some-projection"
+      val dataSource: DataSource       = mock[DataSource]
       val readHandler: ReadSideHandler = mock[ReadSideHandler]
-      val numShards = 2
-      val failurePolicy = ReadSideFailurePolicy.StopDirective
+      val numShards                    = 2
+      val failurePolicy                = ReadSideFailurePolicy.StopDirective
       val projection =
         new ReadSide(actorSystem, projectionId, dataSource, readHandler, numShards, failurePolicy)
       val tagName: String = "1"

@@ -27,18 +27,19 @@ case class WriteSideConfig(
     eventsProtos: Seq[String],
     statesProtos: Seq[String],
     propagatedHeaders: Seq[String],
-    persistedHeaders: Seq[String])
+    persistedHeaders: Seq[String]
+)
 
 object WriteSideConfig {
 
-  private val hostKey: String = "chiefofstate.write-side.host"
-  private val portKey: String = "chiefofstate.write-side.port"
-  private val useTlsKey: String = "chiefofstate.write-side.use-tls"
-  private val protoValidationKey: String = "chiefofstate.write-side.enable-protos-validation"
-  private val eventsProtosKey: String = "chiefofstate.write-side.events-protos"
-  private val statesProtosKey: String = "chiefofstate.write-side.states-protos"
+  private val hostKey: String              = "chiefofstate.write-side.host"
+  private val portKey: String              = "chiefofstate.write-side.port"
+  private val useTlsKey: String            = "chiefofstate.write-side.use-tls"
+  private val protoValidationKey: String   = "chiefofstate.write-side.enable-protos-validation"
+  private val eventsProtosKey: String      = "chiefofstate.write-side.events-protos"
+  private val statesProtosKey: String      = "chiefofstate.write-side.states-protos"
   private val propagatedHeadersKey: String = "chiefofstate.write-side.propagated-headers"
-  private val persistedHeadersKey: String = "chiefofstate.write-side.persisted-headers"
+  private val persistedHeadersKey: String  = "chiefofstate.write-side.persisted-headers"
 
   /**
    * creates an instancee of WriteSideConfig
@@ -56,7 +57,8 @@ object WriteSideConfig {
       eventsProtos = csvSplitDistinct(config.getString(eventsProtosKey)),
       statesProtos = csvSplitDistinct(config.getString(statesProtosKey)),
       propagatedHeaders = csvSplitDistinct(config.getString(propagatedHeadersKey)),
-      persistedHeaders = csvSplitDistinct(config.getString(persistedHeadersKey)))
+      persistedHeaders = csvSplitDistinct(config.getString(persistedHeadersKey))
+    )
   }
 
   /**

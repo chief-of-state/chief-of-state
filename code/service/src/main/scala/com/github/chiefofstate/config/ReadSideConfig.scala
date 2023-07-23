@@ -39,7 +39,8 @@ final case class ReadSideConfig(
     @JsonProperty
     enabled: Boolean = true,
     @JsonProperty
-    failurePolicy: String = "") {
+    failurePolicy: String = ""
+) {
 
   // let us set the valid failure policy values
   private val failurePolicies =
@@ -47,7 +48,8 @@ final case class ReadSideConfig(
       SkipDirective.toLowerCase,
       StopDirective.toLowerCase,
       ReplaySkipDirective.toLowerCase,
-      ReplayStopDirective.toLowerCase)
+      ReplayStopDirective.toLowerCase
+    )
 
   /**
    * check whether the read side config is valid or not
@@ -71,7 +73,7 @@ final case class ReadSideConfig(
 
   override def toString: String = {
     s"id=$readSideId, host=$host, port=$port, " +
-    s"useTls=$useTls, autoStart=$autoStart, " +
-    s"enabled=$enabled, failurePolicy=$failurePolicy"
+      s"useTls=$useTls, autoStart=$autoStart, " +
+      s"enabled=$enabled, failurePolicy=$failurePolicy"
   }
 }

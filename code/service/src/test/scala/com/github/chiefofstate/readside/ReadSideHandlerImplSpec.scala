@@ -14,11 +14,11 @@ import com.github.chiefofstate.protobuf.v1.readside.{
   HandleReadSideResponse,
   ReadSideHandlerServiceGrpc
 }
-import com.github.chiefofstate.protobuf.v1.tests.{ Account, AccountOpened }
+import com.github.chiefofstate.protobuf.v1.tests.{Account, AccountOpened}
 import io.grpc.Status
 import io.grpc.inprocess._
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.api.{ GlobalOpenTelemetry, OpenTelemetry }
+import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
 import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
@@ -31,14 +31,16 @@ import scala.concurrent.Future
 class ReadSideHandlerImplSpec extends BaseSpec {
 
   var testExporter: InMemorySpanExporter = _
-  var openTelemetry: OpenTelemetry = _
+  var openTelemetry: OpenTelemetry       = _
 
   override def beforeEach(): Unit = {
     GlobalOpenTelemetry.resetForTest()
 
     testExporter = InMemorySpanExporter.create
     openTelemetry = OpenTelemetrySdk.builder
-      .setTracerProvider(SdkTracerProvider.builder.addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build)
+      .setTracerProvider(
+        SdkTracerProvider.builder.addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build
+      )
       .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance))
       .buildAndRegisterGlobal
   }
@@ -46,13 +48,13 @@ class ReadSideHandlerImplSpec extends BaseSpec {
   "ReadSideHandlerImpl" should {
     "handle events as expected" in {
       val accountOpened = AccountOpened()
-      val account = Account()
-      val eventTag = "chiefofstate8"
+      val account       = Account()
+      val eventTag      = "chiefofstate8"
       val resultingState =
         com.google.protobuf.any.Any.pack(account.withBalance(200))
 
       val meta: MetaData = MetaData().withEntityId("231")
-      val readSideId = "my-read-side-id"
+      val readSideId     = "my-read-side-id"
 
       val request: HandleReadSideRequest = HandleReadSideRequest()
         .withEvent(com.google.protobuf.any.Any.pack(accountOpened))
@@ -73,7 +75,13 @@ class ReadSideHandlerImplSpec extends BaseSpec {
 
       // register a server that intercepts traces and reports errors
       closeables.register(
-        InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
+        InProcessServerBuilder
+          .forName(serverName)
+          .directExecutor()
+          .addService(service)
+          .build()
+          .start()
+      )
 
       val serverChannel = {
         closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
@@ -89,20 +97,21 @@ class ReadSideHandlerImplSpec extends BaseSpec {
           com.google.protobuf.any.Any.pack(accountOpened),
           eventTag,
           resultingState,
-          meta)
+          meta
+        )
 
       triedHandleReadSideResponse shouldBe true
     }
 
     "handle response with explicit failure" in {
       val accountOpened = AccountOpened()
-      val account = Account()
-      val eventTag = "chiefofstate8"
+      val account       = Account()
+      val eventTag      = "chiefofstate8"
       val resultingState =
         com.google.protobuf.any.Any.pack(account.withBalance(200))
 
       val meta: MetaData = MetaData().withEntityId("231")
-      val readSideId = "my-read-side-id"
+      val readSideId     = "my-read-side-id"
 
       val request: HandleReadSideRequest = HandleReadSideRequest()
         .withEvent(com.google.protobuf.any.Any.pack(accountOpened))
@@ -123,7 +132,13 @@ class ReadSideHandlerImplSpec extends BaseSpec {
 
       // register a server that intercepts traces and reports errors
       closeables.register(
-        InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
+        InProcessServerBuilder
+          .forName(serverName)
+          .directExecutor()
+          .addService(service)
+          .build()
+          .start()
+      )
 
       val serverChannel = {
         closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
@@ -139,20 +154,21 @@ class ReadSideHandlerImplSpec extends BaseSpec {
           com.google.protobuf.any.Any.pack(accountOpened),
           eventTag,
           resultingState,
-          meta)
+          meta
+        )
 
       triedHandleReadSideResponse shouldBe false
     }
 
     "handle event when there is an exception" in {
       val accountOpened = AccountOpened()
-      val account = Account()
-      val eventTag = "chiefofstate8"
+      val account       = Account()
+      val eventTag      = "chiefofstate8"
       val resultingState =
         com.google.protobuf.any.Any.pack(account.withBalance(200))
 
       val meta: MetaData = MetaData().withEntityId("231")
-      val readSideId = "my-read-side-id"
+      val readSideId     = "my-read-side-id"
 
       val request: HandleReadSideRequest = HandleReadSideRequest()
         .withEvent(com.google.protobuf.any.Any.pack(accountOpened))
@@ -171,7 +187,13 @@ class ReadSideHandlerImplSpec extends BaseSpec {
 
       // register a server that intercepts traces and reports errors
       closeables.register(
-        InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
+        InProcessServerBuilder
+          .forName(serverName)
+          .directExecutor()
+          .addService(service)
+          .build()
+          .start()
+      )
 
       val serverChannel = {
         closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
@@ -186,7 +208,8 @@ class ReadSideHandlerImplSpec extends BaseSpec {
           com.google.protobuf.any.Any.pack(accountOpened),
           eventTag,
           resultingState,
-          meta)
+          meta
+        )
 
       triedHandleReadSideResponse shouldBe false
     }

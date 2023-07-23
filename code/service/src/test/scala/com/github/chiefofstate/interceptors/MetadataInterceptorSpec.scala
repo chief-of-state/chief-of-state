@@ -7,12 +7,12 @@
 package com.github.chiefofstate.interceptors
 
 import com.github.chiefofstate.helper.GrpcHelpers.getHeaders
-import com.github.chiefofstate.helper.{ BaseSpec, GrpcHelpers }
-import com.github.chiefofstate.test.helloworld.GreeterGrpc.{ Greeter, GreeterBlockingStub }
-import com.github.chiefofstate.test.helloworld.{ GreeterGrpc, HelloReply, HelloRequest }
-import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
+import com.github.chiefofstate.helper.{BaseSpec, GrpcHelpers}
+import com.github.chiefofstate.test.helloworld.GreeterGrpc.{Greeter, GreeterBlockingStub}
+import com.github.chiefofstate.test.helloworld.{GreeterGrpc, HelloReply, HelloRequest}
+import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.grpc.stub.MetadataUtils
-import io.grpc.{ ManagedChannel, Metadata, ServerServiceDefinition }
+import io.grpc.{ManagedChannel, Metadata, ServerServiceDefinition}
 
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ class MetadataInterceptorSpec extends BaseSpec {
   "header interceptor" should {
     "catch the headers" in {
       // Generate a unique in-process server name.
-      val serverName: String = InProcessServerBuilder.generateName
+      val serverName: String   = InProcessServerBuilder.generateName
       val serviceImpl: Greeter = mock[Greeter]
 
       // declare a variable and interceptor to capture the headers
@@ -46,18 +46,21 @@ class MetadataInterceptorSpec extends BaseSpec {
           .addService(service)
           .intercept(MetadataInterceptor)
           .build()
-          .start())
+          .start()
+      )
 
       val channel: ManagedChannel =
         closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
 
       val stub: GreeterBlockingStub = GreeterGrpc.blockingStub(channel)
 
-      val key = "x-custom-header"
-      val value = "value"
+      val key                      = "x-custom-header"
+      val value                    = "value"
       val requestHeaders: Metadata = getHeaders((key, value))
 
-      stub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(requestHeaders)).sayHello(HelloRequest("hi"))
+      stub
+        .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(requestHeaders))
+        .sayHello(HelloRequest("hi"))
 
       responseHeaders.isDefined shouldBe true
       GrpcHelpers.getStringHeader(responseHeaders.get, key) shouldBe value

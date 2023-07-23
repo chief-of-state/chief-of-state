@@ -7,9 +7,9 @@
 package com.github.chiefofstate.migration
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.migration.helper.TestConfig.dbConfigFromUrl
-import com.github.chiefofstate.migration.helper.{ DbHelper, TestConfig }
+import com.github.chiefofstate.migration.helper.{DbHelper, TestConfig}
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIOAction
@@ -22,14 +22,17 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
+    .Def(
+      dockerImageName = DockerImageName.parse("postgres:11"),
+      urlParams = Map("currentSchema" -> cosSchema)
+    )
     .createContainer()
 
   val testKit: ActorTestKit = ActorTestKit()
@@ -38,7 +41,8 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    val connection = DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
+    val connection =
+      DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
 
     val statement = connection.createStatement()
     statement.addBatch(s"drop schema if exists $cosSchema cascade")
@@ -66,20 +70,25 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       val theEnvironmentField =
         processEnvironmentClass.getDeclaredField("theEnvironment")
       theEnvironmentField.setAccessible(true)
-      val env = theEnvironmentField.get(null).asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
+      val env =
+        theEnvironmentField
+          .get(null)
+          .asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
       env.putAll(newEnv)
 
       val theCaseInsensitiveEnvironmentField =
         processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment")
       theCaseInsensitiveEnvironmentField.setAccessible(true)
       val ciEnv =
-        theCaseInsensitiveEnvironmentField.get(null).asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
+        theCaseInsensitiveEnvironmentField
+          .get(null)
+          .asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
       ciEnv.putAll(newEnv)
     } match {
       case Failure(_: NoSuchFieldException) =>
         Try {
           val classes = classOf[Collections].getDeclaredClasses
-          val env = System.getenv
+          val env     = System.getenv
           classes
             .filter(_.getName == "java.util.Collections$UnmodifiableMap")
             .foreach(cl => {
@@ -122,11 +131,12 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
     mockVersion
   }
 
-  def getDbConfig() = TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
+  def getDbConfig() =
+    TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
 
   ".addVersion" should {
     "add to the versions queue in order" in {
-      val dbConfig = getDbConfig()
+      val dbConfig           = getDbConfig()
       val migrator: Migrator = new Migrator(dbConfig, cosSchema)
 
       // add versions out of order
@@ -146,7 +156,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   ".getVersions" should {
     "filter versions" in {
-      val dbConfig = getDbConfig()
+      val dbConfig           = getDbConfig()
       val migrator: Migrator = new Migrator(dbConfig, cosSchema)
 
       // add versions
@@ -221,7 +231,10 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
       // set db version number
       Migrator.createMigrationsTable(dbConfig)
-      Await.ready(dbConfig.db.run(Migrator.setCurrentVersionNumber(dbConfig, 1, true)), Duration.Inf)
+      Await.ready(
+        dbConfig.db.run(Migrator.setCurrentVersionNumber(dbConfig, 1, true)),
+        Duration.Inf
+      )
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(1)
 
       // define a migrator
@@ -258,7 +271,10 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
       // set db version number to the highest version
       Migrator.createMigrationsTable(dbConfig)
-      Await.ready(dbConfig.db.run(Migrator.setCurrentVersionNumber(dbConfig, 3, true)), Duration.Inf)
+      Await.ready(
+        dbConfig.db.run(Migrator.setCurrentVersionNumber(dbConfig, 3, true)),
+        Duration.Inf
+      )
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(3)
 
       // run the migrator, confirm still at same version
@@ -269,7 +285,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
   ".snapshotVersion" should {
     "run version snapshot and set version number" in {
-      val dbConfig = getDbConfig()
+      val dbConfig      = getDbConfig()
       val versionNumber = 3
 
       // create a mock version that tracks if snapshot was run
@@ -322,8 +338,10 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe None
       // test failure
       val version: Version = getMockVersion(2)
-      val actual = Migrator.upgradeVersion(dbConfig, version)
-      actual.failed.map(_.getMessage().endsWith("no prior version, cannot upgrade")) shouldBe Success(true)
+      val actual           = Migrator.upgradeVersion(dbConfig, version)
+      actual.failed.map(
+        _.getMessage().endsWith("no prior version, cannot upgrade")
+      ) shouldBe Success(true)
     }
     "fail if skipping versions" in {
       val dbConfig = getDbConfig()
@@ -336,8 +354,10 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(1)
       // test failure
       val version = getMockVersion(3)
-      val actual = Migrator.upgradeVersion(dbConfig, version)
-      actual.failed.map(_.getMessage().endsWith("cannot upgrade from version 1 to 3")) shouldBe Success(true)
+      val actual  = Migrator.upgradeVersion(dbConfig, version)
+      actual.failed.map(
+        _.getMessage().endsWith("cannot upgrade from version 1 to 3")
+      ) shouldBe Success(true)
     }
   }
 

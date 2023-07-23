@@ -15,7 +15,7 @@ import java.net.InetSocketAddress
 import javax.net.SocketFactory
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.util.{ Failure, Success, Using }
+import scala.util.{Failure, Success, Using}
 
 object DbUtil {
 
@@ -39,8 +39,11 @@ object DbUtil {
    */
   def dropTableIfExists(tableName: String, dbConfig: DatabaseConfig[JdbcProfile]): Int = {
     Await.result(
-      dbConfig.db.run(sqlu"""DROP TABLE IF EXISTS #$tableName CASCADE""".withPinnedSession.transactionally),
-      Duration.Inf)
+      dbConfig.db.run(
+        sqlu"""DROP TABLE IF EXISTS #$tableName CASCADE""".withPinnedSession.transactionally
+      ),
+      Duration.Inf
+    )
   }
 
   /**

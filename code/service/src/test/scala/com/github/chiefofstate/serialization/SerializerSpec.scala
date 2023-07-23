@@ -85,7 +85,7 @@ class SerializerSpec extends BaseActorSpec(s"""
   "SendReceive" should {
     "successfully serialize and deserialize" in {
       val probe: TestProbe[GeneratedMessage] = createTestProbe[GeneratedMessage]()
-      val serializer = new Serializer(extendedSystem)
+      val serializer                         = new Serializer(extendedSystem)
       val innerMsg = SendCommand().withGetStateCommand(GetStateCommand().withEntityId("x"))
       val outerMsg = SendReceive(innerMsg, probe.ref)
       // serialize the message
@@ -94,14 +94,14 @@ class SerializerSpec extends BaseActorSpec(s"""
       noException shouldBe thrownBy(WireMessageWithActorRef.parseFrom(serialized))
       // deserialize it
       val manifest = serializer.manifest(outerMsg)
-      val actual = serializer.fromBinary(serialized, manifest)
+      val actual   = serializer.fromBinary(serialized, manifest)
       actual.isInstanceOf[SendReceive] shouldBe true
       // assert unchanged
       actual.asInstanceOf[SendReceive] shouldBe outerMsg
     }
     "fail to serialize with unknown child message" in {
       val probe: TestProbe[GeneratedMessage] = createTestProbe[GeneratedMessage]()
-      val serializer = new Serializer(extendedSystem)
+      val serializer                         = new Serializer(extendedSystem)
       // construct a message with an unregistered type
       val outerMsg = SendReceive(StringValue("x"), probe.ref)
       // serialize the message
@@ -126,7 +126,7 @@ class SerializerSpec extends BaseActorSpec(s"""
   "scalapb GeneratedMessages" should {
     "successfully serialize and deserialize" in {
       val serializer = new Serializer(extendedSystem)
-      val msg = SendCommand().withGetStateCommand(GetStateCommand().withEntityId("x"))
+      val msg        = SendCommand().withGetStateCommand(GetStateCommand().withEntityId("x"))
       val serialized: Array[Byte] = serializer.toBinary(msg)
       // check proto serialization
       noException shouldBe thrownBy { SendCommand.parseFrom(serialized) }
@@ -134,8 +134,8 @@ class SerializerSpec extends BaseActorSpec(s"""
       serializer.fromBinary(serialized, serializer.manifest(msg)) shouldBe msg
     }
     "fail to deserialize unknown messages" in {
-      val msg = StringValue("x")
-      val manifest = msg.companion.scalaDescriptor.fullName
+      val msg        = StringValue("x")
+      val manifest   = msg.companion.scalaDescriptor.fullName
       val serializer = new Serializer(extendedSystem)
       val err = intercept[IllegalArgumentException] {
         serializer.fromBinary(msg.toByteArray, manifest)

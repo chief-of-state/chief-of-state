@@ -7,7 +7,7 @@
 package com.github.chiefofstate.config
 
 import com.github.chiefofstate.helper.BaseSpec
-import com.typesafe.config.{ Config, ConfigException, ConfigFactory }
+import com.typesafe.config.{Config, ConfigException, ConfigFactory}
 
 class EventsConfigSpec extends BaseSpec {
   "Loading events config" should {

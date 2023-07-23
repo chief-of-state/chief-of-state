@@ -7,7 +7,7 @@
 package com.github.chiefofstate.services
 
 import akka.actor.typed.ActorRef
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef }
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
 import com.github.chiefofstate.AggregateRoot
 import com.github.chiefofstate.config.WriteSideConfig
@@ -22,17 +22,18 @@ import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto
 import io.grpc.protobuf.StatusProto
-import io.grpc.{ Metadata, Status, StatusException }
+import io.grpc.{Metadata, Status, StatusException}
 import io.opentelemetry.context.Context
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 import scalapb.GeneratedMessage
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
-class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(implicit val askTimeout: Timeout)
-    extends ChiefOfStateServiceGrpc.ChiefOfStateService {
+class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(implicit
+    val askTimeout: Timeout
+) extends ChiefOfStateServiceGrpc.ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
@@ -52,16 +53,20 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
       .requireEntityId(entityId)
       // run remote command
       .flatMap(_ => {
-        val entityRef: EntityRef[SendReceive] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
-        val propagatedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.propagatedHeaders)
-        val persistedHeaders: Seq[Header] = Util.extractHeaders(metadata, writeSideConfig.persistedHeaders)
+        val entityRef: EntityRef[SendReceive] =
+          clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+        val propagatedHeaders: Seq[Header] =
+          Util.extractHeaders(metadata, writeSideConfig.propagatedHeaders)
+        val persistedHeaders: Seq[Header] =
+          Util.extractHeaders(metadata, writeSideConfig.persistedHeaders)
         val remoteCommand: RemoteCommand =
           RemoteCommand(
             entityId = request.entityId,
             command = request.command,
             propagatedHeaders = propagatedHeaders,
             persistedHeaders = persistedHeaders,
-            data = Map.empty[String, any.Any])
+            data = Map.empty[String, any.Any]
+          )
 
         // ask entity for response to aggregate command
         entityRef ? ((replyTo: ActorRef[GeneratedMessage]) => {
@@ -89,7 +94,8 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
     CoSService
       .requireEntityId(entityId)
       .flatMap(_ => {
-        val entityRef: EntityRef[SendReceive] = clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+        val entityRef: EntityRef[SendReceive] =
+          clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
 
         val getCommand = GetStateCommand().withEntityId(entityId)
 
@@ -142,7 +148,10 @@ object CoSService {
 
       case default =>
         Failure(
-          new StatusException(Status.INTERNAL.withDescription(s"unknown CommandReply ${default.getClass.getName}")))
+          new StatusException(
+            Status.INTERNAL.withDescription(s"unknown CommandReply ${default.getClass.getName}")
+          )
+        )
     }
   }
 }

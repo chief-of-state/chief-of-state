@@ -20,13 +20,15 @@ final case class SnapshotConfig(
     disableSnapshot: Boolean,
     retentionFrequency: Int,
     retentionNr: Int,
-    deleteEventsOnSnapshot: Boolean) {}
+    deleteEventsOnSnapshot: Boolean
+) {}
 
 object SnapshotConfig {
-  private val disableSnapshotKey: String = "chiefofstate.snapshot-criteria.disable-snapshot"
+  private val disableSnapshotKey: String    = "chiefofstate.snapshot-criteria.disable-snapshot"
   private val retentionFrequencyKey: String = "chiefofstate.snapshot-criteria.retention-frequency"
-  private val retentionNrKey: String = "chiefofstate.snapshot-criteria.retention-number"
-  private val deleteEventsOnSnapshotKey: String = "chiefofstate.snapshot-criteria.delete-events-on-snapshot"
+  private val retentionNrKey: String        = "chiefofstate.snapshot-criteria.retention-number"
+  private val deleteEventsOnSnapshotKey: String =
+    "chiefofstate.snapshot-criteria.delete-events-on-snapshot"
 
   /**
    * creates a new instance of SnaphotConfig
@@ -38,6 +40,7 @@ object SnapshotConfig {
       config.getBoolean(disableSnapshotKey),
       config.getInt(retentionFrequencyKey),
       config.getInt(retentionNrKey),
-      config.getBoolean(deleteEventsOnSnapshotKey))
+      config.getBoolean(deleteEventsOnSnapshotKey)
+    )
   }
 }

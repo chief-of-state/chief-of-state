@@ -8,9 +8,9 @@ package com.github.chiefofstate.readside
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.ActorSystem
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.helper.BaseSpec
-import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.testcontainers.utility.DockerImageName
 
 class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
@@ -18,7 +18,10 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
+    .Def(
+      dockerImageName = DockerImageName.parse("postgres:11"),
+      urlParams = Map("currentSchema" -> cosSchema)
+    )
     .createContainer()
 
   lazy val configFile: String = getClass.getResource("/readside-config-testcase-1.yaml").getPath
@@ -29,7 +32,10 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
     .withValue("jdbc-default.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue("jdbc-default.password", ConfigValueFactory.fromAnyRef(container.password))
     .withValue("jdbc-default.hikari-settings.max-pool-size", ConfigValueFactory.fromAnyRef(1))
-    .withValue("jdbc-default.hikari-settings.min-idle-connections", ConfigValueFactory.fromAnyRef(1))
+    .withValue(
+      "jdbc-default.hikari-settings.min-idle-connections",
+      ConfigValueFactory.fromAnyRef(1)
+    )
     .withValue("jdbc-default.hikari-settings.idle-timeout-ms", ConfigValueFactory.fromAnyRef(1000))
     .withValue("jdbc-default.hikari-settings.max-lifetime-ms", ConfigValueFactory.fromAnyRef(3000))
     .withValue("chiefofstate.read-side.enabled", ConfigValueFactory.fromAnyRef(true))
@@ -60,7 +66,8 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
         maxPoolSize = 1,
         minIdleConnections = 1,
         idleTimeoutMs = 1000,
-        maxLifetimeMs = 3000)
+        maxLifetimeMs = 3000
+      )
       val dataSource = ReadSideBootstrap.getDataSource(dbConfig)
 
       noException shouldBe thrownBy(dataSource.getConnection().close())

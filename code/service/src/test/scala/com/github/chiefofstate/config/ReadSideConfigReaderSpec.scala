@@ -6,8 +6,8 @@
 
 package com.github.chiefofstate.config
 
-import com.fasterxml.jackson.databind.exc.{ InvalidFormatException, MismatchedInputException }
-import com.github.chiefofstate.helper.{ BaseSpec, EnvironmentHelper }
+import com.fasterxml.jackson.databind.exc.{InvalidFormatException, MismatchedInputException}
+import com.github.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
 
 import scala.jdk.CollectionConverters._
 
@@ -29,7 +29,8 @@ class ReadSideConfigReaderSpec extends BaseSpec {
           host = "localhost",
           port = 100,
           autoStart = false,
-          failurePolicy = ReadSideFailurePolicy.StopDirective)
+          failurePolicy = ReadSideFailurePolicy.StopDirective
+        )
 
       val readSide2 =
         ReadSideConfig(
@@ -38,10 +39,11 @@ class ReadSideConfigReaderSpec extends BaseSpec {
           port = 200,
           useTls = true,
           autoStart = false,
-          enabled = false)
+          enabled = false
+        )
 
       val configFile = getClass.getResource("/readside-config-testcase-1.yaml").getPath
-      val actual = ReadSideConfigReader.read(configFile)
+      val actual     = ReadSideConfigReader.read(configFile)
       val expected: Seq[ReadSideConfig] = Seq(readSide1, readSide2)
 
       actual.length should be(expected.length)
@@ -50,7 +52,13 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
     "read configurations from a directory" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false, enabled = true)
+        ReadSideConfig(
+          readSideId = "read-side-1",
+          host = "localhost",
+          port = 100,
+          autoStart = false,
+          enabled = true
+        )
 
       val readSide2 =
         ReadSideConfig(
@@ -59,10 +67,11 @@ class ReadSideConfigReaderSpec extends BaseSpec {
           port = 200,
           useTls = true,
           autoStart = false,
-          enabled = true)
+          enabled = true
+        )
 
-      val configFile = getClass.getResource("/readside-configs").getPath
-      val actual = ReadSideConfigReader.read(configFile)
+      val configFile                    = getClass.getResource("/readside-configs").getPath
+      val actual                        = ReadSideConfigReader.read(configFile)
       val expected: Seq[ReadSideConfig] = Seq(readSide1, readSide2)
 
       actual.length should be(expected.length)
@@ -71,13 +80,18 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
     "read configurations with default values" in {
       val readSide1 =
-        ReadSideConfig(readSideId = "read-side-1", host = "localhost", port = 100, autoStart = false)
+        ReadSideConfig(
+          readSideId = "read-side-1",
+          host = "localhost",
+          port = 100,
+          autoStart = false
+        )
 
       val readSide2 =
         ReadSideConfig(readSideId = "read-side-2", host = "localhost", port = 200)
 
       val configFile = getClass.getResource("/readside-config-testcase-2.yaml").getPath
-      val actual = ReadSideConfigReader.read(configFile)
+      val actual     = ReadSideConfigReader.read(configFile)
       val expected: Seq[ReadSideConfig] = Seq(readSide1, readSide2)
 
       actual.length should be(expected.length)
@@ -131,14 +145,15 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
     "read from environment variables" in {
       val envs = Map(
-        "COS_READ_SIDE_CONFIG__HOST__RS1" -> "host1",
-        "COS_READ_SIDE_CONFIG__PORT__RS1" -> "1",
-        "COS_READ_SIDE_CONFIG__HOST__RS2" -> "host2",
-        "COS_READ_SIDE_CONFIG__PORT__RS2" -> "2",
-        "COS_READ_SIDE_CONFIG__HOST__RS3" -> "host3",
-        "COS_READ_SIDE_CONFIG__PORT__RS3" -> "3",
-        "COS_READ_SIDE_CONFIG__USE_TLS__RS3" -> "true",
-        "COS_READ_SIDE_CONFIG__AUTO_START__RS3" -> "true")
+        "COS_READ_SIDE_CONFIG__HOST__RS1"       -> "host1",
+        "COS_READ_SIDE_CONFIG__PORT__RS1"       -> "1",
+        "COS_READ_SIDE_CONFIG__HOST__RS2"       -> "host2",
+        "COS_READ_SIDE_CONFIG__PORT__RS2"       -> "2",
+        "COS_READ_SIDE_CONFIG__HOST__RS3"       -> "host3",
+        "COS_READ_SIDE_CONFIG__PORT__RS3"       -> "3",
+        "COS_READ_SIDE_CONFIG__USE_TLS__RS3"    -> "true",
+        "COS_READ_SIDE_CONFIG__AUTO_START__RS3" -> "true"
+      )
       // set the env vars
       EnvironmentHelper.setEnv(envs.asJava)
 
@@ -146,7 +161,7 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       val readSide2: ReadSideConfig = ReadSideConfig("RS2", "host2", 2)
       val readSide3: ReadSideConfig = ReadSideConfig("RS3", "host3", 3, useTls = true)
 
-      val actual: Seq[ReadSideConfig] = ReadSideConfigReader.readFromEnvVars
+      val actual: Seq[ReadSideConfig]   = ReadSideConfigReader.readFromEnvVars
       val expected: Seq[ReadSideConfig] = Seq(readSide1, readSide2, readSide3)
       actual.length should be(expected.length)
       actual should contain theSameElementsAs expected
@@ -159,7 +174,10 @@ class ReadSideConfigReaderSpec extends BaseSpec {
     }
 
     "throw an exception if one or more of the read side configurations env vars is invalid" in {
-      val envs = Map("COS_READ_SIDE_CONFIG__HOST__" -> "not-a-valid-config", "COS_READ_SIDE_CONFIG__PORT__" -> "1")
+      val envs = Map(
+        "COS_READ_SIDE_CONFIG__HOST__" -> "not-a-valid-config",
+        "COS_READ_SIDE_CONFIG__PORT__" -> "1"
+      )
       // set the env vars
       EnvironmentHelper.setEnv(envs.asJava)
 
@@ -173,7 +191,8 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       val envs = Map(
         "COS_READ_SIDE_CONFIG__HOST__RS1" -> "host1",
         "COS_READ_SIDE_CONFIG__PORT__RS1" -> "1",
-        "COS_READ_SIDE_CONFIG__PORT__RS2" -> "2")
+        "COS_READ_SIDE_CONFIG__PORT__RS2" -> "2"
+      )
       // set the env vars
       EnvironmentHelper.setEnv(envs.asJava)
 
@@ -187,7 +206,8 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       val envs = Map(
         "COS_READ_SIDE_CONFIG__HOST__RS1" -> "host1",
         "COS_READ_SIDE_CONFIG__PORT__RS1" -> "1",
-        "COS_READ_SIDE_CONFIG__HOST__RS2" -> "host2")
+        "COS_READ_SIDE_CONFIG__HOST__RS2" -> "host2"
+      )
       // set the env vars
       EnvironmentHelper.setEnv(envs.asJava)
 
@@ -201,7 +221,8 @@ class ReadSideConfigReaderSpec extends BaseSpec {
       val envs = Map(
         "COS_READ_SIDE_CONFIG__HOST__RS1" -> "host1",
         "COS_READ_SIDE_CONFIG__PORT__RS1" -> "1",
-        "COS_READ_SIDE_CONFIG____RS1" -> "host2")
+        "COS_READ_SIDE_CONFIG____RS1"     -> "host2"
+      )
       // set the env vars
       EnvironmentHelper.setEnv(envs.asJava)
 
@@ -213,9 +234,10 @@ class ReadSideConfigReaderSpec extends BaseSpec {
 
     "throw an exception on invalid keys" in {
       val envs = Map(
-        "COS_READ_SIDE_CONFIG__HOST__RS1" -> "host1",
-        "COS_READ_SIDE_CONFIG__PORT__RS1" -> "1",
-        "COS_READ_SIDE_CONFIG__GRPC_SOME_SETTING__RS1" -> "setting1")
+        "COS_READ_SIDE_CONFIG__HOST__RS1"              -> "host1",
+        "COS_READ_SIDE_CONFIG__PORT__RS1"              -> "1",
+        "COS_READ_SIDE_CONFIG__GRPC_SOME_SETTING__RS1" -> "setting1"
+      )
       // set the env vars
       EnvironmentHelper.setEnv(envs.asJava)
 

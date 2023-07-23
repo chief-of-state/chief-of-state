@@ -7,26 +7,26 @@
 package com.github.chiefofstate
 
 import akka.actor.testkit.typed.scaladsl.TestProbe
-import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.persistence.typed.PersistenceId
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.helper.BaseActorSpec
-import com.github.chiefofstate.protobuf.v1.common.{ Header, MetaData }
+import com.github.chiefofstate.protobuf.v1.common.{Header, MetaData}
 import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
 import com.github.chiefofstate.protobuf.v1.internal._
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
-import com.github.chiefofstate.protobuf.v1.tests.{ Account, AccountOpened, OpenAccount }
+import com.github.chiefofstate.protobuf.v1.tests.{Account, AccountOpened, OpenAccount}
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.protobuf.v1.writeside._
 import com.github.chiefofstate.serialization.SendReceive
-import com.github.chiefofstate.utils.{ ProtosValidator, Util }
-import com.github.chiefofstate.writeside.{ RemoteCommandHandler, RemoteEventHandler }
+import com.github.chiefofstate.utils.{ProtosValidator, Util}
+import com.github.chiefofstate.writeside.{RemoteCommandHandler, RemoteEventHandler}
 import com.google.protobuf.any
 import com.google.protobuf.any.Any
 import com.google.protobuf.empty.Empty
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 import io.grpc.inprocess._
-import io.grpc.{ ManagedChannel, ServerServiceDefinition, Status }
+import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import scalapb.GeneratedMessage
 
 import java.util.UUID
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{ Failure, Try }
+import scala.util.{Failure, Try}
 
 class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
@@ -43,13 +43,20 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       akka.persistence.snapshot-store.local.dir = "tmp/snapshot"
     """) {
 
-  var cosConfig: CosConfig = _
+  var cosConfig: CosConfig              = _
   val actorSystem: ActorSystem[Nothing] = testKit.system
-  val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
+  val replyTimeout: FiniteDuration      = FiniteDuration(30, TimeUnit.SECONDS)
 
   // register a server that intercepts traces and reports errors
   def createServer(serverName: String, service: ServerServiceDefinition): Unit = {
-    closeables.register(InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start())
+    closeables.register(
+      InProcessServerBuilder
+        .forName(serverName)
+        .directExecutor()
+        .addService(service)
+        .build()
+        .start()
+    )
   }
 
   def getChannel(serverName: String): ManagedChannel = {
@@ -113,7 +120,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
   ".initialState" should {
     "return the aggregate initial state" in {
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId("123")
-      val initialState: StateWrapper = AggregateRoot.initialState(persistenceId)
+      val initialState: StateWrapper   = AggregateRoot.initialState(persistenceId)
       initialState.getMeta.entityId shouldBe "123"
       initialState.getMeta.revisionNumber shouldBe 0
     }
@@ -122,19 +129,23 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
   ".handleCommand" should {
     "return as expected" in {
       // define the ID's
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
 
       // define prior state, command, and prior event meta
       val priorState: Any = Any.pack(Empty.defaultInstance)
-      val command: Any = Any.pack(OpenAccount())
-      val priorMeta: MetaData = MetaData.defaultInstance.withRevisionNumber(0).withEntityId(aggregateId)
+      val command: Any    = Any.pack(OpenAccount())
+      val priorMeta: MetaData =
+        MetaData.defaultInstance.withRevisionNumber(0).withEntityId(aggregateId)
 
       // define event to return and handle command response
       val event: AccountOpened = AccountOpened()
 
       val handleCommandRequest =
-        HandleCommandRequest().withCommand(command).withPriorState(priorState).withPriorEventMeta(priorMeta)
+        HandleCommandRequest()
+          .withCommand(command)
+          .withPriorState(priorState)
+          .withPriorEventMeta(priorMeta)
 
       val handleCommandResponse = HandleCommandResponse().withEvent(Any.pack(event))
 
@@ -160,7 +171,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
           Future.fromTry(output)
         })
 
-      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val service    = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
       val serverName = InProcessServerBuilder.generateName()
 
       createServer(serverName, service)
@@ -187,7 +198,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         cosConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
 
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
@@ -209,7 +221,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       }
     }
     "return as expected with no event to persist" in {
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
       val stateWrapper: StateWrapper = StateWrapper()
         .withState(any.Any.pack(Empty.defaultInstance))
@@ -223,7 +235,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
-      (serviceImpl.handleCommand _).expects(request).returning(Future.successful(HandleCommandResponse()))
+      (serviceImpl.handleCommand _)
+        .expects(request)
+        .returning(Future.successful(HandleCommandResponse()))
 
       val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
 
@@ -241,7 +255,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
       val remoteCommandHandler: RemoteCommandHandler =
         RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: RemoteEventHandler =
+        RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
@@ -252,7 +267,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         cosConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
 
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
@@ -273,11 +289,11 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       }
     }
     "return a failure when an empty command is sent" in {
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
-      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val service     = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
 
       val serverName = InProcessServerBuilder.generateName()
 
@@ -306,13 +322,15 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         cosConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
 
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       aggregateRef ! SendReceive(
         SendCommand().withMessage(SendCommand.Message.Empty), // empty message
-        commandSender.ref)
+        commandSender.ref
+      )
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
@@ -323,9 +341,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
     }
     "return a failure when command handler failed" in {
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
-      val command: Any = Any.pack(OpenAccount())
+      val command: Any                 = Any.pack(OpenAccount())
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
@@ -361,7 +379,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         cosConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
 
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
@@ -381,9 +400,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       }
     }
     "return a failure when event handler failed" in {
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
-      val command: Any = Any.pack(OpenAccount())
+      val command: Any                 = Any.pack(OpenAccount())
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
@@ -421,7 +440,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         cosConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
 
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
@@ -442,13 +462,17 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     }
     "return a failure when an invalid event is received" in {
       val writeSideConfig =
-        cosConfig.writeSideConfig.copy(enableProtoValidation = true, eventsProtos = Seq(), statesProtos = Seq())
+        cosConfig.writeSideConfig.copy(
+          enableProtoValidation = true,
+          eventsProtos = Seq(),
+          statesProtos = Seq()
+        )
 
       val mainConfig = cosConfig.copy(writeSideConfig = writeSideConfig)
 
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
-      val command: Any = Any.pack(OpenAccount())
+      val command: Any                 = Any.pack(OpenAccount())
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
@@ -484,7 +508,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         mainConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
 
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
@@ -498,7 +523,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
           status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
-          Option(status.message) shouldBe (Some("invalid event: type.googleapis.com/chief_of_state.v1.AccountOpened"))
+          Option(status.message) shouldBe (Some(
+            "invalid event: type.googleapis.com/chief_of_state.v1.AccountOpened"
+          ))
 
         case _ => fail("unexpected message type")
       }
@@ -508,16 +535,17 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val writeSideConfig = cosConfig.writeSideConfig.copy(
         enableProtoValidation = true,
         eventsProtos = Seq("chief_of_state.v1.AccountOpened"),
-        statesProtos = Seq())
+        statesProtos = Seq()
+      )
 
       val mainConfig = cosConfig.copy(writeSideConfig = writeSideConfig)
 
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
-      val command: Any = Any.pack(OpenAccount())
-      val event: AccountOpened = AccountOpened()
-      val state: Account = Account().withAccountUuid(aggregateId)
-      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
+      val command: Any                 = Any.pack(OpenAccount())
+      val event: AccountOpened         = AccountOpened()
+      val state: Account               = Account().withAccountUuid(aggregateId)
+      val resultingState               = com.google.protobuf.any.Any.pack(state.withBalance(200))
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
@@ -557,7 +585,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         mainConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
 
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
@@ -571,7 +600,9 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(Reply.Error(status), _) =>
           status.code shouldBe (Status.Code.INVALID_ARGUMENT.value)
-          Option(status.message) shouldBe (Some("invalid state: type.googleapis.com/chief_of_state.v1.Account"))
+          Option(status.message) shouldBe (Some(
+            "invalid state: type.googleapis.com/chief_of_state.v1.Account"
+          ))
 
         case _ => fail("unexpected message type")
       }
@@ -581,10 +612,10 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
     "return a failure when an empty state is received" in {
       val mainConfig = cosConfig.copy()
 
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
-      val command: Any = Any.pack(OpenAccount())
-      val event: AccountOpened = AccountOpened()
+      val command: Any                 = Any.pack(OpenAccount())
+      val event: AccountOpened         = AccountOpened()
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
@@ -622,7 +653,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         mainConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
 
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
@@ -646,12 +678,12 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
 
   ".getStateCommand" should {
     "return as expected" in {
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
-      val state: Account = Account().withAccountUuid(aggregateId)
-      val command: Any = Any.pack(OpenAccount())
-      val event: AccountOpened = AccountOpened()
-      val resultingState = com.google.protobuf.any.Any.pack(state.withBalance(200))
+      val state: Account               = Account().withAccountUuid(aggregateId)
+      val command: Any                 = Any.pack(OpenAccount())
+      val event: AccountOpened         = AccountOpened()
+      val resultingState               = com.google.protobuf.any.Any.pack(state.withBalance(200))
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
 
@@ -690,7 +722,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         cosConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       val remoteCommand = RemoteCommand()
@@ -711,7 +744,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       }
       aggregateRef ! SendReceive(
         SendCommand().withGetStateCommand(GetStateCommand().withEntityId(aggregateId)),
-        commandSender.ref)
+        commandSender.ref
+      )
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>
@@ -729,7 +763,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       }
     }
     "return a failure when there is no entity as expected" in {
-      val aggregateId: String = UUID.randomUUID().toString
+      val aggregateId: String          = UUID.randomUUID().toString
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId(aggregateId)
 
       // Let us create the sender of commands
@@ -737,8 +771,8 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
-      val service = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
-      val serverName = InProcessServerBuilder.generateName()
+      val service     = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val serverName  = InProcessServerBuilder.generateName()
 
       createServer(serverName, service)
       val serverChannel = getChannel(serverName)
@@ -761,12 +795,14 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
         cosConfig,
         remoteCommandHandler,
         remoteEventHandler,
-        eventsAndStateProtosValidation)
+        eventsAndStateProtosValidation
+      )
       val aggregateRef: ActorRef[SendReceive] = spawn(aggregateRoot)
 
       aggregateRef ! SendReceive(
         SendCommand().withGetStateCommand(GetStateCommand().withEntityId(aggregateId)),
-        commandSender.ref)
+        commandSender.ref
+      )
 
       commandSender.receiveMessage(replyTimeout) match {
         case CommandReply(reply, _) =>

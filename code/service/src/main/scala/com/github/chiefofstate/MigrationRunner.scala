@@ -9,15 +9,19 @@ package com.github.chiefofstate
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import com.github.chiefofstate.migration.versions.v6.V6
-import com.github.chiefofstate.migration.{ JdbcConfig, Migrator }
-import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded, StartMigration }
-import com.github.chiefofstate.serialization.{ Message, SendReceive }
+import com.github.chiefofstate.migration.{JdbcConfig, Migrator}
+import com.github.chiefofstate.protobuf.v1.internal.{
+  MigrationFailed,
+  MigrationSucceeded,
+  StartMigration
+}
+import com.github.chiefofstate.serialization.{Message, SendReceive}
 import com.typesafe.config.Config
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 /**
  * kick starts the various migrations needed to run.

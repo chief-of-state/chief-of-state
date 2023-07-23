@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.migration
 
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
@@ -15,8 +15,8 @@ import slick.sql.SqlAction
 import java.time.Instant
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, Future }
-import scala.util.{ Success, Try }
+import scala.concurrent.{Await, Future}
+import scala.util.{Success, Try}
 
 /**
  * Runs the provided migrations
@@ -91,7 +91,8 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile], schema: String)
 
           if (versionsToUpgrade.nonEmpty) {
             logger.info(
-              s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}")
+              s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}"
+            )
 
             versionsToUpgrade.foldLeft(Try {})((output, version) => {
               output.flatMap(_ => {
@@ -120,7 +121,10 @@ object Migrator {
    * @param version version to snapshot
    * @return success/failure
    */
-  private[migration] def snapshotVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
+  private[migration] def snapshotVersion(
+      dbConfig: DatabaseConfig[JdbcProfile],
+      version: Version
+  ): Try[Unit] = {
     logger.info(s"Snapshotting version ${version.versionNumber}")
 
     val stmt = version
@@ -140,7 +144,10 @@ object Migrator {
    * @param version version to upgrade to
    * @return success/failure
    */
-  private[migration] def upgradeVersion(dbConfig: DatabaseConfig[JdbcProfile], version: Version): Try[Unit] = {
+  private[migration] def upgradeVersion(
+      dbConfig: DatabaseConfig[JdbcProfile],
+      version: Version
+  ): Try[Unit] = {
     logger.info(s"upgrading to version ${version.versionNumber}")
     Try {
       // check prior version number
@@ -148,7 +155,8 @@ object Migrator {
       require(priorVersionNumber >= 0, "no prior version, cannot upgrade")
       require(
         priorVersionNumber + 1 == version.versionNumber,
-        s"cannot upgrade from version $priorVersionNumber to ${version.versionNumber}")
+        s"cannot upgrade from version $priorVersionNumber to ${version.versionNumber}"
+      )
     }.flatMap(_ => version.beforeUpgrade())
       // run upgrade
       .flatMap(_ => {
@@ -171,7 +179,9 @@ object Migrator {
    * @param dbConfig a jdbc db config for the journal
    * @return success/failure
    */
-  private[chiefofstate] def createMigrationsTable(dbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
+  private[chiefofstate] def createMigrationsTable(
+      dbConfig: DatabaseConfig[JdbcProfile]
+  ): Try[Unit] = {
 
     val stmt = sqlu"""
      CREATE TABLE IF NOT EXISTS #$COS_MIGRATIONS_TABLE (
@@ -191,7 +201,9 @@ object Migrator {
    * @param dbConfig a jdbc db config for the journal
    * @return optional version number as an int
    */
-  private[chiefofstate] def getCurrentVersionNumber(dbConfig: DatabaseConfig[JdbcProfile]): Option[Int] = {
+  private[chiefofstate] def getCurrentVersionNumber(
+      dbConfig: DatabaseConfig[JdbcProfile]
+  ): Option[Int] = {
     val sqlStmt = sql"SELECT version_number from #$COS_MIGRATIONS_TABLE".as[Int]
 
     val result = Await.result(dbConfig.db.run(sqlStmt), Duration.Inf)
@@ -213,7 +225,8 @@ object Migrator {
   private[chiefofstate] def setCurrentVersionNumber(
       dbConfig: DatabaseConfig[JdbcProfile],
       versionNumber: Int,
-      isSnapshot: Boolean): SqlAction[Int, NoStream, Effect] = {
+      isSnapshot: Boolean
+  ): SqlAction[Int, NoStream, Effect] = {
     val currentTs: Long = Instant.now().toEpochMilli()
 
     sqlu"""
@@ -228,7 +241,9 @@ object Migrator {
    * @param journalDbConfig the DatabaseConfig to use
    * @return success/failure
    */
-  private[migration] def setInitialVersion(journalDbConfig: DatabaseConfig[JdbcProfile]): Try[Unit] = {
+  private[migration] def setInitialVersion(
+      journalDbConfig: DatabaseConfig[JdbcProfile]
+  ): Try[Unit] = {
     Try {
       // if no prior version number, allow providing via env var
       if (getCurrentVersionNumber(journalDbConfig).isEmpty) {
@@ -237,7 +252,10 @@ object Migrator {
           val envValue: String = sys.env.getOrElse(COS_MIGRATIONS_INITIAL_VERSION, "").trim()
 
           require(envValue.nonEmpty, s"${COS_MIGRATIONS_INITIAL_VERSION} setting provided empty")
-          require(Try(envValue.toInt).isSuccess, s"${COS_MIGRATIONS_INITIAL_VERSION} cannot be '$envValue'")
+          require(
+            Try(envValue.toInt).isSuccess,
+            s"${COS_MIGRATIONS_INITIAL_VERSION} cannot be '$envValue'"
+          )
 
           val versionNumber: Int = envValue.toInt
 
@@ -255,7 +273,10 @@ object Migrator {
    * @param journalJdbcConfig a journal jdbc config
    * @return success/failure
    */
-  private[migration] def createSchema(journalJdbcConfig: DatabaseConfig[JdbcProfile], schema: String): Try[Unit] = Try {
+  private[migration] def createSchema(
+      journalJdbcConfig: DatabaseConfig[JdbcProfile],
+      schema: String
+  ): Try[Unit] = Try {
     logger.info(s"creating schema '$schema' if not exists")
     // create the schema
     val conn = journalJdbcConfig.db.source.createConnection()

@@ -11,10 +11,10 @@ import akka.actor.typed.ActorSystem
 import akka.persistence.query.Sequence
 import akka.projection.ProjectionId
 import akka.projection.scaladsl.ProjectionManagement
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.{ ExecutionContextExecutor, Future }
-import scala.util.{ Failure, Success }
+import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.util.{Failure, Success}
 
 sealed trait StateManager {
 
@@ -150,7 +150,9 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
     mgmt.getOffset[Sequence](projectionId).map {
       case Some(sequence) => sequence.value
       case None =>
-        logger.warn(s"unable to retrieve the offset of readSide=$readSideId given the shard=$shardNumber")
+        logger.warn(
+          s"unable to retrieve the offset of readSide=$readSideId given the shard=$shardNumber"
+        )
         0L
     }
   }
@@ -170,14 +172,17 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
       mgmt.getOffset[Sequence](projectionId).map {
         case Some(sequence) => (shardNumber, sequence.value)
         case None =>
-          logger.warn(s"unable to retrieve the offset of readSide=$readSideId given the shard=$shardNumber")
+          logger.warn(
+            s"unable to retrieve the offset of readSide=$readSideId given the shard=$shardNumber"
+          )
           (shardNumber, 0L)
       }
     }
     // execute the futures
     Future.sequence(futures).transformWith {
       case Failure(exception) =>
-        logger.error(s"fail to fetch offsets, readSideID=$readSideId, cause=${exception.getMessage}")
+        logger
+          .error(s"fail to fetch offsets, readSideID=$readSideId, cause=${exception.getMessage}")
         Future.failed(exception)
       case Success(value) => Future.successful(value)
     }
@@ -201,10 +206,12 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
     ProjectionManagement(system).clearOffset(projectionId).transformWith[Boolean] {
       case Failure(exception) =>
         logger.error(
-          s"read side restart failed, readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}")
+          s"read side restart failed, readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}"
+        )
         Future.failed(exception)
       case Success(_) =>
-        logger.info(s"read side restart successfully, readSideID=$readSideId, shardNumber=$shardNumber")
+        logger
+          .info(s"read side restart successfully, readSideID=$readSideId, shardNumber=$shardNumber")
         Future.successful(true)
     }
   }
@@ -244,10 +251,12 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
     ProjectionManagement(system).pause(projectionId).transformWith[Boolean] {
       case Failure(exception) =>
         logger.error(
-          s"unable to pause read side readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}")
+          s"unable to pause read side readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}"
+        )
         Future.failed(exception)
       case Success(_) =>
-        logger.info(s"read side pause successfully, readSideID=$readSideId, shardNumber=$shardNumber")
+        logger
+          .info(s"read side pause successfully, readSideID=$readSideId, shardNumber=$shardNumber")
         Future.successful(true)
     }
   }
@@ -287,10 +296,12 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
     ProjectionManagement(system).resume(projectionId).transformWith[Boolean] {
       case Failure(exception) =>
         logger.error(
-          s"unable to pause read side readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}")
+          s"unable to pause read side readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}"
+        )
         Future.failed(exception)
       case Success(_) =>
-        logger.info(s"read side pause successfully, readSideID=$readSideId, shardNumber=$shardNumber")
+        logger
+          .info(s"read side pause successfully, readSideID=$readSideId, shardNumber=$shardNumber")
         Future.successful(true)
     }
   }
@@ -324,10 +335,12 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
    */
   override def skipOffset(readSideId: String, shardNumber: Int): Unit = {
     val projectionId = ProjectionId(readSideId, shardNumber.toString)
-    val currentOffset: Future[Option[Sequence]] = ProjectionManagement(system).getOffset[Sequence](projectionId)
+    val currentOffset: Future[Option[Sequence]] =
+      ProjectionManagement(system).getOffset[Sequence](projectionId)
     currentOffset.foreach {
-      case Some(s) => ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
-      case None    => // already removed
+      case Some(s) =>
+        ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
+      case None => // already removed
     }
   }
 
@@ -344,11 +357,13 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
     (0 until numShards).foreach { shardNumber =>
       // create the projection ID
       val projectionId = ProjectionId(readSideId, shardNumber.toString)
-      val currentOffset: Future[Option[Sequence]] = ProjectionManagement(system).getOffset[Sequence](projectionId)
+      val currentOffset: Future[Option[Sequence]] =
+        ProjectionManagement(system).getOffset[Sequence](projectionId)
       // process the value of the future
       currentOffset.foreach {
-        case Some(s) => ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
-        case None    => // already removed
+        case Some(s) =>
+          ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
+        case None => // already removed
       }
     }
   }
@@ -356,7 +371,8 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
   private def handleForAll(futures: Seq[Future[Done]], readSideId: String): Future[Boolean] = {
     Future.sequence(futures).transformWith[Boolean] {
       case Failure(exception) =>
-        logger.error(s"read side restart failed, readSideID=$readSideId, cause=${exception.getMessage}")
+        logger
+          .error(s"read side restart failed, readSideID=$readSideId, cause=${exception.getMessage}")
         Future.failed(exception)
       case Success(_) =>
         logger.info(s"read side restart successfully, readSideID=$readSideId")

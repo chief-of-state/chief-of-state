@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.File
 import scala.jdk.CollectionConverters.CollectionHasAsScala;
@@ -55,7 +55,11 @@ object ReadSideConfigReader {
     // register the default scala module
     mapper.registerModule(DefaultScalaModule)
     val configs =
-      mapper.readValues(factory.createParser(f), new TypeReference[ReadSideConfig] {}).readAll().asScala.toSeq
+      mapper
+        .readValues(factory.createParser(f), new TypeReference[ReadSideConfig] {})
+        .readAll()
+        .asScala
+        .toSeq
     // let us validate the configs
     if (!configs.forall(_.isValid)) {
       throw new IllegalArgumentException("invalid read side configuration")
@@ -68,7 +72,7 @@ object ReadSideConfigReader {
       // here the directory exist and it is readable
       case d if d.exists && d.isDirectory && d.canRead =>
         val files = d.listFiles.filter(a => a.canRead && a.isFile).toList
-        val dirs = dir.listFiles.filter(_.isDirectory).toList
+        val dirs  = dir.listFiles.filter(_.isDirectory).toList
         files ::: dirs.foldLeft(List.empty[File])(_ ::: go(_))
       // here the default scenario
       case _ => List.empty[File]
@@ -83,11 +87,11 @@ object ReadSideConfigReader {
    */
   def readFromEnvVars: Seq[ReadSideConfig] = {
     // define the various env vars settings to read
-    val READ_SIDE_HOST_KEY: String = "HOST"
-    val READ_SIDE_PORT_KEY: String = "PORT"
-    val READ_SIDE_TLS_KEY: String = "USE_TLS"
-    val READ_SIDE_AUTO_START: String = "AUTO_START"
-    val READ_SIDE_ENABLED: String = "ENABLED"
+    val READ_SIDE_HOST_KEY: String       = "HOST"
+    val READ_SIDE_PORT_KEY: String       = "PORT"
+    val READ_SIDE_TLS_KEY: String        = "USE_TLS"
+    val READ_SIDE_AUTO_START: String     = "AUTO_START"
+    val READ_SIDE_ENABLED: String        = "ENABLED"
     val READ_SIDE_FAILURE_POLICY: String = "FAILURE_POLICY"
 
     // let us read the env vars
@@ -143,12 +147,16 @@ object ReadSideConfigReader {
       require(readSideConfig.port > 0, s"readside $readSideId is missing a PORT")
 
       // Validate the failure policy
-      require(readSideConfig.isFailurePolicyValid, s"readside $readSideId failurePolicy is invalid.")
+      require(
+        readSideConfig.isFailurePolicyValid,
+        s"readside $readSideId failurePolicy is invalid."
+      )
 
       logger.info(
         s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, " +
-        s"useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}, " +
-        s"enabled=${readSideConfig.enabled}, failurePolicy=${readSideConfig.failurePolicy}")
+          s"useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}, " +
+          s"enabled=${readSideConfig.enabled}, failurePolicy=${readSideConfig.failurePolicy}"
+      )
 
       readSideConfig
     }.toSeq

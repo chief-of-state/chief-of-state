@@ -8,18 +8,22 @@ package com.github.chiefofstate.services
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import akka.cluster.sharding.typed.javadsl.{ ClusterSharding => ClusterShardingJava }
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, EntityRef, EntityTypeKey }
+import akka.cluster.sharding.typed.javadsl.{ClusterSharding => ClusterShardingJava}
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef, EntityTypeKey}
 import akka.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
 import com.github.chiefofstate.AggregateRoot
 import com.github.chiefofstate.config.WriteSideConfig
-import com.github.chiefofstate.helper.{ BaseActorSpec, GrpcHelpers, TestConfig }
+import com.github.chiefofstate.helper.{BaseActorSpec, GrpcHelpers, TestConfig}
 import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.common.MetaData
-import com.github.chiefofstate.protobuf.v1.internal.{ CommandReply, RemoteCommand, SendCommand }
+import com.github.chiefofstate.protobuf.v1.internal.{CommandReply, RemoteCommand, SendCommand}
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
-import com.github.chiefofstate.protobuf.v1.service.{ ChiefOfStateServiceGrpc, GetStateRequest, ProcessCommandRequest }
-import com.github.chiefofstate.serialization.{ Message, SendReceive }
+import com.github.chiefofstate.protobuf.v1.service.{
+  ChiefOfStateServiceGrpc,
+  GetStateRequest,
+  ProcessCommandRequest
+}
+import com.github.chiefofstate.serialization.{Message, SendReceive}
 import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
@@ -27,14 +31,14 @@ import com.google.rpc.code
 import com.google.rpc.error_details.BadRequest
 import com.google.rpc.status.Status
 import io.grpc.Status.Code
-import io.grpc.inprocess.{ InProcessChannelBuilder, InProcessServerBuilder }
+import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.grpc.protobuf.StatusProto
 import io.grpc.stub.MetadataUtils
-import io.grpc.{ ManagedChannel, Metadata, StatusException }
+import io.grpc.{ManagedChannel, Metadata, StatusException}
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{ Duration, FiniteDuration }
-import scala.concurrent.{ Await, ExecutionContext }
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
 
 class CoSServiceSpec extends BaseActorSpec(s"""
@@ -63,7 +67,7 @@ class CoSServiceSpec extends BaseActorSpec(s"""
   }
 
   val actorSystem: ActorSystem[Nothing] = testKit.system
-  val replyTimeout: FiniteDuration = FiniteDuration(1, TimeUnit.SECONDS)
+  val replyTimeout: FiniteDuration      = FiniteDuration(1, TimeUnit.SECONDS)
 
   val writeSideConfig: WriteSideConfig = WriteSideConfig(
     host = "",
@@ -73,14 +77,15 @@ class CoSServiceSpec extends BaseActorSpec(s"""
     eventsProtos = Seq(),
     statesProtos = Seq(),
     propagatedHeaders = Seq(),
-    persistedHeaders = Seq())
+    persistedHeaders = Seq()
+  )
 
   val cosConfig = TestConfig.cosConfig
 
   ".processCommand" should {
     "require entity ID" in {
       val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
-      val impl = new CoSService(clusterSharding, writeSideConfig)
+      val impl                             = new CoSService(clusterSharding, writeSideConfig)
 
       val request = ProcessCommandRequest(entityId = "")
 
@@ -94,25 +99,29 @@ class CoSServiceSpec extends BaseActorSpec(s"""
     "handles happy returns" in {
       // create the expected state
       val expectedState =
-        StateWrapper().withState(any.Any.pack(StringValue("some state"))).withMeta(MetaData().withRevisionNumber(2))
+        StateWrapper()
+          .withState(any.Any.pack(StringValue("some state")))
+          .withMeta(MetaData().withRevisionNumber(2))
       // create a behavior that returns a state
       val mockedBehavior = Behaviors.receiveMessage[Message] { case SendReceive(message, replyTo) =>
         replyTo ! CommandReply().withState(expectedState)
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[Message]()
+      val probe        = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
-      val entityId: String = "id-1"
-      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val entityId: String                      = "id-1"
+      val typeKey                               = EntityTypeKey[SendReceive](entityId)
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
-      val clusterSharding = getClusterShard(testEntityRef)
+      val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new CoSService(clusterSharding, writeSideConfig)
       // call method
       val request =
-        ProcessCommandRequest().withEntityId(entityId).withCommand(any.Any.pack(StringValue("some-command")))
+        ProcessCommandRequest()
+          .withEntityId(entityId)
+          .withCommand(any.Any.pack(StringValue("some-command")))
       val sendFuture = impl.processCommand(request)
 
       // assert message sent to actor
@@ -131,31 +140,33 @@ class CoSServiceSpec extends BaseActorSpec(s"""
     }
     "inject persisted and propagated headers" in {
       // define a config that persists & propagates headers
-      val headerKey = "x-custom-header"
+      val headerKey   = "x-custom-header"
       val headerValue = "value"
       val customWriteConfig =
         writeSideConfig.copy(persistedHeaders = Seq(headerKey), propagatedHeaders = Seq(headerKey))
       // create the expected state
       val entityId = "some-entity"
       val expectedState =
-        StateWrapper().withState(any.Any.pack(StringValue("some state"))).withMeta(MetaData().withRevisionNumber(2))
+        StateWrapper()
+          .withState(any.Any.pack(StringValue("some state")))
+          .withMeta(MetaData().withRevisionNumber(2))
       // create a behavior that returns the state
       val mockedBehavior = Behaviors.receiveMessage[Message] { case SendReceive(message, replyTo) =>
         replyTo ! CommandReply().withState(expectedState)
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[Message]()
+      val probe        = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
-      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val typeKey                               = EntityTypeKey[SendReceive](entityId)
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
-      val clusterSharding = getClusterShard(testEntityRef)
+      val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new CoSService(clusterSharding, customWriteConfig)
       // bind service and intercept headers
       val serverName: String = InProcessServerBuilder.generateName();
-      val service = ChiefOfStateServiceGrpc.bindService(impl, ExecutionContext.global)
+      val service            = ChiefOfStateServiceGrpc.bindService(impl, ExecutionContext.global)
       closeables.register(
         InProcessServerBuilder
           .forName(serverName)
@@ -163,7 +174,8 @@ class CoSServiceSpec extends BaseActorSpec(s"""
           .addService(service)
           .intercept(MetadataInterceptor)
           .build()
-          .start())
+          .start()
+      )
       // create a client
       val channel: ManagedChannel =
         closeables.register(InProcessChannelBuilder.forName(serverName).directExecutor().build())
@@ -171,13 +183,20 @@ class CoSServiceSpec extends BaseActorSpec(s"""
 
       // send request
       val requestHeaders: Metadata = GrpcHelpers.getHeaders((headerKey, headerValue))
-      val request = ProcessCommandRequest(entityId = entityId).withCommand(any.Any.pack(StringValue("some-command")))
+      val request = ProcessCommandRequest(entityId = entityId).withCommand(
+        any.Any.pack(StringValue("some-command"))
+      )
 
       MetadataUtils.attachHeaders(client, requestHeaders).processCommand(request)
 
       // assert headers sent to actor
       val remoteCommand: RemoteCommand =
-        probe.receiveMessage().asInstanceOf[SendReceive].message.asInstanceOf[SendCommand].getRemoteCommand
+        probe
+          .receiveMessage()
+          .asInstanceOf[SendReceive]
+          .message
+          .asInstanceOf[SendCommand]
+          .getRemoteCommand
 
       remoteCommand.persistedHeaders.map(_.key).toSeq shouldBe Seq(headerKey)
       remoteCommand.persistedHeaders.map(_.getStringValue).toSeq shouldBe Seq(headerValue)
@@ -191,22 +210,27 @@ class CoSServiceSpec extends BaseActorSpec(s"""
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[Message]()
+      val probe        = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
-      val entityId: String = "id-1"
-      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val entityId: String                      = "id-1"
+      val typeKey                               = EntityTypeKey[SendReceive](entityId)
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
-      val clusterSharding = getClusterShard(testEntityRef)
+      val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new CoSService(clusterSharding, writeSideConfig)
       // call method
-      val request = ProcessCommandRequest().withEntityId(entityId)
+      val request    = ProcessCommandRequest().withEntityId(entityId)
       val sendFuture = impl.processCommand(request)
       // assert message sent to actor
       val akkaMsg = probe.receiveMessage()
       akkaMsg.shouldBe(an[SendReceive])
-      akkaMsg.asInstanceOf[SendReceive].message.asInstanceOf[SendCommand].getRemoteCommand.entityId shouldBe entityId
+      akkaMsg
+        .asInstanceOf[SendReceive]
+        .message
+        .asInstanceOf[SendCommand]
+        .getRemoteCommand
+        .entityId shouldBe entityId
 
       // assert response
       val actualError = intercept[StatusException] {
@@ -219,7 +243,7 @@ class CoSServiceSpec extends BaseActorSpec(s"""
   ".getState" should {
     "require entity ID" in {
       val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
-      val impl = new CoSService(clusterSharding, writeSideConfig)
+      val impl                             = new CoSService(clusterSharding, writeSideConfig)
 
       val request = GetStateRequest(entityId = "")
       val actualErr = intercept[StatusException] {
@@ -232,24 +256,26 @@ class CoSServiceSpec extends BaseActorSpec(s"""
     "handle happy return" in {
       // create the expected state
       val expectedState =
-        StateWrapper().withState(any.Any.pack(StringValue("some state"))).withMeta(MetaData().withRevisionNumber(2))
+        StateWrapper()
+          .withState(any.Any.pack(StringValue("some state")))
+          .withMeta(MetaData().withRevisionNumber(2))
       // create a behavior that returns a state
       val mockedBehavior = Behaviors.receiveMessage[Message] { case SendReceive(message, replyTo) =>
         replyTo ! CommandReply().withState(expectedState)
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[Message]()
+      val probe        = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
-      val entityId: String = "id-1"
-      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val entityId: String                      = "id-1"
+      val typeKey                               = EntityTypeKey[SendReceive](entityId)
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
-      val clusterSharding = getClusterShard(testEntityRef)
+      val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new CoSService(clusterSharding, writeSideConfig)
       // call method
-      val request = GetStateRequest().withEntityId(entityId)
+      val request    = GetStateRequest().withEntityId(entityId)
       val sendFuture = impl.getState(request)
       // assert message sent to actor
       val akkaResponse = probe.receiveMessage()
@@ -275,22 +301,27 @@ class CoSServiceSpec extends BaseActorSpec(s"""
         Behaviors.same
       }
       // create a mocked entity & probe to run this behavior
-      val probe = testKit.createTestProbe[Message]()
+      val probe        = testKit.createTestProbe[Message]()
       val mockedEntity = testKit.spawn(Behaviors.monitor(probe.ref, mockedBehavior))
       // create mocked cluster sharding with the actor
-      val entityId: String = "id-1"
-      val typeKey = EntityTypeKey[SendReceive](entityId)
+      val entityId: String                      = "id-1"
+      val typeKey                               = EntityTypeKey[SendReceive](entityId)
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
-      val clusterSharding = getClusterShard(testEntityRef)
+      val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
       val impl = new CoSService(clusterSharding, writeSideConfig)
       // call method
-      val request = GetStateRequest().withEntityId(entityId)
+      val request    = GetStateRequest().withEntityId(entityId)
       val sendFuture = impl.getState(request)
       // assert message sent to actor
       val akkaMsg = probe.receiveMessage()
       akkaMsg.shouldBe(an[SendReceive])
-      akkaMsg.asInstanceOf[SendReceive].message.asInstanceOf[SendCommand].getGetStateCommand.entityId shouldBe entityId
+      akkaMsg
+        .asInstanceOf[SendReceive]
+        .message
+        .asInstanceOf[SendCommand]
+        .getGetStateCommand
+        .entityId shouldBe entityId
 
       // assert response
       val actualError = intercept[StatusException] {
@@ -344,7 +375,10 @@ class CoSServiceSpec extends BaseActorSpec(s"""
         CoSService.handleCommandReply(commandReply).get
       }
 
-      val javaStatus = StatusProto.fromStatusAndTrailers(statusException.getStatus(), statusException.getTrailers())
+      val javaStatus = StatusProto.fromStatusAndTrailers(
+        statusException.getStatus(),
+        statusException.getTrailers()
+      )
 
       val actual = Status.fromJavaProto(javaStatus)
 

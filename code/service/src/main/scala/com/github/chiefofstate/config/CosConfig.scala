@@ -28,11 +28,12 @@ final case class CosConfig(
     eventsConfig: EventsConfig,
     grpcConfig: GrpcConfig,
     writeSideConfig: WriteSideConfig,
-    enableReadSide: Boolean)
+    enableReadSide: Boolean
+)
 
 object CosConfig {
-  private val serviceNameKey: String = "chiefofstate.service-name"
-  private val askTimeoutKey: String = "chiefofstate.ask-timeout"
+  private val serviceNameKey: String    = "chiefofstate.service-name"
+  private val askTimeoutKey: String     = "chiefofstate.ask-timeout"
   private val enableReadSideKey: String = "chiefofstate.read-side.enabled"
 
   /**
@@ -49,6 +50,7 @@ object CosConfig {
       EventsConfig(config),
       GrpcConfig(config),
       WriteSideConfig(config),
-      config.getBoolean(enableReadSideKey))
+      config.getBoolean(enableReadSideKey)
+    )
   }
 }

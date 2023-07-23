@@ -7,16 +7,16 @@
 package com.github.chiefofstate.readside
 
 import akka.actor.typed.ActorSystem
-import com.github.chiefofstate.config.{ ReadSideConfig, ReadSideConfigReader }
+import com.github.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.github.chiefofstate.utils.NettyHelper
-import com.typesafe.config.{ Config, ConfigException }
-import com.zaxxer.hikari.{ HikariConfig, HikariDataSource }
-import org.slf4j.{ Logger, LoggerFactory }
+import com.typesafe.config.{Config, ConfigException}
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.language.postfixOps
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 /**
  * Used to configure and start all read side processors
@@ -32,7 +32,8 @@ class ReadSideBootstrap(
     dbConfig: ReadSideBootstrap.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
     numShards: Int,
-    readSideManager: ReadSideManager) {
+    readSideManager: ReadSideManager
+) {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -52,13 +53,22 @@ class ReadSideBootstrap(
       // construct a remote gRPC read side client for this read side
       // and register interceptors
       val rpcClient: ReadSideHandlerServiceBlockingStub =
-        new ReadSideHandlerServiceBlockingStub(NettyHelper.builder(config.host, config.port, config.useTls).build)
+        new ReadSideHandlerServiceBlockingStub(
+          NettyHelper.builder(config.host, config.port, config.useTls).build
+        )
       // instantiate a remote read side processor with the gRPC client
       val remoteReadSideProcessor: ReadSideHandlerImpl =
         new ReadSideHandlerImpl(config.readSideId, rpcClient)
       // instantiate the read side projection with the remote processor
       val projection =
-        new ReadSide(system, config.readSideId, dataSource, remoteReadSideProcessor, numShards, config.failurePolicy)
+        new ReadSide(
+          system,
+          config.readSideId,
+          dataSource,
+          remoteReadSideProcessor,
+          numShards,
+          config.failurePolicy
+        )
 
       Try {
         // start the projection
@@ -81,7 +91,8 @@ class ReadSideBootstrap(
         }
       } match {
         case Failure(exception) =>
-          logger.error(s"fail to start read side=${config.readSideId}, cause=${exception.getMessage}")
+          logger
+            .error(s"fail to start read side=${config.readSideId}, cause=${exception.getMessage}")
         case Success(_) => logger.info(s"read side=${config.readSideId} started successfully.")
       }
     }
@@ -90,7 +101,11 @@ class ReadSideBootstrap(
 
 object ReadSideBootstrap {
 
-  def apply(system: ActorSystem[_], numShards: Int, readSideManager: ReadSideManager): ReadSideBootstrap = {
+  def apply(
+      system: ActorSystem[_],
+      numShards: Int,
+      readSideManager: ReadSideManager
+  ): ReadSideBootstrap = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
@@ -104,7 +119,8 @@ object ReadSideBootstrap {
       Try {
         system.settings.config.getString("chiefofstate.read-side.config-file")
       } match {
-        case Success(fh) => if (fh.nonEmpty) ReadSideConfigReader.read(fh) else ReadSideConfigReader.readFromEnvVars
+        case Success(fh) =>
+          if (fh.nonEmpty) ReadSideConfigReader.read(fh) else ReadSideConfigReader.readFromEnvVars
         case Failure(_: ConfigException.Missing) => ReadSideConfigReader.readFromEnvVars
         case Failure(exception)                  => throw exception
       }
@@ -116,7 +132,8 @@ object ReadSideBootstrap {
       dbConfig = dbConfig,
       readSideConfigs = configs,
       numShards = numShards,
-      readSideManager)
+      readSideManager
+    )
   }
 
   /**
@@ -156,7 +173,8 @@ object ReadSideBootstrap {
       maxPoolSize: Int,
       minIdleConnections: Int,
       idleTimeoutMs: Long,
-      maxLifetimeMs: Long)
+      maxLifetimeMs: Long
+  )
 
   private[readside] object DbConfig {
     def apply(jdbcCfg: Config): DbConfig =
@@ -167,6 +185,7 @@ object ReadSideBootstrap {
         maxPoolSize = jdbcCfg.getInt("hikari-settings.max-pool-size"),
         minIdleConnections = jdbcCfg.getInt("hikari-settings.min-idle-connections"),
         idleTimeoutMs = jdbcCfg.getLong("hikari-settings.idle-timeout-ms"),
-        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms"))
+        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms")
+      )
   }
 }

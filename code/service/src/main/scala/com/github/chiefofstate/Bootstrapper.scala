@@ -7,24 +7,24 @@
 package com.github.chiefofstate
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ ActorSystem, Behavior }
-import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
+import akka.actor.typed.{ActorSystem, Behavior}
+import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import akka.persistence.typed.PersistenceId
 import akka.util.Timeout
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.interceptors.MetadataInterceptor
-import com.github.chiefofstate.protobuf.v1.internal.{ MigrationFailed, MigrationSucceeded }
+import com.github.chiefofstate.protobuf.v1.internal.{MigrationFailed, MigrationSucceeded}
 import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import com.github.chiefofstate.readside.{ ReadSideBootstrap, ReadSideManager }
-import com.github.chiefofstate.services.{ CoSReadSideManagerService, CoSService }
-import com.github.chiefofstate.utils.{ NettyHelper, ProtosValidator, Util }
-import com.github.chiefofstate.writeside.{ RemoteCommandHandler, RemoteEventHandler }
+import com.github.chiefofstate.readside.{ReadSideBootstrap, ReadSideManager}
+import com.github.chiefofstate.services.{CoSReadSideManagerService, CoSService}
+import com.github.chiefofstate.utils.{NettyHelper, ProtosValidator, Util}
+import com.github.chiefofstate.writeside.{RemoteCommandHandler, RemoteEventHandler}
 import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
@@ -43,67 +43,77 @@ import scala.sys.ShutdownHookThread
 object Bootstrapper {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
-  def apply(config: Config): Behavior[scalapb.GeneratedMessage] = Behaviors.setup[scalapb.GeneratedMessage] { context =>
-    // get the  COS config
-    val cosConfig: CosConfig = CosConfig(config)
+  def apply(config: Config): Behavior[scalapb.GeneratedMessage] =
+    Behaviors.setup[scalapb.GeneratedMessage] { context =>
+      // get the  COS config
+      val cosConfig: CosConfig = CosConfig(config)
 
-    Behaviors.receiveMessage[scalapb.GeneratedMessage] {
-      // handle successful migration proceed with the rest of startup
-      case _: MigrationSucceeded =>
-        // We only proceed when the data stores and various migrations are done successfully.
-        log.info("Data store migration complete. About to start...")
+      Behaviors.receiveMessage[scalapb.GeneratedMessage] {
+        // handle successful migration proceed with the rest of startup
+        case _: MigrationSucceeded =>
+          // We only proceed when the data stores and various migrations are done successfully.
+          log.info("Data store migration complete. About to start...")
 
-        val channel: ManagedChannel =
-          NettyHelper
-            .builder(cosConfig.writeSideConfig.host, cosConfig.writeSideConfig.port, cosConfig.writeSideConfig.useTls)
-            .build()
+          val channel: ManagedChannel =
+            NettyHelper
+              .builder(
+                cosConfig.writeSideConfig.host,
+                cosConfig.writeSideConfig.port,
+                cosConfig.writeSideConfig.useTls
+              )
+              .build()
 
-        val writeHandler: WriteSideHandlerServiceBlockingStub =
-          new WriteSideHandlerServiceBlockingStub(channel)
+          val writeHandler: WriteSideHandlerServiceBlockingStub =
+            new WriteSideHandlerServiceBlockingStub(channel)
 
-        val remoteCommandHandler: RemoteCommandHandler = RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
-        val remoteEventHandler: RemoteEventHandler = RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
+          val remoteCommandHandler: RemoteCommandHandler =
+            RemoteCommandHandler(cosConfig.grpcConfig, writeHandler)
+          val remoteEventHandler: RemoteEventHandler =
+            RemoteEventHandler(cosConfig.grpcConfig, writeHandler)
 
-        // instance of eventsAndStatesProtoValidation
-        val eventsAndStateProtoValidation: ProtosValidator = ProtosValidator(cosConfig.writeSideConfig)
+          // instance of eventsAndStatesProtoValidation
+          val eventsAndStateProtoValidation: ProtosValidator =
+            ProtosValidator(cosConfig.writeSideConfig)
 
-        // initialize the sharding extension
-        val sharding: ClusterSharding = ClusterSharding(context.system)
+          // initialize the sharding extension
+          val sharding: ClusterSharding = ClusterSharding(context.system)
 
-        // initialize the shard region
-        sharding.init(Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
-          AggregateRoot(
-            PersistenceId.ofUniqueId(entityContext.entityId),
-            Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
-            cosConfig,
-            remoteCommandHandler,
-            remoteEventHandler,
-            eventsAndStateProtoValidation)
-        })
+          // initialize the shard region
+          sharding.init(Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
+            AggregateRoot(
+              PersistenceId.ofUniqueId(entityContext.entityId),
+              Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
+              cosConfig,
+              remoteCommandHandler,
+              remoteEventHandler,
+              eventsAndStateProtoValidation
+            )
+          })
 
-        // create an instance of the readSide manager
-        val readSideManager = new ReadSideManager(context.system, cosConfig.eventsConfig.numShards)
+          // create an instance of the readSide manager
+          val readSideManager =
+            new ReadSideManager(context.system, cosConfig.eventsConfig.numShards)
 
-        // read side service
-        startReadSides(context.system, cosConfig, readSideManager)
+          // read side service
+          startReadSides(context.system, cosConfig, readSideManager)
 
-        // start the service
-        startServices(context.system, sharding, cosConfig, readSideManager)
+          // start the service
+          startServices(context.system, sharding, cosConfig, readSideManager)
 
-        Behaviors.same
+          Behaviors.same
 
-      // handle failed migration
-      case msg: MigrationFailed =>
-        log.error(s"migration failed: ${msg.errorMessage}")
-        Behaviors.stopped
+        // handle failed migration
+        case msg: MigrationFailed =>
+          log.error(s"migration failed: ${msg.errorMessage}")
+          Behaviors.stopped
 
-      // handle unknown message
-      case unhandled =>
-        log.warn(s"unhandled message ${unhandled.companion.scalaDescriptor.fullName}")
+        // handle unknown message
+        case unhandled =>
+          log.warn(s"unhandled message ${unhandled.companion.scalaDescriptor.fullName}")
 
-        Behaviors.stopped
+          Behaviors.stopped
+      }
     }
-  }
 
   /**
    * starts the main application
@@ -115,7 +125,8 @@ object Bootstrapper {
       system: ActorSystem[_],
       clusterSharding: ClusterSharding,
       cosConfig: CosConfig,
-      readSideManager: ReadSideManager): ShutdownHookThread = {
+      readSideManager: ReadSideManager
+  ): ShutdownHookThread = {
     implicit val askTimeout: Timeout = cosConfig.askTimeout
 
     // create the traced execution context for grpc
@@ -130,13 +141,18 @@ object Bootstrapper {
 
     // create the server builder
     var builder = NettyServerBuilder
-      .forAddress(new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port))
+      .forAddress(
+        new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port)
+      )
       .addService(setServiceWithInterceptors(ChiefOfStateService.bindService(coSService, grpcEc)))
 
     // only start the read side manager if readSide is enabled
     if (cosConfig.enableReadSide)
       builder = builder.addService(
-        setServiceWithInterceptors(ReadSideManagerService.bindService(readSideManagerService, grpcEc)))
+        setServiceWithInterceptors(
+          ReadSideManagerService.bindService(readSideManagerService, grpcEc)
+        )
+      )
 
     // attach service to netty server
     val server: Server = builder.build().start()
@@ -156,12 +172,20 @@ object Bootstrapper {
    * @param cosConfig the chief of state config
    * @param interceptors gRPC client interceptors for remote calls
    */
-  private def startReadSides(system: ActorSystem[_], cosConfig: CosConfig, readSideManager: ReadSideManager): Unit = {
+  private def startReadSides(
+      system: ActorSystem[_],
+      cosConfig: CosConfig,
+      readSideManager: ReadSideManager
+  ): Unit = {
     // if read side is enabled
     if (cosConfig.enableReadSide) {
       // instantiate a read side manager
       val readSideBootstrap: ReadSideBootstrap =
-        ReadSideBootstrap(system = system, numShards = cosConfig.eventsConfig.numShards, readSideManager)
+        ReadSideBootstrap(
+          system = system,
+          numShards = cosConfig.eventsConfig.numShards,
+          readSideManager
+        )
       // initialize all configured read sides
       readSideBootstrap.init()
     }
@@ -173,7 +197,9 @@ object Bootstrapper {
    * @param serviceDefinition the service definition
    * @return a new ServerServiceDefinition with the various interceptors
    */
-  private def setServiceWithInterceptors(serviceDefinition: ServerServiceDefinition): ServerServiceDefinition = {
+  private def setServiceWithInterceptors(
+      serviceDefinition: ServerServiceDefinition
+  ): ServerServiceDefinition = {
     ServerInterceptors.intercept(serviceDefinition, MetadataInterceptor)
   }
 }

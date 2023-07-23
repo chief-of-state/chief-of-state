@@ -6,13 +6,13 @@
 
 package com.github.chiefofstate.migration
 
-import slick.dbio.{ DBIO, DBIOAction }
+import slick.dbio.{DBIO, DBIOAction}
 
 class VersionSpec extends BaseSpec {
 
   case class SomeVersion(versionNumber: Int) extends Version {
     override def snapshot(): DBIO[Unit] = DBIOAction.successful {}
-    def upgrade(): DBIO[Unit] = DBIOAction.successful {}
+    def upgrade(): DBIO[Unit]           = DBIOAction.successful {}
   }
 
   "VersionOrdering" should {

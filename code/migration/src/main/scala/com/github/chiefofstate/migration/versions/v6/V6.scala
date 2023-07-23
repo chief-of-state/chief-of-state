@@ -5,8 +5,8 @@
  */
 
 package com.github.chiefofstate.migration.versions.v6
-import com.github.chiefofstate.migration.{ SchemasUtil, Version }
-import org.slf4j.{ Logger, LoggerFactory }
+import com.github.chiefofstate.migration.{SchemasUtil, Version}
+import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
@@ -18,7 +18,7 @@ import slick.jdbc.JdbcProfile
  * @param schema the COS schema name
  */
 case class V6(journalJdbcConfig: DatabaseConfig[JdbcProfile]) extends Version {
-  final val log: Logger = LoggerFactory.getLogger(getClass)
+  final val log: Logger           = LoggerFactory.getLogger(getClass)
   override def versionNumber: Int = 6
 
   /**

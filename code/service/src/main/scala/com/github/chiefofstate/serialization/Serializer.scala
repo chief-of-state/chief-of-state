@@ -8,11 +8,11 @@ package com.github.chiefofstate.serialization
 
 import akka.actor.ExtendedActorSystem
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ ActorRef, ActorRefResolver }
+import akka.actor.typed.{ActorRef, ActorRefResolver}
 import akka.serialization.SerializerWithStringManifest
 import com.github.chiefofstate.protobuf.v1.internal.WireMessageWithActorRef
-import com.google.protobuf.{ any, ByteString }
-import scalapb.{ GeneratedMessage, GeneratedMessageCompanion }
+import com.google.protobuf.{any, ByteString}
+import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 
 import java.nio.charset.StandardCharsets
 
@@ -21,7 +21,8 @@ class Serializer(val system: ExtendedActorSystem) extends SerializerWithStringMa
   private lazy val actorRefResolver: ActorRefResolver = ActorRefResolver(system.toTyped)
 
   // build a reverse lookup of type url's to companions
-  private[serialization] lazy val companionMap: Map[String, GeneratedMessageCompanion[_ <: GeneratedMessage]] =
+  private[serialization] lazy val companionMap
+      : Map[String, GeneratedMessageCompanion[_ <: GeneratedMessage]] =
     Serializer.companions.map(c => (Serializer.getTypeUrl(c) -> c)).toMap
 
   // returns the unique ID for this serializer defined in the companion
@@ -98,12 +99,15 @@ class Serializer(val system: ExtendedActorSystem) extends SerializerWithStringMa
           actorRefResolver.toSerializationFormat(m.actorRef).getBytes(StandardCharsets.UTF_8)
 
         if (!companionMap.contains(Serializer.getTypeUrl(m.message.companion))) {
-          throw new IllegalArgumentException(s"cannot serialize ${m.message.companion.scalaDescriptor.fullName}")
+          throw new IllegalArgumentException(
+            s"cannot serialize ${m.message.companion.scalaDescriptor.fullName}"
+          )
         }
 
         WireMessageWithActorRef(
           message = Some(any.Any.pack(m.message)),
-          actorRef = ByteString.copyFrom(actorBytes)).toByteArray
+          actorRef = ByteString.copyFrom(actorBytes)
+        ).toByteArray
 
       case e: GeneratedMessage =>
         e.toByteArray
@@ -125,8 +129,8 @@ object Serializer {
   private[serialization] val companions: Seq[GeneratedMessageCompanion[_ <: GeneratedMessage]] =
     // recognizes all internal messages
     com.github.chiefofstate.protobuf.v1.internal.InternalProto.messagesCompanions ++
-    // recognizes all persistence messages
-    com.github.chiefofstate.protobuf.v1.persistence.PersistenceProto.messagesCompanions
+      // recognizes all persistence messages
+      com.github.chiefofstate.protobuf.v1.persistence.PersistenceProto.messagesCompanions
 
   /**
    * returns at type URL given a companion

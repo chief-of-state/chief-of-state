@@ -11,11 +11,11 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
 import com.google.protobuf.timestamp.Timestamp
 import io.grpc.protobuf.StatusProto
-import io.grpc.{ Metadata, Status, StatusException, StatusRuntimeException }
+import io.grpc.{Metadata, Status, StatusException, StatusRuntimeException}
 
-import java.time.{ Instant, LocalDate, ZoneId }
+import java.time.{Instant, LocalDate, ZoneId}
 import scala.collection.mutable
-import scala.util.{ Failure, Try }
+import scala.util.{Failure, Try}
 
 object Util {
   implicit class Timestamps(timestamp: Timestamp) {
@@ -80,7 +80,8 @@ object Util {
 
     keys.foreach(key => {
       if (key.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
-        val bytesKey: Metadata.Key[Array[Byte]] = Metadata.Key.of(key, Metadata.BINARY_BYTE_MARSHALLER)
+        val bytesKey: Metadata.Key[Array[Byte]] =
+          Metadata.Key.of(key, Metadata.BINARY_BYTE_MARSHALLER)
         val byteValues = metadata.getAll[Array[Byte]](bytesKey)
 
         if (byteValues != null) {
@@ -91,7 +92,7 @@ object Util {
         }
       } else {
         val stringKey: Metadata.Key[String] = Metadata.Key.of(key, Metadata.ASCII_STRING_MARSHALLER)
-        val stringValues = metadata.getAll[String](stringKey)
+        val stringValues                    = metadata.getAll[String](stringKey)
 
         if (stringValues != null) {
           stringValues.forEach(stringValue => {

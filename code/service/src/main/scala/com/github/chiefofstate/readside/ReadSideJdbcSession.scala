@@ -23,7 +23,7 @@ private[readside] class ReadSideJdbcSession(val conn: Connection) extends JdbcSe
     func(conn)
   }
 
-  override def commit(): Unit = conn.commit()
+  override def commit(): Unit   = conn.commit()
   override def rollback(): Unit = conn.rollback()
-  override def close(): Unit = conn.close()
+  override def close(): Unit    = conn.close()
 }

@@ -7,8 +7,8 @@
 package com.github.chiefofstate.helper
 
 import akka.actor.testkit.typed.TestKitSettings
-import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, ActorTestKitBase }
-import com.typesafe.config.{ Config, ConfigFactory }
+import akka.actor.testkit.typed.scaladsl.{ActorTestKit, ActorTestKitBase}
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.time.Span
 
 class BaseActorSpec(testKit: ActorTestKit) extends ActorTestKitBase(testKit) with BaseSpec {
@@ -42,7 +42,10 @@ class BaseActorSpec(testKit: ActorTestKit) extends ActorTestKitBase(testKit) wit
    * `PatienceConfig` from akka test kit default timeout
    */
   implicit val patience: PatienceConfig =
-    PatienceConfig(testKit.testKitSettings.DefaultTimeout.duration, Span(100, org.scalatest.time.Millis))
+    PatienceConfig(
+      testKit.testKitSettings.DefaultTimeout.duration,
+      Span(100, org.scalatest.time.Millis)
+    )
 
   /**
    * Shuts down the ActorTestKit. If override be sure to call super.afterAll

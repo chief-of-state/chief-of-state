@@ -7,7 +7,7 @@
 package com.github.chiefofstate.migration
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
@@ -15,7 +15,7 @@ import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
 
-import java.sql.{ Connection, DriverManager }
+import java.sql.{Connection, DriverManager}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
@@ -25,12 +25,20 @@ class SchemasUtilSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
+    .Def(
+      dockerImageName = DockerImageName.parse("postgres:11"),
+      urlParams = Map("currentSchema" -> cosSchema)
+    )
     .createContainer()
 
   // journal jdbc config
   lazy val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
-    TestConfig.dbConfigFromUrl(container.jdbcUrl, container.username, container.password, "write-side-slick")
+    TestConfig.dbConfigFromUrl(
+      container.jdbcUrl,
+      container.username,
+      container.password,
+      "write-side-slick"
+    )
 
   def runAndWait[R](a: DBIOAction[R, NoStream, Nothing]): R = {
     Await.result(journalJdbcConfig.db.run(a), Duration.Inf)

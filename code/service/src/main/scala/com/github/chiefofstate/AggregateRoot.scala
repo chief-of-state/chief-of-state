@@ -6,29 +6,34 @@
 
 package com.github.chiefofstate
 
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import akka.actor.typed.{ ActorRef, Behavior, SupervisorStrategy }
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl._
-import com.github.chiefofstate.config.{ CosConfig, SnapshotConfig }
+import com.github.chiefofstate.config.{CosConfig, SnapshotConfig}
 import com.github.chiefofstate.protobuf.v1.common.MetaData
-import com.github.chiefofstate.protobuf.v1.internal.{ CommandReply, GetStateCommand, RemoteCommand, SendCommand }
-import com.github.chiefofstate.protobuf.v1.persistence.{ EventWrapper, StateWrapper }
+import com.github.chiefofstate.protobuf.v1.internal.{
+  CommandReply,
+  GetStateCommand,
+  RemoteCommand,
+  SendCommand
+}
+import com.github.chiefofstate.protobuf.v1.persistence.{EventWrapper, StateWrapper}
 import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.ProtosValidator
-import com.github.chiefofstate.utils.Util.{ makeFailedStatusPf, toRpcStatus, Instants }
+import com.github.chiefofstate.utils.Util.{makeFailedStatusPf, toRpcStatus, Instants}
 import com.github.chiefofstate.writeside.ResponseType._
-import com.github.chiefofstate.writeside.{ RemoteCommandHandler, RemoteEventHandler }
+import com.github.chiefofstate.writeside.{RemoteCommandHandler, RemoteEventHandler}
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
-import io.grpc.{ Status, StatusException }
+import io.grpc.{Status, StatusException}
 import io.opentelemetry.instrumentation.annotations.WithSpan
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.time.Instant
 import scala.concurrent.duration.DurationInt
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 /**
  *  This is an event sourced actor.
@@ -58,15 +63,18 @@ object AggregateRoot {
       cosConfig: CosConfig,
       commandHandler: RemoteCommandHandler,
       eventHandler: RemoteEventHandler,
-      protosValidator: ProtosValidator): Behavior[SendReceive] = {
+      protosValidator: ProtosValidator
+  ): Behavior[SendReceive] = {
     Behaviors.setup { context =>
       {
         EventSourcedBehavior
           .withEnforcedReplies[SendReceive, EventWrapper, StateWrapper](
             persistenceId,
             emptyState = initialState(persistenceId),
-            (state, command) => handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
-            (state, event) => handleEvent(state, event))
+            (state, command) =>
+              handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
+            (state, event) => handleEvent(state, event)
+          )
           .withTagger(_ => Set(shardIndex.toString))
           .withRetention(setSnapshotRetentionCriteria(cosConfig.snapshotConfig))
           .onPersistFailure(SupervisorStrategy.restartWithBackoff(200.millis, 5.seconds, 0.1))
@@ -90,7 +98,8 @@ object AggregateRoot {
       aggregateCommand: SendReceive,
       commandHandler: RemoteCommandHandler,
       eventHandler: RemoteEventHandler,
-      protosValidator: ProtosValidator): ReplyEffect[EventWrapper, StateWrapper] = {
+      protosValidator: ProtosValidator
+  ): ReplyEffect[EventWrapper, StateWrapper] = {
     log.debug("begin handle command")
 
     val sendCommand: SendCommand = aggregateCommand.message.asInstanceOf[SendCommand]
@@ -107,7 +116,8 @@ object AggregateRoot {
           commandHandler,
           eventHandler,
           protosValidator,
-          remoteCommand.data)
+          remoteCommand.data
+        )
 
       case SendCommand.Message.GetStateCommand(getStateCommand) =>
         handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.actorRef)
@@ -131,7 +141,8 @@ object AggregateRoot {
   def handleGetStateCommand(
       cmd: GetStateCommand,
       state: StateWrapper,
-      replyTo: ActorRef[CommandReply]): ReplyEffect[EventWrapper, StateWrapper] = {
+      replyTo: ActorRef[CommandReply]
+  ): ReplyEffect[EventWrapper, StateWrapper] = {
     if (state.meta.map(_.revisionNumber).getOrElse(0) > 0) {
       log.debug(s"found state for entity ${cmd.entityId}")
       Effect.reply(replyTo)(CommandReply().withState(state))
@@ -160,7 +171,8 @@ object AggregateRoot {
       commandHandler: RemoteCommandHandler,
       eventHandler: RemoteEventHandler,
       protosValidator: ProtosValidator,
-      data: Map[String, com.google.protobuf.any.Any]): ReplyEffect[EventWrapper, StateWrapper] = {
+      data: Map[String, com.google.protobuf.any.Any]
+  ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     val handlerOutput: Try[Response] = commandHandler
       .handleCommand(command, priorState)
@@ -209,7 +221,8 @@ object AggregateRoot {
 
       case unhandled =>
         // this should never happen, but here for code completeness
-        val errStatus = Status.INTERNAL.withDescription(s"write handler failure, ${unhandled.getClass}")
+        val errStatus =
+          Status.INTERNAL.withDescription(s"write handler failure, ${unhandled.getClass}")
         Effect.reply(replyTo)(CommandReply().withError(toRpcStatus(errStatus)))
     }
   }
@@ -232,13 +245,15 @@ object AggregateRoot {
    * @param snapshotConfig the snapshot config
    * @return the snapshot retention criteria
    */
-  private[chiefofstate] def setSnapshotRetentionCriteria(snapshotConfig: SnapshotConfig): RetentionCriteria = {
+  private[chiefofstate] def setSnapshotRetentionCriteria(
+      snapshotConfig: SnapshotConfig
+  ): RetentionCriteria = {
     if (snapshotConfig.disableSnapshot) RetentionCriteria.disabled
     else {
       // journal/snapshot retention criteria
       val rc: SnapshotCountRetentionCriteria = RetentionCriteria.snapshotEvery(
         numberOfEvents = snapshotConfig.retentionFrequency, // snapshotFrequency
-        keepNSnapshots = snapshotConfig.retentionNr // snapshotRetention
+        keepNSnapshots = snapshotConfig.retentionNr         // snapshotRetention
       )
       // journal/snapshot retention criteria
       if (snapshotConfig.deleteEventsOnSnapshot) rc.withDeleteEventsOnSnapshot
@@ -259,10 +274,13 @@ object AggregateRoot {
       event: any.Any,
       resultingState: any.Any,
       eventMeta: MetaData,
-      replyTo: ActorRef[CommandReply]): ReplyEffect[EventWrapper, StateWrapper] = {
+      replyTo: ActorRef[CommandReply]
+  ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     Effect
-      .persist(EventWrapper().withEvent(event).withResultingState(resultingState).withMeta(eventMeta))
+      .persist(
+        EventWrapper().withEvent(event).withResultingState(resultingState).withMeta(eventMeta)
+      )
       .thenReply(replyTo)((updatedState: StateWrapper) => CommandReply().withState(updatedState))
   }
 

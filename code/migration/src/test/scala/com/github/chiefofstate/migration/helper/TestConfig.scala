@@ -6,13 +6,18 @@
 
 package com.github.chiefofstate.migration.helper
 
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 
 object TestConfig {
   // get a typesafe config for a given jdbc url
-  def getTypesafeConfigUrl(rootKey: String = "jdbc-default", url: String, user: String, password: String): Config = {
+  def getTypesafeConfigUrl(
+      rootKey: String = "jdbc-default",
+      url: String,
+      user: String,
+      password: String
+  ): Config = {
 
     val cfgString: String = s"""
       $rootKey {
@@ -30,7 +35,12 @@ object TestConfig {
     ConfigFactory.parseString(cfgString)
   }
 
-  def getProjectionConfig(url: String, user: String, password: String, useLowerCase: Boolean): Config = {
+  def getProjectionConfig(
+      url: String,
+      user: String,
+      password: String,
+      useLowerCase: Boolean
+  ): Config = {
     val cfgString: String = s"""
       akka.projection.slick {
         profile = "slick.jdbc.PostgresProfile$$"
@@ -56,7 +66,8 @@ object TestConfig {
       url: String,
       user: String,
       password: String,
-      rootKey: String = "jdbc-default"): DatabaseConfig[JdbcProfile] = {
+      rootKey: String = "jdbc-default"
+  ): DatabaseConfig[JdbcProfile] = {
     val cfg = getTypesafeConfigUrl(rootKey, url, user, password)
     DatabaseConfig.forConfig[JdbcProfile](rootKey, cfg)
   }

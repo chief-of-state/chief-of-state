@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.readside
 
-import akka.actor.typed.{ ActorSystem, Behavior }
+import akka.actor.typed.{ActorSystem, Behavior}
 import akka.cluster.sharding.typed.ShardedDaemonProcessSettings
 import akka.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
@@ -15,10 +15,10 @@ import akka.projection.eventsourced.EventEnvelope
 import akka.projection.eventsourced.scaladsl.EventSourcedProvider
 import akka.projection.jdbc.scaladsl.JdbcProjection
 import akka.projection.scaladsl.SourceProvider
-import akka.projection.{ HandlerRecoveryStrategy, ProjectionBehavior, ProjectionId }
+import akka.projection.{HandlerRecoveryStrategy, ProjectionBehavior, ProjectionId}
 import com.github.chiefofstate.config.ReadSideFailurePolicy
 import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 
 import javax.sql.DataSource
 import scala.concurrent.duration.DurationInt
@@ -39,7 +39,8 @@ private[readside] class ReadSide(
     val dataSource: DataSource,
     readSideHandler: ReadSideHandler,
     val numShards: Int,
-    val failurePolicy: String) {
+    val failurePolicy: String
+) {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   implicit val sys: ActorSystem[_] = actorSystem
@@ -53,7 +54,8 @@ private[readside] class ReadSide(
       numberOfInstances = numShards,
       behaviorFactory = shardNumber => jdbcProjection(shardNumber.toString),
       settings = ShardedDaemonProcessSettings(actorSystem),
-      stopMessage = Some(ProjectionBehavior.Stop))
+      stopMessage = Some(ProjectionBehavior.Stop)
+    )
 
   /**
    * creates a jdbc projection behavior
@@ -68,7 +70,8 @@ private[readside] class ReadSide(
       // defines a session factory that returns a jdbc
       // session connected to the hikari pool
       sessionFactory = () => new ReadSideJdbcSession(dataSource.getConnection()),
-      handler = () => new ReadSideJdbcHandler(tagName, readSideId, readSideHandler))
+      handler = () => new ReadSideJdbcHandler(tagName, readSideId, readSideHandler)
+    )
 
     // let us set the failure policy
     failurePolicy.toUpperCase match {
@@ -77,17 +80,28 @@ private[readside] class ReadSide(
         // here we disable restart because we are stopping the readside
         projection
           .withRecoveryStrategy(HandlerRecoveryStrategy.fail)
-          .withRestartBackoff(minBackoff = 3.seconds, maxBackoff = 30.seconds, randomFactor = 0.2, maxRestarts = 0)
+          .withRestartBackoff(
+            minBackoff = 3.seconds,
+            maxBackoff = 30.seconds,
+            randomFactor = 0.2,
+            maxRestarts = 0
+          )
 
       // this will skip the failed processed event and advanced the offset to continue to the next event.
-      case ReadSideFailurePolicy.SkipDirective => projection.withRecoveryStrategy(HandlerRecoveryStrategy.skip)
+      case ReadSideFailurePolicy.SkipDirective =>
+        projection.withRecoveryStrategy(HandlerRecoveryStrategy.skip)
 
       // this will attempt to replay the failed processed event five times and stop the given readside
       case ReadSideFailurePolicy.ReplayStopDirective =>
         // here we disable restart because we are stopping the readside
         projection
           .withRecoveryStrategy(HandlerRecoveryStrategy.retryAndFail(5, 5.seconds))
-          .withRestartBackoff(minBackoff = 3.seconds, maxBackoff = 30.seconds, randomFactor = 0.2, maxRestarts = 0)
+          .withRestartBackoff(
+            minBackoff = 3.seconds,
+            maxBackoff = 30.seconds,
+            randomFactor = 0.2,
+            maxRestarts = 0
+          )
 
       // this will attempt to replay the failed processed event five times and skip to the next event
       case ReadSideFailurePolicy.ReplaySkipDirective =>
@@ -110,6 +124,8 @@ private[readside] object ReadSide {
    */
   private[readside] def sourceProvider(
       system: ActorSystem[_],
-      tag: String): SourceProvider[Offset, EventEnvelope[EventWrapper]] =
-    EventSourcedProvider.eventsByTag[EventWrapper](system, readJournalPluginId = JdbcReadJournal.Identifier, tag)
+      tag: String
+  ): SourceProvider[Offset, EventEnvelope[EventWrapper]] =
+    EventSourcedProvider
+      .eventsByTag[EventWrapper](system, readJournalPluginId = JdbcReadJournal.Identifier, tag)
 }

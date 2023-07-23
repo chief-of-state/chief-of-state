@@ -10,10 +10,10 @@ import com.github.chiefofstate.protobuf.v1.common.ReadSideOffset
 import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.readside_manager._
 import com.github.chiefofstate.readside.ReadSideManager
-import org.slf4j.{ Logger, LoggerFactory }
+import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.{ ExecutionContext, Future }
-import scala.util.{ Failure, Success, Try }
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionContext)
     extends ReadSideManagerService {
@@ -44,7 +44,8 @@ class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: E
    * GetLatestOffsetByShard retrieves the latest offset given a shard
    */
   override def getLatestOffsetByShard(
-      request: GetLatestOffsetByShardRequest): Future[GetLatestOffsetByShardResponse] = {
+      request: GetLatestOffsetByShardRequest
+  ): Future[GetLatestOffsetByShardResponse] = {
     // log the method name
     log.debug(ReadSideManagerServiceGrpc.METHOD_GET_LATEST_OFFSET_BY_SHARD.getFullMethodName)
     // execute the request.
@@ -53,7 +54,9 @@ class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: E
       .offset(request.readSideId, request.clusterShardNumber.intValue())
       .map(offset =>
         GetLatestOffsetByShardResponse().withOffsets(
-          ReadSideOffset().withOffset(offset).withClusterShardNumber(request.clusterShardNumber)))
+          ReadSideOffset().withOffset(offset).withClusterShardNumber(request.clusterShardNumber)
+        )
+      )
   }
 
   /**
@@ -78,7 +81,8 @@ class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: E
    * RestartReadSideByShard will clear the read side offset for the given shard and start it over again from the first offset
    */
   override def restartReadSideByShard(
-      request: RestartReadSideByShardRequest): Future[RestartReadSideByShardResponse] = {
+      request: RestartReadSideByShardRequest
+  ): Future[RestartReadSideByShardResponse] = {
     // log the method name
     log.debug(ReadSideManagerServiceGrpc.METHOD_RESTART_READ_SIDE_BY_SHARD.getFullMethodName)
     // get the readside id
@@ -113,7 +117,9 @@ class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: E
    * PauseReadSide pauses a read side. This can be useful when running some data
    * migration and this for a given shard
    */
-  override def pauseReadSideByShard(request: PauseReadSideByShardRequest): Future[PauseReadSideByShardResponse] = {
+  override def pauseReadSideByShard(
+      request: PauseReadSideByShardRequest
+  ): Future[PauseReadSideByShardResponse] = {
     // log the method name
     log.debug(ReadSideManagerServiceGrpc.METHOD_PAUSE_READ_SIDE_BY_SHARD.getFullMethodName)
     // get the readside id
@@ -147,7 +153,9 @@ class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: E
   /**
    * ResumeReadSideByShard  resumes a paused read side for a given shard
    */
-  override def resumeReadSideByShard(request: ResumeReadSideByShardRequest): Future[ResumeReadSideByShardResponse] = {
+  override def resumeReadSideByShard(
+      request: ResumeReadSideByShardRequest
+  ): Future[ResumeReadSideByShardResponse] = {
     // log the method name
     log.debug(ReadSideManagerServiceGrpc.METHOD_RESUME_READ_SIDE_BY_SHARD.getFullMethodName)
     // get the readside id
@@ -175,7 +183,9 @@ class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: E
       readSideManager.skipOffsets(readSideId)
     } match {
       case Failure(exception) =>
-        log.error(s"skipping read side offset failed, readSideID=$readSideId, cause=${exception.getMessage}")
+        log.error(
+          s"skipping read side offset failed, readSideID=$readSideId, cause=${exception.getMessage}"
+        )
         Future.failed(exception)
       case Success(_) =>
         log.info(s"skipping read side offset successfully, readSideID=$readSideId")
@@ -186,11 +196,13 @@ class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: E
   /**
    * SkippOffset skips the current offset to read for a given shard and continue with next. The operation will automatically restart the read side.
    */
-  override def skipOffsetByShard(request: SkipOffsetByShardRequest): Future[SkipOffsetByShardResponse] = {
+  override def skipOffsetByShard(
+      request: SkipOffsetByShardRequest
+  ): Future[SkipOffsetByShardResponse] = {
     // log the method name
     log.debug(ReadSideManagerServiceGrpc.METHOD_SKIP_OFFSET_BY_SHARD.getFullMethodName)
     // get the readside id
-    val readSideId = request.readSideId
+    val readSideId  = request.readSideId
     val shardNumber = request.clusterShardNumber.intValue()
     // execute the request.
     // In case there is an error an internal error will be returned
@@ -199,10 +211,13 @@ class CoSReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: E
     } match {
       case Failure(exception) =>
         log.error(
-          s"unable to skip read side offset readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}")
+          s"unable to skip read side offset readSideID=$readSideId, shardNumber=$shardNumber, cause=${exception.getMessage}"
+        )
         Future.failed(exception)
       case Success(_) =>
-        log.info(s"skipping read side offset successfully, readSideID=$readSideId, shardNumber=$shardNumber")
+        log.info(
+          s"skipping read side offset successfully, readSideID=$readSideId, shardNumber=$shardNumber"
+        )
         Future.successful(SkipOffsetByShardResponse().withSuccessful(true))
     }
   }

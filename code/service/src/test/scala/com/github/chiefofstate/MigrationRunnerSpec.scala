@@ -6,23 +6,23 @@
 
 package com.github.chiefofstate
 
-import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, BehaviorTestKit, TestProbe }
+import akka.actor.testkit.typed.scaladsl.{ActorTestKit, BehaviorTestKit, TestProbe}
 import akka.actor.typed.ActorRef
-import com.dimafeng.testcontainers.{ ForAllTestContainer, PostgreSQLContainer }
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate
 import com.github.chiefofstate.helper.BaseSpec
-import com.github.chiefofstate.migration.{ JdbcConfig, Migrator }
-import com.github.chiefofstate.protobuf.v1.internal.{ MigrationSucceeded, StartMigration }
-import com.github.chiefofstate.serialization.{ Message, SendReceive }
+import com.github.chiefofstate.migration.{JdbcConfig, Migrator}
+import com.github.chiefofstate.protobuf.v1.internal.{MigrationSucceeded, StartMigration}
+import com.github.chiefofstate.serialization.{Message, SendReceive}
 import com.google.protobuf.wrappers.StringValue
-import com.typesafe.config.{ Config, ConfigFactory, ConfigValueFactory }
+import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.testcontainers.utility.DockerImageName
 import scalapb.GeneratedMessage
 
-import java.sql.{ Connection, DriverManager, Statement }
+import java.sql.{Connection, DriverManager, Statement}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
-import scala.concurrent.duration.{ Duration, FiniteDuration }
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
@@ -30,14 +30,18 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
 
   override val container: PostgreSQLContainer = PostgreSQLContainer
-    .Def(dockerImageName = DockerImageName.parse("postgres:11"), urlParams = Map("currentSchema" -> cosSchema))
+    .Def(
+      dockerImageName = DockerImageName.parse("postgres:11"),
+      urlParams = Map("currentSchema" -> cosSchema)
+    )
     .createContainer()
 
   def recreateSchema(): Unit = {
     // load the driver
     Class.forName("org.postgresql.Driver")
 
-    val connection: Connection = DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
+    val connection: Connection =
+      DriverManager.getConnection(container.jdbcUrl, container.username, container.password)
 
     val statement: Statement = connection.createStatement()
     statement.addBatch(s"drop schema if exists $cosSchema cascade")
@@ -49,14 +53,23 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
     .parseResources("test.conf")
     .withValue("akka.projection.slick.db.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
     .withValue("akka.projection.slick.db.user", ConfigValueFactory.fromAnyRef(container.username))
-    .withValue("akka.projection.slick.db.password", ConfigValueFactory.fromAnyRef(container.password))
+    .withValue(
+      "akka.projection.slick.db.password",
+      ConfigValueFactory.fromAnyRef(container.password)
+    )
     .withValue("akka.projection.slick.db.serverName", ConfigValueFactory.fromAnyRef(container.host))
-    .withValue("akka.projection.slick.db.databaseName", ConfigValueFactory.fromAnyRef(container.databaseName))
+    .withValue(
+      "akka.projection.slick.db.databaseName",
+      ConfigValueFactory.fromAnyRef(container.databaseName)
+    )
     .withValue("write-side-slick.db.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
     .withValue("write-side-slick.db.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue("write-side-slick.db.password", ConfigValueFactory.fromAnyRef(container.password))
     .withValue("write-side-slick.db.serverName", ConfigValueFactory.fromAnyRef(container.host))
-    .withValue("write-side-slick.db.databaseName", ConfigValueFactory.fromAnyRef(container.databaseName))
+    .withValue(
+      "write-side-slick.db.databaseName",
+      ConfigValueFactory.fromAnyRef(container.databaseName)
+    )
     .resolve()
 
   lazy val testKit: ActorTestKit = ActorTestKit(config)
@@ -99,7 +112,8 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       Await.ready(dbConfig.db.run(stmt), Duration.Inf)
 
       // create an instance of MigrationRunner
-      val migrationRunnerRef: ActorRef[Message] = testKit.spawn(chiefofstate.MigrationRunner(config))
+      val migrationRunnerRef: ActorRef[Message] =
+        testKit.spawn(chiefofstate.MigrationRunner(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
@@ -119,7 +133,8 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
 
       // create an instance of MigrationRunner
-      val migrationRunnerRef: ActorRef[Message] = testKit.spawn(chiefofstate.MigrationRunner(config))
+      val migrationRunnerRef: ActorRef[Message] =
+        testKit.spawn(chiefofstate.MigrationRunner(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()

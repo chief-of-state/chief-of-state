@@ -6,8 +6,8 @@
 
 package com.github.chiefofstate.utils
 
-import io.grpc.netty.NegotiationType.{ PLAINTEXT, TLS }
-import io.grpc.netty.{ NegotiationType, NettyChannelBuilder }
+import io.grpc.netty.NegotiationType.{PLAINTEXT, TLS}
+import io.grpc.netty.{NegotiationType, NettyChannelBuilder}
 
 object NettyHelper {
 

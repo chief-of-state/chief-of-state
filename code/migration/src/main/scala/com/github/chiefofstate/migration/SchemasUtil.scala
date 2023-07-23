@@ -96,7 +96,8 @@ object SchemasUtil {
    * @return the DBIOAction creating the table and offset
    */
   private[migration] def createReadSideOffsetsStmt(
-      tableName: String = "read_side_offsets"): DBIOAction[Unit, NoStream, Effect] = {
+      tableName: String = "read_side_offsets"
+  ): DBIOAction[Unit, NoStream, Effect] = {
 
     val table = sqlu"""
       CREATE TABLE IF NOT EXISTS #$tableName (
@@ -153,7 +154,8 @@ object SchemasUtil {
         createEventTagStmt,
         createSnapshotStmt,
         createReadSideOffsetsStmt(),
-        createReadSidesStmt())
+        createReadSidesStmt()
+      )
       .withPinnedSession
       .transactionally
   }
@@ -173,7 +175,8 @@ object SchemasUtil {
             """,
         sqlu"""
         DROP INDEX IF EXISTS event_journal_ordering_idx;
-      """)
+      """
+      )
       .withPinnedSession
       .transactionally
 

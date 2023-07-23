@@ -7,7 +7,7 @@
 package com.github.chiefofstate.helper
 
 import com.github.chiefofstate.config.CosConfig
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.{Config, ConfigFactory}
 
 object TestConfig {
   val config: Config = ConfigFactory.parseString(s"""
