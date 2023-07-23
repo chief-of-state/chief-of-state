@@ -18,9 +18,7 @@ import com.typesafe.config.Config
 import org.slf4j.{Logger, LoggerFactory}
 
 object NodeBehaviour {
-  final val log: Logger        = LoggerFactory.getLogger(getClass)
-  val COS_MIGRATION_RUNNER     = "CosServiceMigrationRunner"
-  val COS_SERVICE_BOOTSTRAPPER = "CosServiceBootstrapper"
+  final val log: Logger = LoggerFactory.getLogger(getClass)
 
   def apply(config: Config): Behavior[NotUsed] = {
     Behaviors.setup { context =>
@@ -39,7 +37,7 @@ object NodeBehaviour {
           Behaviors
             .supervise(Bootstrapper(config))
             .onFailure[Exception](SupervisorStrategy.restart),
-          COS_SERVICE_BOOTSTRAPPER
+          "CosBootstrapper"
         )
 
       // initialise the migration cluster singleton settings
@@ -48,7 +46,7 @@ object NodeBehaviour {
       // create the migration cluster singleton
       val migrationRunner = SingletonActor(
         Behaviors.supervise(MigrationRunner(config)).onFailure[Exception](SupervisorStrategy.stop),
-        COS_MIGRATION_RUNNER
+        "CosMigrationRunner"
       ).withSettings(singletonSettings)
 
       // initialise the migration runner in a singleton
