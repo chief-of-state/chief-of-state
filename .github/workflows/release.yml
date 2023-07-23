@@ -19,13 +19,6 @@ jobs:
 
       - uses: nelonoel/branch-name@v1.0.1
 
-      - name: Set up QEMU
-        id: qemu
-        uses: docker/setup-qemu-action@v1
-        with:
-          image: tonistiigi/binfmt:latest
-          platforms: all
-
       - name: Docker Login
         env:
           DOCKER_REGISTRY: ghcr.io
@@ -59,4 +52,4 @@ jobs:
           FORCE_COLOR: 1
           COMMIT_HASH: ${{ github.sha }}
           VERSION: ${{ steps.version.outputs.VERSION }}
-        run: earthly -P --ci --push +all
+        run: earthly -P --ci --push +release

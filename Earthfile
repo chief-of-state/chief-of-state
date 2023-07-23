@@ -2,12 +2,6 @@ VERSION 0.7
 
 FROM busybox:1.36
 
-all:
-    BUILD \
-        --platform=linux/amd64 \
-        --platform=linux/arm64/v8 \
-        --platform=linux/arm/v7 \
-        +release
 
 test-and-build:
     # target running tests and building image
