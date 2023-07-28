@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0
 
       - uses: nelonoel/branch-name@v1.0.1
-      - uses: wagoid/commitlint-github-action@v5
+      - uses: wagoid/commitlint-github-action@v5.4.3
 
       - name: Docker Login
         env:
@@ -26,7 +26,7 @@ jobs:
 
       - uses: earthly/actions/setup-earthly@v1
         with:
-          version: v0.7.12
+          version: v0.7.13
 
       - name: Earthly Version
         run: earthly --version
