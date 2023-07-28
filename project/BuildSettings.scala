@@ -1,4 +1,4 @@
-import sbt.{ plugins, AutoPlugin, Plugins }
+import sbt.{plugins, AutoPlugin, Plugins}
 import sbt.Keys.libraryDependencies
 
 object BuildSettings extends AutoPlugin {
