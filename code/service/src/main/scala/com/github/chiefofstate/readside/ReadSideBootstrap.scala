@@ -34,11 +34,9 @@ class ReadSideBootstrap(
     numShards: Int,
     readSideManager: ReadSideManager
 ) {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
-
   private[readside] lazy val dataSource: HikariDataSource =
     ReadSideBootstrap.getDataSource(dbConfig)
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   // grab the execution context from the actor system
   implicit val ec: ExecutionContextExecutor = system.executionContext

@@ -15,11 +15,6 @@ object ResponseType {
   sealed trait Response
 
   /**
-   * this will return the current state of the AggregateRoot. No event will be persisted
-   */
-  case object NoOp extends Response
-
-  /**
    *  an event is returned by the write side handler. That event will be persisted into the journal
    * @param event the event return
    */
@@ -36,5 +31,10 @@ object ResponseType {
       state: com.google.protobuf.any.Any,
       eventMeta: MetaData
   ) extends Response
+
+  /**
+   * this will return the current state of the AggregateRoot. No event will be persisted
+   */
+  case object NoOp extends Response
 
 }

@@ -23,7 +23,6 @@ import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto
 import io.grpc.protobuf.StatusProto
 import io.grpc.{Metadata, Status, StatusException}
-import io.opentelemetry.context.Context
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.GeneratedMessage
 

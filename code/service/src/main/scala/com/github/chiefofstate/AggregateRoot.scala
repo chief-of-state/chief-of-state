@@ -22,7 +22,7 @@ import com.github.chiefofstate.protobuf.v1.internal.{
 import com.github.chiefofstate.protobuf.v1.persistence.{EventWrapper, StateWrapper}
 import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.ProtosValidator
-import com.github.chiefofstate.utils.Util.{makeFailedStatusPf, toRpcStatus, Instants}
+import com.github.chiefofstate.utils.Util.{Instants, makeFailedStatusPf, toRpcStatus}
 import com.github.chiefofstate.writeside.ResponseType._
 import com.github.chiefofstate.writeside.{RemoteCommandHandler, RemoteEventHandler}
 import com.google.protobuf.any
@@ -228,6 +228,29 @@ object AggregateRoot {
   }
 
   /**
+   * persists an event and the resulting state and reply to the caller
+   *
+   * @param event the event to persist
+   * @param resultingState the resulting state to persist
+   * @param eventMeta the prior meta before the event to be persisted
+   * @param replyTo the caller ref receiving the reply when persistence is successful
+   * @return a reply effect
+   */
+  private[chiefofstate] def persistEventAndReply(
+      event: any.Any,
+      resultingState: any.Any,
+      eventMeta: MetaData,
+      replyTo: ActorRef[CommandReply]
+  ): ReplyEffect[EventWrapper, StateWrapper] = {
+
+    Effect
+      .persist(
+        EventWrapper().withEvent(event).withResultingState(resultingState).withMeta(eventMeta)
+      )
+      .thenReply(replyTo)((updatedState: StateWrapper) => CommandReply().withState(updatedState))
+  }
+
+  /**
    * handles the aggregate event persisted by applying the prior state to the
    * event to return a new state
    *
@@ -259,29 +282,6 @@ object AggregateRoot {
       if (snapshotConfig.deleteEventsOnSnapshot) rc.withDeleteEventsOnSnapshot
       rc
     }
-  }
-
-  /**
-   * persists an event and the resulting state and reply to the caller
-   *
-   * @param event the event to persist
-   * @param resultingState the resulting state to persist
-   * @param eventMeta the prior meta before the event to be persisted
-   * @param replyTo the caller ref receiving the reply when persistence is successful
-   * @return a reply effect
-   */
-  private[chiefofstate] def persistEventAndReply(
-      event: any.Any,
-      resultingState: any.Any,
-      eventMeta: MetaData,
-      replyTo: ActorRef[CommandReply]
-  ): ReplyEffect[EventWrapper, StateWrapper] = {
-
-    Effect
-      .persist(
-        EventWrapper().withEvent(event).withResultingState(resultingState).withMeta(eventMeta)
-      )
-      .thenReply(replyTo)((updatedState: StateWrapper) => CommandReply().withState(updatedState))
   }
 
   /**

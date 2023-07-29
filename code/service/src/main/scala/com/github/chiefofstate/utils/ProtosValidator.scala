@@ -21,6 +21,15 @@ case class ProtosValidator(writeSideConfig: WriteSideConfig) {
   private val validStatesProtos: Seq[String] = writeSideConfig.statesProtos
 
   /**
+   * helper to require known event types
+   *
+   * @param event an event as an Any
+   */
+  def requireValidEvent(event: com.google.protobuf.any.Any): Unit = {
+    require(validateEvent(event), s"invalid event: ${event.typeUrl}")
+  }
+
+  /**
    * validates an event proto message and return true when it is valid or false when it is not
    *
    * @param event the event to validate
@@ -35,6 +44,15 @@ case class ProtosValidator(writeSideConfig: WriteSideConfig) {
   }
 
   /**
+   * helper to require known state types
+   *
+   * @param state a state as an Any
+   */
+  def requireValidState(state: com.google.protobuf.any.Any): Unit = {
+    require(validateState(state), s"invalid state: ${state.typeUrl}")
+  }
+
+  /**
    * validates an state proto message and return true when it is valid or false when it is not
    *
    * @param state  the state to validate
@@ -46,23 +64,5 @@ case class ProtosValidator(writeSideConfig: WriteSideConfig) {
     } else {
       true
     }
-  }
-
-  /**
-   * helper to require known event types
-   *
-   * @param event an event as an Any
-   */
-  def requireValidEvent(event: com.google.protobuf.any.Any): Unit = {
-    require(validateEvent(event), s"invalid event: ${event.typeUrl}")
-  }
-
-  /**
-   * helper to require known state types
-   *
-   * @param state a state as an Any
-   */
-  def requireValidState(state: com.google.protobuf.any.Any): Unit = {
-    require(validateState(state), s"invalid state: ${state.typeUrl}")
   }
 }

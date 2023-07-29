@@ -14,7 +14,7 @@ import akka.util.Timeout
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.internal.{MigrationFailed, MigrationSucceeded}
-import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
+import com.github.chiefofstate.protobuf.v1.manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.readside.{ReadSideBootstrap, ReadSideManager}
@@ -166,6 +166,18 @@ object Bootstrapper {
   }
 
   /**
+   * sets gRPC service definitions with the default interceptors
+   *
+   * @param serviceDefinition the service definition
+   * @return a new ServerServiceDefinition with the various interceptors
+   */
+  private def setServiceWithInterceptors(
+      serviceDefinition: ServerServiceDefinition
+  ): ServerServiceDefinition = {
+    ServerInterceptors.intercept(serviceDefinition, MetadataInterceptor)
+  }
+
+  /**
    * Start all the read side processors (akka projections)
    *
    * @param system actor system
@@ -189,17 +201,5 @@ object Bootstrapper {
       // initialize all configured read sides
       readSideBootstrap.init()
     }
-  }
-
-  /**
-   * sets gRPC service definitions with the default interceptors
-   *
-   * @param serviceDefinition the service definition
-   * @return a new ServerServiceDefinition with the various interceptors
-   */
-  private def setServiceWithInterceptors(
-      serviceDefinition: ServerServiceDefinition
-  ): ServerServiceDefinition = {
-    ServerInterceptors.intercept(serviceDefinition, MetadataInterceptor)
   }
 }

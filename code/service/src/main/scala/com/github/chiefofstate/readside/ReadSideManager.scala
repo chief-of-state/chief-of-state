@@ -124,14 +124,13 @@ sealed trait StateManager {
  * @param numShards the number of cluster shards
  */
 class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManager {
-  // set the logger
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  // create an instance of the projection management
+  val mgmt: ProjectionManagement = ProjectionManagement(system)
 
   // grab the execution context from the actor system
   implicit val ec: ExecutionContextExecutor = system.executionContext
-
-  // create an instance of the projection management
-  val mgmt: ProjectionManagement = ProjectionManagement(system)
+  // set the logger
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   /**
    * returns the offset of a read side given the offset
@@ -280,6 +279,18 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
     handleForAll(futures, readSideId)
   }
 
+  private def handleForAll(futures: Seq[Future[Done]], readSideId: String): Future[Boolean] = {
+    Future.sequence(futures).transformWith[Boolean] {
+      case Failure(exception) =>
+        logger
+          .error(s"read side restart failed, readSideID=$readSideId, cause=${exception.getMessage}")
+        Future.failed(exception)
+      case Success(_) =>
+        logger.info(s"read side restart successfully, readSideID=$readSideId")
+        Future.successful(true)
+    }
+  }
+
   /**
    * resumes a paused given read side on a given shard.
    *
@@ -365,18 +376,6 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
           ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
         case None => // already removed
       }
-    }
-  }
-
-  private def handleForAll(futures: Seq[Future[Done]], readSideId: String): Future[Boolean] = {
-    Future.sequence(futures).transformWith[Boolean] {
-      case Failure(exception) =>
-        logger
-          .error(s"read side restart failed, readSideID=$readSideId, cause=${exception.getMessage}")
-        Future.failed(exception)
-      case Success(_) =>
-        logger.info(s"read side restart successfully, readSideID=$readSideId")
-        Future.successful(true)
     }
   }
 

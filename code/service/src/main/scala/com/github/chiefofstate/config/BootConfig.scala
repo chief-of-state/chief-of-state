@@ -13,10 +13,7 @@ object BootConfig {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  val DEPLOYMENT_MODE: String = "COS_DEPLOYMENT_MODE"
-
-  case class DeploymentMode(key: String, file: String)
-
+  val DEPLOYMENT_MODE: String                = "COS_DEPLOYMENT_MODE"
   val DEPLOYMENT_MODE_DOCKER: DeploymentMode = DeploymentMode("docker", "docker.conf")
   val DEPLOYMENT_MODE_K8S: DeploymentMode    = DeploymentMode("kubernetes", "kubernetes.conf")
 
@@ -46,4 +43,6 @@ object BootConfig {
         throw new IllegalArgumentException(err)
     }
   }
+
+  case class DeploymentMode(key: String, file: String)
 }

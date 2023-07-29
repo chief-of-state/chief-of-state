@@ -7,8 +7,8 @@
 package com.github.chiefofstate.services
 
 import com.github.chiefofstate.protobuf.v1.common.ReadSideOffset
-import com.github.chiefofstate.protobuf.v1.readside_manager.ReadSideManagerServiceGrpc.ReadSideManagerService
-import com.github.chiefofstate.protobuf.v1.readside_manager._
+import com.github.chiefofstate.protobuf.v1.manager.ReadSideManagerServiceGrpc.ReadSideManagerService
+import com.github.chiefofstate.protobuf.v1.manager._
 import com.github.chiefofstate.readside.ReadSideManager
 import org.slf4j.{Logger, LoggerFactory}
 
