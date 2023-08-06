@@ -68,7 +68,7 @@ Some potential read side handlers might:
 - Automatic configuration of postgres storage on boot
 - Opentelemetry integration for tracing and prometheus metrics
 - Direct integration to Kubernetes to form a cluster using the kubernetes API
-- [Read Side Management](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/readside_manager.proto#L15)
+- [Read Side Management](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/manager.proto)
   - Skip offset per shard and across the whole CoS cluster
   - Pause and Resume read sides per shard and across the whole CoS cluster
   - Restart read sides per shard and across the whole CoS cluster
