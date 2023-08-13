@@ -45,7 +45,7 @@ One can refer to the [documentation](#documentation) for set up.
   - List read sides' offsets per shard and across the whole CoS cluster
 
 ## Production
-Chief-of-State has been used in production by the following notable companies since its birth in 2020.
+Chief-of-State has been used in production by notable companies since its birth in 2020.
 
 ## Anatomy of a Chief-of-State app
 
