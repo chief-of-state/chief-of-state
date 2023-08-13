@@ -7,12 +7,12 @@
 
 ## Overview
 
-Chief-of-state (COS) is an Open Source clustered persistence tool for building event sourced applications. COS supports CQRS and
+Chief-of-State (CoS) is an Open Source clustered persistence tool for building event sourced applications. CoS supports CQRS and
 event-sourcing through simple, language-agnostic interfaces via gRPC, and it allows developers to describe their schema
-with Protobuf. Under the hood, COS leverages [Akka](https://akka.io/)
+with Protobuf. Under the hood, CoS leverages [Akka](https://akka.io/)
 to scale out and guarantee performant, reliable persistence.
 
-Chief-of-state was built with the following principles:
+Chief-of-State was built with the following principles:
 
 * Wire format should be the same as persistence
 * Scaling should not require re-architecture
@@ -21,7 +21,33 @@ Chief-of-state was built with the following principles:
 * Event sourcing is valuable, but challenging to implement
 * An ideal event-sourcing datastore would offer random access by key, streaming, and atomic writes
 
-## Anatomy of a chief-of-state app
+Chief-of-State was birthed in year 2020 at [Namely](https://github.com/namely/chief-of-state) based upon the principles
+aforementioned.
+
+### Note
+
+If a company is still using the Namely version and wants to migrate to this, it will have to be at least on the [namely v0.9.2-rc.1](https://github.com/namely/chief-of-state/releases/tag/v0.9.2-rc.1) version.
+One can refer the [documentation](#documentation) for set up.
+
+## Features
+
+- Journal and Snapshot serialization using google protocol buffer message format
+- Preconfigured Akka clustering and domain entity sharding with the split-brain-resolver algorithm
+- Automatic caching and entity passivation
+- Automatic configuration of postgres storage on boot
+- Opentelemetry integration for tracing and prometheus metrics
+- Direct integration to Kubernetes to form a cluster using the kubernetes API
+- Read Side Management using the [CLI tool](https://github.com/chief-of-state/cos-cli)
+  - Skip offset per shard and across the whole CoS cluster
+  - Pause read sides per shard and across the whole CoS cluster
+  - Resume read sides per shard and across the whole CoS cluster
+  - Restart read sides per shard and across the whole CoS cluster
+  - List read sides' offsets per shard and across the whole CoS cluster
+
+## Production
+Chief-of-State has been used in production by the following notable companies since its birth in 2020.
+
+## Anatomy of a Chief-of-State app
 
 Developers implement two gRPC interfaces: a write handler for building state and, optionally, many read handlers for
 reacting to state changes.
@@ -59,20 +85,6 @@ Some potential read side handlers might:
 - Write state changes to a special data store like elastic
 - Publish changes to kafka topics
 - Send notifications to users in response to specific events
-
-## Features
-
-- Journal and Snapshot serialization using google protocol buffer message format
-- Preconfigured Akka clustering and domain entity sharding with the split-brain-resolver algorithm
-- Automatic caching and entity passivation
-- Automatic configuration of postgres storage on boot
-- Opentelemetry integration for tracing and prometheus metrics
-- Direct integration to Kubernetes to form a cluster using the kubernetes API
-- [Read Side Management](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/manager.proto#L16)
-  - Skip offset per shard and across the whole CoS cluster
-  - Pause and Resume read sides per shard and across the whole CoS cluster
-  - Restart read sides per shard and across the whole CoS cluster
-  - List read sides' offsets per shard and across the whole CoS cluster
 
 ## Documentation
 
@@ -113,6 +125,9 @@ earthly -P --no-output +test-local
 ## License
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
+Chief-of-State is free, and it will remain so without any paid license requirement. It is not subject to the Akka licensing.
+
 
 ## Sample Projects
 
