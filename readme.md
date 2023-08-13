@@ -21,13 +21,13 @@ Chief-of-State was built with the following principles:
 * Event sourcing is valuable, but challenging to implement
 * An ideal event-sourcing datastore would offer random access by key, streaming, and atomic writes
 
-Chief-of-State was birthed in year 2020 at [Namely](https://github.com/namely/chief-of-state) based upon the principles
+Chief-of-State was created in year 2020 at [Namely](https://github.com/namely/chief-of-state) based upon the principles
 aforementioned.
 
 ### Note
 
 If a company is still using the Namely version and wants to migrate to this, it will have to be at least on the [namely v0.9.2-rc.1](https://github.com/namely/chief-of-state/releases/tag/v0.9.2-rc.1) version.
-One can refer the [documentation](#documentation) for set up.
+One can refer to the [documentation](#documentation) for set up.
 
 ## Features
 
