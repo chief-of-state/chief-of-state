@@ -187,7 +187,9 @@ class CoSServiceSpec extends BaseActorSpec(s"""
         any.Any.pack(StringValue("some-command"))
       )
 
-      MetadataUtils.attachHeaders(client, requestHeaders).processCommand(request)
+      client
+        .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(requestHeaders))
+        .processCommand(request)
 
       // assert headers sent to actor
       val remoteCommand: RemoteCommand =
