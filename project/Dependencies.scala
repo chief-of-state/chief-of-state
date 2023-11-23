@@ -14,7 +14,7 @@ object Dependencies {
     val ScalaTestVersion: String           = "3.2.17"
     val AkkaManagementVersion: String      = "1.1.4"
     val AkkaProjectionVersion: String      = "1.2.5"
-    val PostgresDriverVersion: String      = "42.6.0"
+    val PostgresDriverVersion: String      = "42.7.0"
     val SlickVersion: String               = "3.3.3"
     val AkkaPersistenceJdbcVersion: String = "5.1.0"
     val ScalaMockVersion: String           = "5.2.0"
@@ -29,7 +29,7 @@ object Dependencies {
     val OpenTelemetryExtensionVersion: String          = "1.32.0"
     val OpenTelemetryGRPCVersion: String               = "1.0.1-alpha"
     val ScalaXmlVersion: String                        = "2.2.0"
-    val JacksonVersion: String                         = "2.15.3"
+    val JacksonVersion: String                         = "2.16.0"
   }
 
   import Dependencies.Versions._
