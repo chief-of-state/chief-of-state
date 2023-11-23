@@ -15,7 +15,6 @@ jobs:
           fetch-depth: 0
 
       - uses: nelonoel/branch-name@v1.0.1
-      - uses: wagoid/commitlint-github-action@v5.4.3
 
       - name: Docker Login
         env:
