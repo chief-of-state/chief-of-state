@@ -274,13 +274,20 @@ object AggregateRoot {
     if (snapshotConfig.disableSnapshot) RetentionCriteria.disabled
     else {
       // journal/snapshot retention criteria
-      val rc: SnapshotCountRetentionCriteria = RetentionCriteria.snapshotEvery(
-        numberOfEvents = snapshotConfig.retentionFrequency, // snapshotFrequency
-        keepNSnapshots = snapshotConfig.retentionNr         // snapshotRetention
-      )
-      // journal/snapshot retention criteria
-      if (snapshotConfig.deleteEventsOnSnapshot) rc.withDeleteEventsOnSnapshot
-      rc
+      if (snapshotConfig.deleteEventsOnSnapshot) {
+        RetentionCriteria
+          .snapshotEvery(
+            numberOfEvents = snapshotConfig.retentionFrequency, // snapshotFrequency
+            keepNSnapshots = snapshotConfig.retentionNr         // snapshotRetention
+          )
+          .withDeleteEventsOnSnapshot
+      } else {
+        RetentionCriteria
+          .snapshotEvery(
+            numberOfEvents = snapshotConfig.retentionFrequency, // snapshotFrequency
+            keepNSnapshots = snapshotConfig.retentionNr         // snapshotRetention
+          )
+      }
     }
   }
 
