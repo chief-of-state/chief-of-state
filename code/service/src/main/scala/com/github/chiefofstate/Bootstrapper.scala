@@ -24,6 +24,7 @@ import com.github.chiefofstate.writeside.{RemoteCommandHandler, RemoteEventHandl
 import com.typesafe.config.Config
 import io.grpc._
 import io.grpc.netty.NettyServerBuilder
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.net.InetSocketAddress

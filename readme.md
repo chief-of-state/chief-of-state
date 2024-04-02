@@ -4,6 +4,20 @@
 ![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/chief-of-state/chief-of-state?include_prereleases)
 [![GitHub](https://img.shields.io/github/license/chief-of-state/chief-of-state)](https://github.com/chief-of-state/chief-of-state/blob/master/LICENSE)
 
+## Table of Content
+
+- [Overview](#overview)
+- [Features](#features)
+- [Production](#production)
+- [Anatomy](#anatomy-of-a-chief-of-state-app)
+  - [Service](#chief-of-state-service)
+  - [Write Model](#write-handler)
+  - [Read Model](#read-handler)
+- [Documentation](#documentation)
+- [Community](#community)
+- [Contribution](#contribution)
+- [License](#license)
+- [Sample Projects](#sample-projects)
 
 ## Overview
 
@@ -32,10 +46,11 @@ One can refer to the [documentation](#documentation) for set up.
 ## Features
 
 - Journal and Snapshot serialization using google protocol buffer message format
-- Preconfigured Akka clustering and domain entity sharding with the split-brain-resolver algorithm
+- Preconfigured clustering and domain entity sharding with the split-brain-resolver algorithm
 - Automatic caching and entity passivation
 - Automatic configuration of postgres storage on boot
-- Opentelemetry integration for tracing and prometheus metrics
+- Opentelemetry integration for tracing and metrics
+- Journal Compaction
 - Direct integration to Kubernetes to form a cluster using the kubernetes API
 - Read Side Management using the [CLI tool](https://github.com/chief-of-state/cos-cli)
   - Skip offset per shard and across the whole CoS cluster

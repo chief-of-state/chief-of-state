@@ -137,7 +137,7 @@ object PersistentEntity {
    * @param replyTo address to reply to
    * @return a reply effect returning the state or an error
    */
-  @WithSpan(value = "AggregateRoot.HandleGetStateCommand")
+  @WithSpan(value = "PersistentEntity.HandleGetStateCommand")
   def handleGetStateCommand(
       cmd: GetStateCommand,
       state: StateWrapper,
@@ -163,7 +163,7 @@ object PersistentEntity {
    * @param data COS plugin data
    * @return a reply effect
    */
-  @WithSpan(value = "AggregateRoot.HandleRemoteCommandsAndEvents")
+  @WithSpan(value = "PersistentEntity.HandleRemoteCommandsAndEvents")
   def handleRemoteCommand(
       priorState: StateWrapper,
       command: RemoteCommand,
