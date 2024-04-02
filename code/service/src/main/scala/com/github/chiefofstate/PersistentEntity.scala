@@ -38,7 +38,7 @@ import scala.util.{Failure, Success, Try}
 /**
  *  This is an event sourced actor.
  */
-object AggregateRoot {
+object PersistentEntity {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 

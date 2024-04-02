@@ -11,7 +11,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.javadsl.{ClusterSharding => ClusterShardingJava}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef, EntityTypeKey}
 import akka.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
-import com.github.chiefofstate.AggregateRoot
+import com.github.chiefofstate.PersistentEntity
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.helper.{BaseActorSpec, GrpcHelpers, TestConfig}
 import com.github.chiefofstate.interceptors.MetadataInterceptor
@@ -59,7 +59,7 @@ class CoSServiceSpec extends BaseActorSpec(s"""
     val clusterSharding = mock[FakeClusterSharding]
 
     ((a: EntityTypeKey[SendReceive], b: String) => clusterSharding.entityRefFor(a, b))
-      .expects(AggregateRoot.TypeKey, *)
+      .expects(PersistentEntity.TypeKey, *)
       .returning(output)
       .repeat(1)
 

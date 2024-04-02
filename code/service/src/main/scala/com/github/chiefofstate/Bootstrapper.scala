@@ -79,8 +79,8 @@ object Bootstrapper {
           val sharding: ClusterSharding = ClusterSharding(context.system)
 
           // initialize the shard region
-          sharding.init(Entity(typeKey = AggregateRoot.TypeKey) { entityContext =>
-            AggregateRoot(
+          sharding.init(Entity(typeKey = PersistentEntity.TypeKey) { entityContext =>
+            PersistentEntity(
               PersistenceId.ofUniqueId(entityContext.entityId),
               Util.getShardIndex(entityContext.entityId, cosConfig.eventsConfig.numShards),
               cosConfig,

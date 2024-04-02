@@ -36,7 +36,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Try}
 
-class AggregrateRootSpec extends BaseActorSpec(s"""
+class PersistentEntitySpec extends BaseActorSpec(s"""
       akka.cluster.sharding.number-of-shards = 1
       akka.persistence.journal.plugin = "akka.persistence.journal.inmem"
       akka.persistence.snapshot-store.plugin = "akka.persistence.snapshot-store.local"
@@ -120,7 +120,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
   ".initialState" should {
     "return the aggregate initial state" in {
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId("123")
-      val initialState: StateWrapper   = AggregateRoot.initialState(persistenceId)
+      val initialState: StateWrapper   = PersistentEntity.initialState(persistenceId)
       initialState.getMeta.entityId shouldBe "123"
       initialState.getMeta.revisionNumber shouldBe 0
     }
@@ -192,7 +192,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -261,7 +261,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -316,7 +316,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -373,7 +373,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -434,7 +434,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -502,7 +502,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         mainConfig,
@@ -579,7 +579,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         mainConfig,
@@ -647,7 +647,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         mainConfig,
@@ -716,7 +716,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -789,7 +789,7 @@ class AggregrateRootSpec extends BaseActorSpec(s"""
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = AggregateRoot(
+      val aggregateRoot = PersistentEntity(
         persistenceId,
         shardIndex,
         cosConfig,

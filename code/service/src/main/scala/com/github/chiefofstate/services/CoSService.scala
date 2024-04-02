@@ -9,7 +9,7 @@ package com.github.chiefofstate.services
 import akka.actor.typed.ActorRef
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import akka.util.Timeout
-import com.github.chiefofstate.AggregateRoot
+import com.github.chiefofstate.PersistentEntity
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.common.Header
@@ -53,7 +53,7 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
       // run remote command
       .flatMap(_ => {
         val entityRef: EntityRef[SendReceive] =
-          clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+          clusterSharding.entityRefFor(PersistentEntity.TypeKey, entityId)
         val propagatedHeaders: Seq[Header] =
           Util.extractHeaders(metadata, writeSideConfig.propagatedHeaders)
         val persistedHeaders: Seq[Header] =
@@ -94,7 +94,7 @@ class CoSService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
       .requireEntityId(entityId)
       .flatMap(_ => {
         val entityRef: EntityRef[SendReceive] =
-          clusterSharding.entityRefFor(AggregateRoot.TypeKey, entityId)
+          clusterSharding.entityRefFor(PersistentEntity.TypeKey, entityId)
 
         val getCommand = GetStateCommand().withEntityId(entityId)
 
