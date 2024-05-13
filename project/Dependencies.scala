@@ -1,14 +1,16 @@
-import sbt.{Test, _}
-import scalapb.compiler.Version.{grpcJavaVersion, scalapbVersion}
+import sbt.*
+import sbt.Test
+import scalapb.compiler.Version.grpcJavaVersion
+import scalapb.compiler.Version.scalapbVersion
 
 object Dependencies {
 
   // Package versions
   object Versions {
-    val ScalaVersion: String               = "2.13.11"
+    val ScalaVersion: String               = "2.13.14"
     val AkkaVersion: String                = "2.6.20"
     val ScalapbCommonProtoVersion: String  = "2.9.6-0"
-    val SilencerVersion: String            = "1.17.13"
+    val SilencerVersion: String            = "1.7.17"
     val LogbackVersion: String             = "1.5.6"
     val ScalapbValidationVersion: String   = "0.1.4"
     val ScalaTestVersion: String           = "3.2.18"
