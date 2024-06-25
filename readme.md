@@ -1,5 +1,10 @@
 # Chief of State
 
+[![Stability: Maintenance](https://masterminds.github.io/stability/maintenance.svg)](https://masterminds.github.io/stability/maintenance.html)
+
+_**Chief Of State** is feature complete and mature. 
+No future feature development is planned, though bugs and security issues are fixed and patches will be released accordingly._
+
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/chief-of-state/chief-of-state/master.yml?branch=main)
 ![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/chief-of-state/chief-of-state?include_prereleases)
 [![GitHub](https://img.shields.io/github/license/chief-of-state/chief-of-state)](https://github.com/chief-of-state/chief-of-state/blob/master/LICENSE)
