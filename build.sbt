@@ -21,8 +21,8 @@ lazy val root: Project = project
       "-Dotel.exporter.otlp.protocol=grpc",
       "-Dotel.traces.sampler=parentbased_always_on",
       "-Dotel.javaagent.debug=false",
-      "-Dotel.instrumentation.[hikaricp].enabled=false",
-      "-Dotel.instrumentation.[jdbc].enabled=false",
+      "-Dotel.instrumentation.hikaricp.enabled=false",
+      "-Dotel.instrumentation.jdbc.enabled=false",
       "-Dio.opentelemetry.javaagent.slf4j.simpleLogger.defaultLogLevel=error",
       // -J params will be added as jvm parameters
       "-J-XX:+UseContainerSupport",

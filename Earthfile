@@ -1,6 +1,6 @@
-VERSION 0.7
+VERSION 0.8
 
-FROM busybox:1.36
+FROM busybox:1.36.1
 
 
 test-and-build:
@@ -49,8 +49,8 @@ compile:
     SAVE ARTIFACT target/universal/stage/ /target
 
 prepare-image:
-    # bundle into a slimmer, runnable container
-    FROM eclipse-temurin:19.0.2_7-jre-jammy
+    # bundle into a runnable container
+    FROM eclipse-temurin:21-jre
 
     USER root
 
