@@ -50,7 +50,7 @@ compile:
 
 prepare-image:
     # bundle into a runnable container
-    FROM eclipse-temurin:21-jre
+    FROM eclipse-temurin:21.0.4_7-jre
 
     USER root
 
@@ -101,7 +101,7 @@ test-all:
 
 sbt:
     # TODO: move this to a central image
-    FROM eclipse-temurin:19.0.2_7-jdk-jammy
+    FROM eclipse-temurin:21.0.4_7-jdk-jammy
 
     USER root
 
