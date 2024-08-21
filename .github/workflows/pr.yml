@@ -23,9 +23,11 @@ jobs:
           DOCKER_PASS: ${{ secrets.GITHUB_TOKEN }}
         run: docker login $DOCKER_REGISTRY --username "$DOCKER_USER" --password "$DOCKER_PASS"
 
-      - uses: earthly/actions/setup-earthly@v1
+      - name: Install earthly
+        uses: earthly/actions-setup@v1
         with:
-          version: v0.7.13
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version: 0.8.1
 
       - name: Earthly Version
         run: earthly --version
