@@ -72,7 +72,7 @@ Chief-of-State has been used in production by notable companies since its birth 
 Developers implement two gRPC interfaces: a write handler for building state and, optionally, many read handlers for
 reacting to state changes.
 
-![Architecture Diagram](img/anatomy.png?raw=true "Title")
+![Architecture Diagram](./img/cos-anatomy.png?raw=true "Title")
 
 ### Chief Of State Service
 
