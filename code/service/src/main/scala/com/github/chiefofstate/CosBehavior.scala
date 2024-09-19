@@ -5,19 +5,23 @@
  */
 
 package com.github.chiefofstate
-
-import akka.NotUsed
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy, Terminated}
-import akka.cluster.typed.{Cluster, ClusterSingleton, ClusterSingletonSettings, SingletonActor}
-import akka.management.cluster.bootstrap.ClusterBootstrap
-import akka.management.scaladsl.AkkaManagement
 import com.github.chiefofstate.protobuf.v1.internal.StartMigration
 import com.github.chiefofstate.serialization.{Message, SendReceive}
 import com.typesafe.config.Config
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorRef, Behavior, SupervisorStrategy, Terminated}
+import org.apache.pekko.cluster.typed.{
+  Cluster,
+  ClusterSingleton,
+  ClusterSingletonSettings,
+  SingletonActor
+}
+import org.apache.pekko.management.cluster.bootstrap.ClusterBootstrap
+import org.apache.pekko.management.scaladsl.PekkoManagement
 import org.slf4j.{Logger, LoggerFactory}
 
-object NodeBehaviour {
+object CosBehavior {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   def apply(config: Config): Behavior[NotUsed] = {
@@ -27,7 +31,7 @@ object NodeBehaviour {
       context.log.info(s"starting node with roles: ${cluster.selfMember.roles}")
 
       // Start the akka cluster management tool
-      AkkaManagement(context.system).start()
+      PekkoManagement(context.system).start()
       // start the cluster boostrap
       ClusterBootstrap(context.system).start()
 
@@ -35,7 +39,7 @@ object NodeBehaviour {
       val bootstrapper: ActorRef[scalapb.GeneratedMessage] =
         context.spawn(
           Behaviors
-            .supervise(Bootstrapper(config))
+            .supervise(ServiceStarter(config))
             .onFailure[Exception](SupervisorStrategy.restart),
           "CosBootstrapper"
         )
@@ -45,7 +49,7 @@ object NodeBehaviour {
 
       // create the migration cluster singleton
       val migrationRunner = SingletonActor(
-        Behaviors.supervise(MigrationRunner(config)).onFailure[Exception](SupervisorStrategy.stop),
+        Behaviors.supervise(Migration(config)).onFailure[Exception](SupervisorStrategy.stop),
         "CosMigrationRunner"
       ).withSettings(singletonSettings)
 

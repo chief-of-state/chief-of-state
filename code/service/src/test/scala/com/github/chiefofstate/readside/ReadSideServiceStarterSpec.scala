@@ -6,14 +6,14 @@
 
 package com.github.chiefofstate.readside
 
-import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import akka.actor.typed.ActorSystem
+import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
+import org.apache.pekko.actor.typed.ActorSystem
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import org.testcontainers.utility.DockerImageName
 
-class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
+class ReadSideServiceStarterSpec extends BaseSpec with ForAllTestContainer {
 
   val cosSchema: String = "cos"
 
@@ -54,12 +54,12 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
   ".apply" should {
     "construct without failure" in {
       val manager = new ReadSideManager(actorSystem, 1)
-      noException shouldBe thrownBy(ReadSideBootstrap(actorSystem, 2, manager))
+      noException shouldBe thrownBy(ReadSideServiceStarter(actorSystem, 2, manager))
     }
   }
   ".getDataSource" should {
     "return a hikari data source" in {
-      val dbConfig = ReadSideBootstrap.DbConfig(
+      val dbConfig = ReadSideServiceStarter.DbConfig(
         jdbcUrl = container.jdbcUrl,
         username = container.username,
         password = container.password,
@@ -68,7 +68,7 @@ class ReadSideBootstrapSpec extends BaseSpec with ForAllTestContainer {
         idleTimeoutMs = 1000,
         maxLifetimeMs = 3000
       )
-      val dataSource = ReadSideBootstrap.getDataSource(dbConfig)
+      val dataSource = ReadSideServiceStarter.getDataSource(dbConfig)
 
       noException shouldBe thrownBy(dataSource.getConnection().close())
     }

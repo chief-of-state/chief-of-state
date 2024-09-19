@@ -6,8 +6,8 @@
 
 package com.github.chiefofstate.config
 
-import akka.util.Timeout
 import com.typesafe.config.Config
+import org.apache.pekko.util.Timeout
 
 import scala.concurrent.duration.DurationInt
 
@@ -17,7 +17,7 @@ import scala.concurrent.duration.DurationInt
  * @param serviceName the service name
  * @param askTimeout the timeout needed by the aggreegate to reply when handling a command
  * @param snapshotConfig the snapshot configuration
- * @param eventsConfig the events configuration
+ * @param shardConfig the events configuration
  * @param grpcConfig the grpc config
  * @param writeSideConfig the commands/events handler config
  */
@@ -25,7 +25,7 @@ final case class CosConfig(
     serviceName: String,
     askTimeout: Timeout,
     snapshotConfig: SnapshotConfig,
-    eventsConfig: EventsConfig,
+    shardConfig: ShardConfig,
     grpcConfig: GrpcConfig,
     writeSideConfig: WriteSideConfig,
     enableReadSide: Boolean
@@ -47,7 +47,7 @@ object CosConfig {
       config.getString(serviceNameKey),
       Timeout(config.getInt(askTimeoutKey).seconds),
       SnapshotConfig(config),
-      EventsConfig(config),
+      ShardConfig(config),
       GrpcConfig(config),
       WriteSideConfig(config),
       config.getBoolean(enableReadSideKey)

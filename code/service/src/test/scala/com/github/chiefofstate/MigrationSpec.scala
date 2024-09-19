@@ -6,8 +6,8 @@
 
 package com.github.chiefofstate
 
-import akka.actor.testkit.typed.scaladsl.{ActorTestKit, BehaviorTestKit, TestProbe}
-import akka.actor.typed.ActorRef
+import org.apache.pekko.actor.testkit.typed.scaladsl.{ActorTestKit, BehaviorTestKit, TestProbe}
+import org.apache.pekko.actor.typed.ActorRef
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate
 import com.github.chiefofstate.helper.BaseSpec
@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
+class MigrationSpec extends BaseSpec with ForAllTestContainer {
   val cosSchema: String = "cos"
 
   val replyTimeout: FiniteDuration = FiniteDuration(30, TimeUnit.SECONDS)
@@ -51,15 +51,18 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
 
   lazy val config: Config = ConfigFactory
     .parseResources("test.conf")
-    .withValue("akka.projection.slick.db.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
-    .withValue("akka.projection.slick.db.user", ConfigValueFactory.fromAnyRef(container.username))
+    .withValue("pekko.projection.slick.db.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
+    .withValue("pekko.projection.slick.db.user", ConfigValueFactory.fromAnyRef(container.username))
     .withValue(
-      "akka.projection.slick.db.password",
+      "pekko.projection.slick.db.password",
       ConfigValueFactory.fromAnyRef(container.password)
     )
-    .withValue("akka.projection.slick.db.serverName", ConfigValueFactory.fromAnyRef(container.host))
     .withValue(
-      "akka.projection.slick.db.databaseName",
+      "pekko.projection.slick.db.serverName",
+      ConfigValueFactory.fromAnyRef(container.host)
+    )
+    .withValue(
+      "pekko.projection.slick.db.databaseName",
       ConfigValueFactory.fromAnyRef(container.databaseName)
     )
     .withValue("write-side-slick.db.url", ConfigValueFactory.fromAnyRef(container.jdbcUrl))
@@ -87,7 +90,7 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
   "MigrationRunner" should {
     "execute the migration request as expected" in {
       // create an instance of MigrationRunner
-      val migrationRunnerRef: ActorRef[Message] = testKit.spawn(MigrationRunner(config))
+      val migrationRunnerRef: ActorRef[Message] = testKit.spawn(Migration(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
@@ -113,7 +116,7 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
 
       // create an instance of MigrationRunner
       val migrationRunnerRef: ActorRef[Message] =
-        testKit.spawn(chiefofstate.MigrationRunner(config))
+        testKit.spawn(chiefofstate.Migration(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
@@ -134,7 +137,7 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
 
       // create an instance of MigrationRunner
       val migrationRunnerRef: ActorRef[Message] =
-        testKit.spawn(chiefofstate.MigrationRunner(config))
+        testKit.spawn(chiefofstate.Migration(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()
@@ -151,7 +154,7 @@ class MigrationRunnerSpec extends BaseSpec with ForAllTestContainer {
     "stop because of unhandled scalapb GeneratedMessage" in {
       // create an instance of MigrationRunner
       val migrationRunnerRef: BehaviorTestKit[Message] =
-        BehaviorTestKit(chiefofstate.MigrationRunner(config))
+        BehaviorTestKit(chiefofstate.Migration(config))
 
       // create a message sender and a response receiver
       val probe: TestProbe[GeneratedMessage] = testKit.createTestProbe[GeneratedMessage]()

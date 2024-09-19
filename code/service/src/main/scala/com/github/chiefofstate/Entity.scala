@@ -6,11 +6,6 @@
 
 package com.github.chiefofstate
 
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import akka.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
-import akka.persistence.typed.PersistenceId
-import akka.persistence.typed.scaladsl._
 import com.github.chiefofstate.config.{CosConfig, SnapshotConfig}
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.{
@@ -24,11 +19,16 @@ import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.ProtosValidator
 import com.github.chiefofstate.utils.Util.{Instants, makeFailedStatusPf, toRpcStatus}
 import com.github.chiefofstate.writeside.ResponseType._
-import com.github.chiefofstate.writeside.{RemoteCommandHandler, RemoteEventHandler}
+import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import io.grpc.{Status, StatusException}
 import io.opentelemetry.instrumentation.annotations.WithSpan
+import org.apache.pekko.actor.typed.scaladsl.{ActorContext, Behaviors}
+import org.apache.pekko.actor.typed.{ActorRef, Behavior, SupervisorStrategy}
+import org.apache.pekko.cluster.sharding.typed.scaladsl.EntityTypeKey
+import org.apache.pekko.persistence.typed.PersistenceId
+import org.apache.pekko.persistence.typed.scaladsl._
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.time.Instant
@@ -38,8 +38,7 @@ import scala.util.{Failure, Success, Try}
 /**
  *  This is an event sourced actor.
  */
-object PersistentEntity {
-
+object Entity {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   /**
@@ -50,19 +49,19 @@ object PersistentEntity {
   /**
    * creates a new instance of the aggregate root
    *
-   * @param persistenceId the internal persistence ID used by akka to locate the aggregate based upon the given entity ID.
+   * @param persistenceId the internal persistence ID used by pekko to locate the aggregate based upon the given entity ID.
    * @param shardIndex the shard index of the aggregate
    * @param cosConfig the main config
    * @param commandHandler the remote command handler
    * @param eventHandler the remote events handler handler
-   * @return an akka behaviour
+   * @return an pekko behaviour
    */
   def apply(
       persistenceId: PersistenceId,
       shardIndex: Int,
       cosConfig: CosConfig,
-      commandHandler: RemoteCommandHandler,
-      eventHandler: RemoteEventHandler,
+      commandHandler: CommandHandler,
+      eventHandler: EventHandler,
       protosValidator: ProtosValidator
   ): Behavior[SendReceive] = {
     Behaviors.setup { context =>
@@ -96,8 +95,8 @@ object PersistentEntity {
       context: ActorContext[SendReceive],
       aggregateState: StateWrapper,
       aggregateCommand: SendReceive,
-      commandHandler: RemoteCommandHandler,
-      eventHandler: RemoteEventHandler,
+      commandHandler: CommandHandler,
+      eventHandler: EventHandler,
       protosValidator: ProtosValidator
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     log.debug("begin handle command")
@@ -168,8 +167,8 @@ object PersistentEntity {
       priorState: StateWrapper,
       command: RemoteCommand,
       replyTo: ActorRef[CommandReply],
-      commandHandler: RemoteCommandHandler,
-      eventHandler: RemoteEventHandler,
+      commandHandler: CommandHandler,
+      eventHandler: EventHandler,
       protosValidator: ProtosValidator,
       data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {

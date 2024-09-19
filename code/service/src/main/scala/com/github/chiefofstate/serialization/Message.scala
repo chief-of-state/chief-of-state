@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.serialization
 
-import akka.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.ActorRef
 import scalapb.GeneratedMessage
 
 // defines a trait that routes to the custom serializer

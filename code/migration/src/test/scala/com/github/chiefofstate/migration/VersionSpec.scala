@@ -25,5 +25,4 @@ class VersionSpec extends BaseSpec {
       Version.VersionOrdering.compare(versionOne, versionTwo) shouldBe expectedCompare
     }
   }
-
 }

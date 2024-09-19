@@ -23,10 +23,10 @@ import scala.util.{Failure, Success, Try}
  * @param processorId the unique Id for this read side
  * @param readSideHandlerServiceBlockingStub a blocking client for a ReadSideHandler
  */
-private[readside] class ReadSideHandlerImpl(
+private[readside] class HandlerImpl(
     processorId: String,
     readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub
-) extends ReadSideHandler {
+) extends Handler {
 
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
   private val COS_ENTITY_ID_HEADER = "x-cos-entity-id"
@@ -94,7 +94,7 @@ private[readside] class ReadSideHandlerImpl(
   }
 }
 
-private[readside] trait ReadSideHandler {
+private[readside] trait Handler {
 
   /**
    * Processes events read from the Journal

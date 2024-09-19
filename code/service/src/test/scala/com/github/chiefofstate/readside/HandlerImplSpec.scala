@@ -28,7 +28,7 @@ import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
 
-class ReadSideHandlerImplSpec extends BaseSpec {
+class HandlerImplSpec extends BaseSpec {
 
   var testExporter: InMemorySpanExporter = _
   var openTelemetry: OpenTelemetry       = _
@@ -90,7 +90,7 @@ class ReadSideHandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new ReadSideHandlerImpl(readSideId, readSideHandlerServiceStub)
+      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub)
 
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
@@ -147,7 +147,7 @@ class ReadSideHandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new ReadSideHandlerImpl(readSideId, readSideHandlerServiceStub)
+      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub)
 
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
@@ -202,7 +202,7 @@ class ReadSideHandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new ReadSideHandlerImpl(readSideId, readSideHandlerServiceStub)
+      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub)
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
           com.google.protobuf.any.Any.pack(accountOpened),

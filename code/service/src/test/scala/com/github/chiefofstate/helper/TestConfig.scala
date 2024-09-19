@@ -11,7 +11,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 object TestConfig {
   val config: Config = ConfigFactory.parseString(s"""
-    akka.cluster.sharding.number-of-shards = 1
+    pekko.cluster.sharding.number-of-shards = 1
     chiefofstate {
       service-name = "chiefofstate"
       ask-timeout = 5

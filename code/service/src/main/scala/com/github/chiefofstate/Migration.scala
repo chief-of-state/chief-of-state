@@ -6,8 +6,6 @@
 
 package com.github.chiefofstate
 
-import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.Behaviors
 import com.github.chiefofstate.migration.versions.v6.V6
 import com.github.chiefofstate.migration.{JdbcConfig, Migrator}
 import com.github.chiefofstate.protobuf.v1.internal.{
@@ -17,6 +15,8 @@ import com.github.chiefofstate.protobuf.v1.internal.{
 }
 import com.github.chiefofstate.serialization.{Message, SendReceive}
 import com.typesafe.config.Config
+import org.apache.pekko.actor.typed.Behavior
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
@@ -25,21 +25,21 @@ import scala.util.{Failure, Success, Try}
 
 /**
  * kick starts the various migrations needed to run.
- * When the migration process is successful it replies back to the [[Bootstrapper]] to continue the boot process.
+ * When the migration process is successful it replies back to the [[ServiceStarter]] to continue the boot process.
  * However when the migration process fails then  halt the whole boot process by shutting down the underlying actor system.
  * This is the logic behind running the actual migration
  * <p>
  *   <ol>
  *     <li> check the existence of the cos_migrations table
  *     <li> if the table exists go to step 4
- *     <li> if the table does not exist run the whole migration and reply back to the [[Bootstrapper]]
+ *     <li> if the table does not exist run the whole migration and reply back to the [[ServiceStarter]]
  *     <li> check the current version against the available versions
- *     <li> if current version is the last version then no need to run the migration just reply back to [[Bootstrapper]]
- *     <li> if not then run the whole migration and reply back to the [[Bootstrapper]]
+ *     <li> if current version is the last version then no need to run the migration just reply back to [[ServiceStarter]]
+ *     <li> if not then run the whole migration and reply back to the [[ServiceStarter]]
  *   </ol>
  * </p>
  */
-object MigrationRunner {
+object Migration {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   def apply(config: Config): Behavior[Message] = Behaviors.setup[Message] { _ =>

@@ -6,9 +6,9 @@
 
 package com.github.chiefofstate.serialization
 
-import akka.actor.ExtendedActorSystem
-import akka.actor.testkit.typed.scaladsl.TestProbe
-import akka.actor.typed.scaladsl.adapter._
+import org.apache.pekko.actor.ExtendedActorSystem
+import org.apache.pekko.actor.testkit.typed.scaladsl.TestProbe
+import org.apache.pekko.actor.typed.scaladsl.adapter._
 import com.github.chiefofstate.helper.BaseActorSpec
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.internal.{
@@ -23,7 +23,7 @@ import com.google.protobuf.wrappers.StringValue
 import scalapb.GeneratedMessage
 
 class SerializerSpec extends BaseActorSpec(s"""
-    akka {
+    pekko {
       actor {
         serialize-messages = on
         serializers {
@@ -40,7 +40,7 @@ class SerializerSpec extends BaseActorSpec(s"""
   // create a shared extended system for use in constructors
   lazy val extendedSystem: ExtendedActorSystem = system.toClassic.asInstanceOf[ExtendedActorSystem]
 
-  "Akka serialization" should {
+  "Pekko serialization" should {
     "serialize ChiefOfState command" in {
       val probe: TestProbe[GeneratedMessage] = createTestProbe[GeneratedMessage]()
 

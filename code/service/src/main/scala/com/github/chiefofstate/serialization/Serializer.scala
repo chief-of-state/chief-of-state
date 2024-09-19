@@ -6,12 +6,12 @@
 
 package com.github.chiefofstate.serialization
 
-import akka.actor.ExtendedActorSystem
-import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ActorRef, ActorRefResolver}
-import akka.serialization.SerializerWithStringManifest
 import com.github.chiefofstate.protobuf.v1.internal.WireMessageWithActorRef
 import com.google.protobuf.{ByteString, any}
+import org.apache.pekko.actor.ExtendedActorSystem
+import org.apache.pekko.actor.typed.scaladsl.adapter._
+import org.apache.pekko.actor.typed.{ActorRef, ActorRefResolver}
+import org.apache.pekko.serialization.SerializerWithStringManifest
 import scalapb.{GeneratedMessage, GeneratedMessageCompanion}
 
 import java.nio.charset.StandardCharsets

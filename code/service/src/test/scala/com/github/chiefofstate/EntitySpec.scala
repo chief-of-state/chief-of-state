@@ -6,9 +6,9 @@
 
 package com.github.chiefofstate
 
-import akka.actor.testkit.typed.scaladsl.TestProbe
-import akka.actor.typed.{ActorRef, ActorSystem}
-import akka.persistence.typed.PersistenceId
+import org.apache.pekko.actor.testkit.typed.scaladsl.TestProbe
+import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
+import org.apache.pekko.persistence.typed.PersistenceId
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.helper.BaseActorSpec
 import com.github.chiefofstate.protobuf.v1.common.{Header, MetaData}
@@ -20,7 +20,7 @@ import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc
 import com.github.chiefofstate.protobuf.v1.writeside._
 import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.{ProtosValidator, Util}
-import com.github.chiefofstate.writeside.{RemoteCommandHandler, RemoteEventHandler}
+import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
 import com.google.protobuf.any
 import com.google.protobuf.any.Any
 import com.google.protobuf.empty.Empty
@@ -36,11 +36,11 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Try}
 
-class PersistentEntitySpec extends BaseActorSpec(s"""
-      akka.cluster.sharding.number-of-shards = 1
-      akka.persistence.journal.plugin = "akka.persistence.journal.inmem"
-      akka.persistence.snapshot-store.plugin = "akka.persistence.snapshot-store.local"
-      akka.persistence.snapshot-store.local.dir = "tmp/snapshot"
+class EntitySpec extends BaseActorSpec(s"""
+      pekko.cluster.sharding.number-of-shards = 1
+      pekko.persistence.journal.plugin = "pekko.persistence.journal.inmem"
+      pekko.persistence.snapshot-store.plugin = "pekko.persistence.snapshot-store.local"
+      pekko.persistence.snapshot-store.local.dir = "tmp/snapshot"
     """) {
 
   var cosConfig: CosConfig              = _
@@ -66,9 +66,9 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
   override def beforeAll(): Unit = {
 
     val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharding.number-of-shards = 1
+            pekko.cluster.sharding.number-of-shards = 1
             chiefofstate {
-             	service-name = "chiefofstate"
+              service-name = "chiefofstate"
               ask-timeout = 5
               snapshot-criteria {
                 disable-snapshot = false
@@ -120,7 +120,7 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
   ".initialState" should {
     "return the aggregate initial state" in {
       val persistenceId: PersistenceId = PersistenceId.ofUniqueId("123")
-      val initialState: StateWrapper   = PersistentEntity.initialState(persistenceId)
+      val initialState: StateWrapper   = Entity.initialState(persistenceId)
       initialState.getMeta.entityId shouldBe "123"
       initialState.getMeta.revisionNumber shouldBe 0
     }
@@ -184,15 +184,15 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler =
-        RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -253,15 +253,15 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler =
-        RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -307,16 +307,16 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        writeside.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
 
-      val remoteEventHandler: RemoteEventHandler =
-        RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -365,15 +365,15 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        writeside.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler =
-        writeside.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -426,15 +426,15 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        writeside.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler =
-        writeside.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -494,15 +494,15 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        writeside.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler =
-        writeside.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        writeside.CommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         mainConfig,
@@ -571,15 +571,15 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        writeside.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler =
-        writeside.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        writeside.CommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         mainConfig,
@@ -639,15 +639,15 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        writeside.RemoteCommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler =
-        writeside.RemoteEventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        writeside.CommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         ProtosValidator(mainConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         mainConfig,
@@ -708,15 +708,15 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val commandSender: TestProbe[GeneratedMessage] =
         createTestProbe[GeneratedMessage]()
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        writeside.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
-      val remoteEventHandler: RemoteEventHandler =
-        writeside.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         cosConfig,
@@ -780,16 +780,16 @@ class PersistentEntitySpec extends BaseActorSpec(s"""
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        writeside.RemoteCommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
 
-      val remoteEventHandler: RemoteEventHandler =
-        writeside.RemoteEventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
       val eventsAndStateProtosValidation: ProtosValidator =
         utils.ProtosValidator(cosConfig.writeSideConfig)
 
-      val aggregateRoot = PersistentEntity(
+      val aggregateRoot = Entity(
         persistenceId,
         shardIndex,
         cosConfig,

@@ -26,7 +26,7 @@ import scala.util.Try
  * @param grpcConfig the grpc config
  * @param writeHandlerServiceStub the grpc client stub
  */
-case class RemoteCommandHandler(
+case class CommandHandler(
     grpcConfig: GrpcConfig,
     writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub
 ) {

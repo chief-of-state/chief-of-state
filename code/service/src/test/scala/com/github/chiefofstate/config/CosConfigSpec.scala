@@ -13,7 +13,7 @@ class CosConfigSpec extends BaseSpec {
   "Loading main config" should {
     "be successful when all settings are set" in {
       val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharding.number-of-shards = 2
+            pekko.cluster.sharding.number-of-shards = 2
             chiefofstate {
              	service-name = "chiefofstate"
               ask-timeout = 5
@@ -61,9 +61,9 @@ class CosConfigSpec extends BaseSpec {
 
     "fail when there is either a missing setting or a wrong naming" in {
       val config: Config = ConfigFactory.parseString(s"""
-            akka.cluster.sharding.number-of-shards = 2
+            pekko.cluster.sharding.number-of-shards = 2
             chiefofstate {
-             	service-name = "chiefofstate"
+              service-name = "chiefofstate"
               ask-timeouts = 5 # wrong naming
               snapshot-criteria {
                 disable-snapshot = false

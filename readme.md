@@ -28,7 +28,7 @@ No future feature development is planned, though bugs and security issues are fi
 
 Chief-of-State (CoS) is an Open Source clustered persistence tool for building event sourced applications. CoS supports CQRS and
 event-sourcing through simple, language-agnostic interfaces via gRPC, and it allows developers to describe their schema
-with Protobuf. Under the hood, CoS leverages [Akka](https://akka.io/)
+with Protobuf. Under the hood, CoS leverages [Apache Pekko](https://pekko.apache.org/)
 to scale out and guarantee performant, reliable persistence.
 
 Chief-of-State was built with the following principles:
@@ -69,10 +69,10 @@ Chief-of-State has been used in production by notable companies since its birth 
 
 ## Anatomy of a Chief-of-State app
 
-Developers implement two gRPC interfaces: a write handler for building state and, optionally, many read handlers for
-reacting to state changes.
+Developers implement two gRPC interfaces: a write handler(gRPC service) to handle `commands/events` and, optionally, _many_ read handlers(gRPC services) for
+reacting to state changes by consuming the events processed by the write handler.
 
-![Architecture Diagram](img/anatomy.png?raw=true "Title")
+![Architecture Diagram](./img/cos-anatomy.png?raw=true "Title")
 
 ### Chief Of State Service
 
@@ -97,7 +97,7 @@ the [WriteSideHandlerService](https://github.com/chief-of-state/chief-of-state-p
 
 In response to state mutations, COS is able to send changes to
 many [ReadSideHandlerService](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/readside.proto)
-implementations, which may take any action. COS guarantees at-least-once delivery of events and resulting state to each
+implementations, which may take any action. CoS guarantees at-least-once delivery of events and resulting state to each
 read side in the order they were persisted.
 
 Some potential read side handlers might:
@@ -146,7 +146,7 @@ earthly -P --no-output +test-local
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-Chief-of-State is free, and it will remain so without any paid license requirement. It is not subject to the Akka licensing.
+Chief-of-State is free, and it will remain so without any paid license requirement.
 
 
 ## Sample Projects

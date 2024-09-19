@@ -6,12 +6,12 @@
 
 package com.github.chiefofstate.readside
 
-import akka.actor.typed.ActorSystem
 import com.github.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.github.chiefofstate.utils.NettyHelper
 import com.typesafe.config.{Config, ConfigException}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import org.apache.pekko.actor.typed.ActorSystem
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContextExecutor
@@ -27,15 +27,15 @@ import scala.util.{Failure, Success, Try}
  * @param numShards       number of shards for projections/tags
  * @param readSideManager specifies the readSide manager
  */
-class ReadSideBootstrap(
+class ReadSideServiceStarter(
     system: ActorSystem[_],
-    dbConfig: ReadSideBootstrap.DbConfig,
+    dbConfig: ReadSideServiceStarter.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
     numShards: Int,
     readSideManager: ReadSideManager
 ) {
   private[readside] lazy val dataSource: HikariDataSource =
-    ReadSideBootstrap.getDataSource(dbConfig)
+    ReadSideServiceStarter.getDataSource(dbConfig)
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   // grab the execution context from the actor system
@@ -55,8 +55,8 @@ class ReadSideBootstrap(
           NettyHelper.builder(config.host, config.port, config.useTls).build
         )
       // instantiate a remote read side processor with the gRPC client
-      val remoteReadSideProcessor: ReadSideHandlerImpl =
-        new ReadSideHandlerImpl(config.readSideId, rpcClient)
+      val remoteReadSideProcessor: HandlerImpl =
+        new HandlerImpl(config.readSideId, rpcClient)
       // instantiate the read side projection with the remote processor
       val projection =
         new ReadSide(
@@ -97,13 +97,13 @@ class ReadSideBootstrap(
   }
 }
 
-object ReadSideBootstrap {
+object ReadSideServiceStarter {
 
   def apply(
       system: ActorSystem[_],
       numShards: Int,
       readSideManager: ReadSideManager
-  ): ReadSideBootstrap = {
+  ): ReadSideServiceStarter = {
 
     val dbConfig: DbConfig = {
       // read the jdbc-default settings
@@ -125,7 +125,7 @@ object ReadSideBootstrap {
     }
 
     // make the manager
-    new ReadSideBootstrap(
+    new ReadSideServiceStarter(
       system = system,
       dbConfig = dbConfig,
       readSideConfigs = configs,

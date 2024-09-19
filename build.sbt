@@ -9,7 +9,7 @@ lazy val root: Project = project
   .enablePlugins(JavaAgent)
   .settings(
     headerLicense                             := None,
-    Compile / mainClass                       := Some("com.github.chiefofstate.Node"),
+    Compile / mainClass                       := Some("com.github.chiefofstate.Entrypoint"),
     makeBatScripts                            := Seq(),
     executableScriptName                      := "entrypoint",
     javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "2.8.0" % "runtime",

@@ -6,8 +6,8 @@ The following section describes deployment in docker, including local developmen
 
 The following env vars can be set in addition to the [general configurations](./configuration.md).
 
-| environment variable | description | default |
-| --- | --- | --- |
-| COS_DEPLOYMENT_MODE | "docker" | "docker" |
-| COS_SERVICE_NAME | set this to the name of chief of state service in your docker compose | chiefofstate |
-| COS_REPLICA_COUNT | wait for this many replicas before starting (not recommended to change) | 1 |
+| environment variable | description                                                             | default      |
+|----------------------|-------------------------------------------------------------------------|--------------|
+| COS_DEPLOYMENT_MODE  | "docker"                                                                | "docker"     |
+| COS_SERVICE_NAME     | set this to the name of chief of state service in your docker compose   | chiefofstate |
+| COS_REPLICA_COUNT    | wait for this many replicas before starting (not recommended to change) | 1            |
