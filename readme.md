@@ -28,7 +28,7 @@ No future feature development is planned, though bugs and security issues are fi
 
 Chief-of-State (CoS) is an Open Source clustered persistence tool for building event sourced applications. CoS supports CQRS and
 event-sourcing through simple, language-agnostic interfaces via gRPC, and it allows developers to describe their schema
-with Protobuf. Under the hood, CoS leverages [Akka](https://akka.io/)
+with Protobuf. Under the hood, CoS leverages [Apache Pekko](https://pekko.apache.org/)
 to scale out and guarantee performant, reliable persistence.
 
 Chief-of-State was built with the following principles:
@@ -146,7 +146,7 @@ earthly -P --no-output +test-local
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-Chief-of-State is free, and it will remain so without any paid license requirement. It is not subject to the Akka licensing.
+Chief-of-State is free, and it will remain so without any paid license requirement.
 
 
 ## Sample Projects

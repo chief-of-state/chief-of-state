@@ -6,23 +6,21 @@
 
 package com.github.chiefofstate.migration
 
-import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.migration.helper.TestConfig.dbConfigFromUrl
 import com.github.chiefofstate.migration.helper.{DbHelper, TestConfig}
+import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
 
 import java.sql.DriverManager
-import java.util.Collections
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters._
-import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scala.util.Success
 
 class MigratorSpec extends BaseSpec with ForAllTestContainer {
 
@@ -53,73 +51,11 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
   override def beforeEach() = {
     super.beforeEach()
     recreateSchema()
-    clearEnv()
   }
 
   override protected def afterAll() = {
     super.afterAll()
     testKit.shutdownTestKit()
-    clearEnv()
-  }
-
-  def setEnv(newEnv: java.util.Map[String, String]): Unit = {
-    Try {
-      val processEnvironmentClass =
-        Class.forName("java.lang.ProcessEnvironment")
-
-      val theEnvironmentField =
-        processEnvironmentClass.getDeclaredField("theEnvironment")
-      theEnvironmentField.setAccessible(true)
-      val env =
-        theEnvironmentField
-          .get(null)
-          .asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
-      env.putAll(newEnv)
-
-      val theCaseInsensitiveEnvironmentField =
-        processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment")
-      theCaseInsensitiveEnvironmentField.setAccessible(true)
-      val ciEnv =
-        theCaseInsensitiveEnvironmentField
-          .get(null)
-          .asInstanceOf[java.util.Map[String, String]] // scalastyle:off null
-      ciEnv.putAll(newEnv)
-    } match {
-      case Failure(_: NoSuchFieldException) =>
-        Try {
-          val classes = classOf[Collections].getDeclaredClasses
-          val env     = System.getenv
-          classes
-            .filter(_.getName == "java.util.Collections$UnmodifiableMap")
-            .foreach(cl => {
-              val field = cl.getDeclaredField("m")
-              field.setAccessible(true)
-              val map =
-                field.get(env).asInstanceOf[java.util.Map[String, String]]
-              map.clear()
-              map.putAll(newEnv)
-            })
-        } match {
-          case Failure(NonFatal(e2)) =>
-            e2.printStackTrace()
-          case Failure(e) =>
-            e.printStackTrace()
-          case Success(_) =>
-        }
-      case Failure(NonFatal(e1)) =>
-        e1.printStackTrace()
-      case Failure(e) =>
-        e.printStackTrace()
-      case Success(_) =>
-    }
-  }
-
-  def clearEnv(): Unit = {
-    val field = System.getenv().getClass.getDeclaredField("m")
-    field.setAccessible(true)
-    val map: java.util.Map[java.lang.String, java.lang.String] =
-      field.get(System.getenv()).asInstanceOf[java.util.Map[java.lang.String, java.lang.String]]
-    map.clear()
   }
 
   // test helper to get a mock version
@@ -189,8 +125,9 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(dbConfig, Migrator.COS_MIGRATIONS_TABLE) shouldBe true
     }
     "writes the initial value if provided" in {
-      val envs = Map(Migrator.COS_MIGRATIONS_INITIAL_VERSION -> "3")
-      setEnv(envs.asJava)
+      val env = new EnvironmentVariables()
+      env.set(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "3")
+      env.setup()
 
       val dbConfig = getDbConfig()
       val migrator = new Migrator(dbConfig, cosSchema)
@@ -198,6 +135,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       migrator.beforeAll().isSuccess shouldBe true
 
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(3)
+      env.teardown()
     }
   }
 
@@ -461,21 +399,24 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       val dbConfig: DatabaseConfig[JdbcProfile] =
         dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // set initial version as env var
-      val envs = Map(Migrator.COS_MIGRATIONS_INITIAL_VERSION -> "3")
-      setEnv(envs.asJava)
+      val env = new EnvironmentVariables()
+      env.set(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "3")
+      env.setup()
       // create the migrations table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
       // write no value
       Migrator.setInitialVersion(dbConfig).isSuccess shouldBe true
       // read no value
       Migrator.getCurrentVersionNumber(dbConfig) shouldBe Some(3)
+      env.teardown()
     }
     "prevents empty version number" in {
       val dbConfig: DatabaseConfig[JdbcProfile] =
         dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // set initial version as env var
-      val envs = Map(Migrator.COS_MIGRATIONS_INITIAL_VERSION -> "")
-      setEnv(envs.asJava)
+      val env = new EnvironmentVariables()
+      env.set(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "")
+      env.setup()
       // create the migrations table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
       // write no value
@@ -483,13 +424,15 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       // check error
       actual.isFailure shouldBe true
       actual.failed.map(_.getMessage.endsWith("setting provided empty")) shouldBe Success(true)
+      env.teardown()
     }
     "prevents non-int version number" in {
       val dbConfig: DatabaseConfig[JdbcProfile] =
         dbConfigFromUrl(container.jdbcUrl, container.username, container.password)
       // set initial version as env var
-      val envs = Map(Migrator.COS_MIGRATIONS_INITIAL_VERSION -> "X")
-      setEnv(envs.asJava)
+      val env = new EnvironmentVariables()
+      env.set(Migrator.COS_MIGRATIONS_INITIAL_VERSION, "X")
+      env.setup()
       // create the migrations table
       Migrator.createMigrationsTable(dbConfig).isSuccess shouldBe true
       // write no value
@@ -497,6 +440,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
       // check error
       actual.isFailure shouldBe true
       actual.failed.map(_.getMessage.endsWith("cannot be 'X'")) shouldBe Success(true)
+      env.teardown()
     }
   }
 

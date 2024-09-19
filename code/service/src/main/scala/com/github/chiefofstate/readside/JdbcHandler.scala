@@ -10,7 +10,7 @@ import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
 import com.google.protobuf.any.{Any => ProtoAny}
 import org.apache.pekko.projection.eventsourced.EventEnvelope
-import org.apache.pekko.projection.jdbc.JdbcSession
+import org.apache.pekko.projection.jdbc.{JdbcSession => PekkoJdbcSession}
 import org.slf4j.{Logger, LoggerFactory}
 
 /**
@@ -27,7 +27,7 @@ private[readside] class JdbcHandler(
     readSideHandler: Handler
 ) extends org.apache.pekko.projection.jdbc.scaladsl.JdbcHandler[EventEnvelope[
       EventWrapper
-    ], JdbcSession] {
+    ], PekkoJdbcSession] {
 
   private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -37,7 +37,7 @@ private[readside] class JdbcHandler(
    * @param session a JdbcSession implementation
    * @param envelope the wrapped event to process
    */
-  def process(session: JdbcSession, envelope: EventEnvelope[EventWrapper]): Unit = {
+  def process(session: PekkoJdbcSession, envelope: EventEnvelope[EventWrapper]): Unit = {
     // extract required arguments
     val event: ProtoAny          = envelope.event.getEvent
     val resultingState: ProtoAny = envelope.event.getResultingState

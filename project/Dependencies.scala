@@ -68,7 +68,6 @@ object Dependencies {
     "com.typesafe.slick"     %% "slick-hikaricp"           % SlickVersion,
     "net.logstash.logback"    % "logstash-logback-encoder" % LogstashLogbackVersion,
     "org.codehaus.janino"     % "janino"                   % JaninoVersion,
-    "org.scala-lang"          % "scala-reflect"            % ScalaVersion,
     "org.scala-lang.modules" %% "scala-xml"                % ScalaXmlVersion,
     // Jackson dependencies
     "com.fasterxml.jackson.core"       % "jackson-core"            % JacksonVersion,
@@ -93,6 +92,8 @@ object Dependencies {
     "org.scalamock"    %% "scalamock"                 % ScalaMockVersion       % Test,
     "io.grpc"           % "grpc-testing"              % grpcJavaVersion        % Test,
     "io.opentelemetry"  % "opentelemetry-sdk-testing" % OpenTelemetrySdkTestingVersion,
+    "uk.org.webcompere" % "system-stubs-core"         % "2.1.6"                % Test,
+
     // test containers
     "com.dimafeng" %% "testcontainers-scala-scalatest"  % TestContainers % Test,
     "com.dimafeng" %% "testcontainers-scala-postgresql" % TestContainers % Test

@@ -6,9 +6,9 @@
 
 package com.github.chiefofstate.migration
 
-import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.migration.helper.TestConfig
+import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import org.testcontainers.utility.DockerImageName
 import slick.basic.DatabaseConfig
 import slick.dbio.DBIOAction
