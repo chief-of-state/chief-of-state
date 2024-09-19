@@ -69,8 +69,8 @@ Chief-of-State has been used in production by notable companies since its birth 
 
 ## Anatomy of a Chief-of-State app
 
-Developers implement two gRPC interfaces: a write handler for building state and, optionally, many read handlers for
-reacting to state changes.
+Developers implement two gRPC interfaces: a write handler(gRPC service) to handle `commands/events` and, optionally, _many_ read handlers(gRPC services) for
+reacting to state changes by consuming the events processed by the write handler.
 
 ![Architecture Diagram](./img/cos-anatomy.png?raw=true "Title")
 
@@ -97,7 +97,7 @@ the [WriteSideHandlerService](https://github.com/chief-of-state/chief-of-state-p
 
 In response to state mutations, COS is able to send changes to
 many [ReadSideHandlerService](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/readside.proto)
-implementations, which may take any action. COS guarantees at-least-once delivery of events and resulting state to each
+implementations, which may take any action. CoS guarantees at-least-once delivery of events and resulting state to each
 read side in the order they were persisted.
 
 Some potential read side handlers might:
