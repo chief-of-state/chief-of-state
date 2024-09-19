@@ -6,8 +6,8 @@
 
 package com.github.chiefofstate.readside
 
-import akka.japi.function
-import akka.projection.jdbc.JdbcSession
+import org.apache.pekko.japi.function
+import org.apache.pekko.projection.jdbc.{JdbcSession => PekkoJdbcSession}
 
 import java.sql.Connection
 
@@ -17,7 +17,7 @@ import java.sql.Connection
  *
  * @param conn a java sql Connection
  */
-private[readside] class ReadSideJdbcSession(val conn: Connection) extends JdbcSession {
+private[readside] class JdbcSession(val conn: Connection) extends PekkoJdbcSession {
 
   override def withConnection[Result](func: function.Function[Connection, Result]): Result = {
     func(conn)

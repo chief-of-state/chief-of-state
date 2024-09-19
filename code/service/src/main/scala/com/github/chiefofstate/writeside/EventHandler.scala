@@ -23,7 +23,7 @@ import scala.util.Try
  * @param grpcConfig the grpc config
  * @param writeHandlerServiceStub the grpc client stub
  */
-case class RemoteEventHandler(
+case class EventHandler(
     grpcConfig: GrpcConfig,
     writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub
 ) {

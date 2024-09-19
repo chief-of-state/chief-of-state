@@ -27,7 +27,7 @@ import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import scala.concurrent.ExecutionContext.global
 import scala.util.Try
 
-class RemoteCommandHandlerSpec extends BaseSpec {
+class CommandHandlerSpec extends BaseSpec {
 
   val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer("0.0.0.0", 5052))
 
@@ -80,8 +80,8 @@ class RemoteCommandHandlerSpec extends BaseSpec {
         .withCommand(command)
         .withPropagatedHeaders(Seq(Header().withKey("header-1").withStringValue("header-value-1")))
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        CommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
       triedHandleCommandResponse.success.value shouldBe expected
@@ -121,8 +121,8 @@ class RemoteCommandHandlerSpec extends BaseSpec {
           )
         )
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        CommandHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
       (triedHandleCommandResponse.failure.exception should have).message("INTERNAL")
@@ -149,8 +149,8 @@ class RemoteCommandHandlerSpec extends BaseSpec {
           )
         )
 
-      val remoteCommandHandler: RemoteCommandHandler =
-        RemoteCommandHandler(grpcConfig, writeHandlerServicetub)
+      val remoteCommandHandler: CommandHandler =
+        CommandHandler(grpcConfig, writeHandlerServicetub)
 
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)

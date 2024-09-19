@@ -6,9 +6,9 @@
 
 package com.github.chiefofstate.readside
 
-import akka.persistence.query.Offset
-import akka.projection.eventsourced.EventEnvelope
-import akka.projection.jdbc.JdbcSession
+import org.apache.pekko.persistence.query.Offset
+import org.apache.pekko.projection.eventsourced.EventEnvelope
+import org.apache.pekko.projection.jdbc.JdbcSession
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.protobuf.v1.common.MetaData
@@ -19,7 +19,7 @@ import org.testcontainers.utility.DockerImageName
 
 import java.sql.{Connection, DriverManager}
 
-class ReadSideJdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
+class JdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
 
   val cosSchema: String = "cos"
 
@@ -43,11 +43,12 @@ class ReadSideJdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
   ".process" should {
     "handle success" in {
       // mock read handler that returns success
-      val readHandler = mock[ReadSideHandler]
+      val readHandler = mock[Handler]
 
       (readHandler.processEvent _).expects(*, *, *, *).returning(true).once
 
-      val jdbcHandler              = new ReadSideJdbcHandler("tag", "processor", readHandler)
+      val jdbcHandler =
+        new com.github.chiefofstate.readside.JdbcHandler("tag", "processor", readHandler)
       val jdbcSession: JdbcSession = mock[JdbcSession]
       val entityId: String         = "entity-1"
 
@@ -62,11 +63,12 @@ class ReadSideJdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
     }
     "handle failure" in {
       // mock read handler that returns success
-      val readHandler = mock[ReadSideHandler]
+      val readHandler = mock[Handler]
 
       (readHandler.processEvent _).expects(*, *, *, *).returning(false).once
 
-      val jdbcHandler              = new ReadSideJdbcHandler("tag", "processor", readHandler)
+      val jdbcHandler =
+        new com.github.chiefofstate.readside.JdbcHandler("tag", "processor", readHandler)
       val jdbcSession: JdbcSession = mock[JdbcSession]
       val entityId: String         = "entity-1"
 

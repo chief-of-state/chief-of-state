@@ -6,11 +6,11 @@
 
 package com.github.chiefofstate.readside
 
-import akka.Done
-import akka.actor.typed.ActorSystem
-import akka.persistence.query.Sequence
-import akka.projection.ProjectionId
-import akka.projection.scaladsl.ProjectionManagement
+import org.apache.pekko.Done
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.persistence.query.Sequence
+import org.apache.pekko.projection.ProjectionId
+import org.apache.pekko.projection.scaladsl.ProjectionManagement
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContextExecutor, Future}

@@ -24,7 +24,7 @@ import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import scala.concurrent.ExecutionContext.global
 import scala.util.Try
 
-class RemoteEventHandlerSpec extends BaseSpec {
+class EventHandlerSpec extends BaseSpec {
 
   val grpcConfig: GrpcConfig = GrpcConfig(GrpcClient(5000), GrpcServer("0.0.0.0", 5051))
 
@@ -74,8 +74,8 @@ class RemoteEventHandlerSpec extends BaseSpec {
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
-      val remoteEventHandler: RemoteEventHandler =
-        RemoteEventHandler(grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        EventHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleEventResponse: Try[HandleEventResponse] =
         remoteEventHandler.handleEvent(event, stateAny, eventMeta)
       triedHandleEventResponse.success.value shouldBe expected
@@ -111,8 +111,8 @@ class RemoteEventHandlerSpec extends BaseSpec {
       val writeHandlerServicetub: WriteSideHandlerServiceBlockingStub =
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
-      val remoteEventHandler: RemoteEventHandler =
-        RemoteEventHandler(grpcConfig, writeHandlerServicetub)
+      val remoteEventHandler: EventHandler =
+        EventHandler(grpcConfig, writeHandlerServicetub)
       val triedHandleEventResponse: Try[HandleEventResponse] =
         remoteEventHandler.handleEvent(event, stateAny, eventMeta)
       (triedHandleEventResponse.failure.exception should have).message("UNKNOWN")

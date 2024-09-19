@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.migration
 
-import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.migration.helper.TestConfig
 import org.testcontainers.utility.DockerImageName
