@@ -18,7 +18,6 @@ import com.github.chiefofstate.utils.{NettyHelper, ProtosValidator, Util}
 import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
 import com.typesafe.config.Config
 import io.grpc._
-import io.grpc.netty.NettyServerBuilder
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior}
 import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
@@ -26,7 +25,6 @@ import org.apache.pekko.persistence.typed.PersistenceId
 import org.apache.pekko.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 
-import java.net.InetSocketAddress
 import scala.concurrent.ExecutionContext
 import scala.sys.ShutdownHookThread
 
@@ -56,7 +54,7 @@ object ServiceStarter {
 
           val channel: ManagedChannel =
             NettyHelper
-              .builder(
+              .channelBuilder(
                 cosConfig.writeSideConfig.host,
                 cosConfig.writeSideConfig.port,
                 cosConfig.writeSideConfig.useTls
@@ -140,10 +138,8 @@ object ServiceStarter {
     val readSideManagerService = new CosReadSideManagerService(readSideManager)(grpcEc)
 
     // create the server builder
-    var builder = NettyServerBuilder
-      .forAddress(
-        new InetSocketAddress(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port)
-      )
+    var builder = NettyHelper
+      .serverBuilder(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port)
       .addService(setServiceWithInterceptors(ChiefOfStateService.bindService(coSService, grpcEc)))
 
     // only start the read side manager if readSide is enabled

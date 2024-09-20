@@ -175,36 +175,49 @@ object Entity {
 
     val handlerOutput: Try[Response] = commandHandler
       .handleCommand(command, priorState)
-      .map(_.event match {
-        case Some(newEvent) =>
-          protosValidator.requireValidEvent(newEvent)
-          NewEvent(newEvent)
+      .map(response => {
+        // use events or fallback to event in case events is empty
+        val eventsSeq: Seq[any.Any] = if (response.events.isEmpty) response.event match {
+          case Some(newEvent) => Seq(newEvent)
+          case None           => Seq.empty[any.Any]
+        }
+        else response.events
 
-        case None =>
-          NoOp
-      })
-      .flatMap {
-        case NewEvent(newEvent) =>
-          val newEventMeta: MetaData = MetaData()
-            .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
-            .withRevisionDate(Instant.now().toTimestamp)
-            .withData(data)
-            .withEntityId(priorState.getMeta.entityId)
-            .withHeaders(command.persistedHeaders)
+        // filter the events and validate them
+        val events: Seq[any.Any] = eventsSeq
+          .filter(_ != any.Any.defaultInstance) // ignore empty events and validate types
+          .map(newEvent => {
+            protosValidator.requireValidEvent(newEvent)
+            newEvent
+          })
 
-          val priorStateAny: com.google.protobuf.any.Any = priorState.getState
+        // process the events
+        if (events.nonEmpty)
+          events
+            .map(event => {
+              val newEventMeta: MetaData = MetaData()
+                .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
+                .withRevisionDate(Instant.now().toTimestamp)
+                .withData(data)
+                .withEntityId(priorState.getMeta.entityId)
+                .withHeaders(command.persistedHeaders)
 
-          eventHandler
-            .handleEvent(newEvent, priorStateAny, newEventMeta)
-            .map(response => {
-              require(response.resultingState.isDefined, "event handler replied with empty state")
-              protosValidator.requireValidState(response.getResultingState)
-              NewState(newEvent, response.getResultingState, newEventMeta)
+              eventHandler
+                .handleEvent(event, priorState.getState, newEventMeta)
+                .map(response => {
+                  require(
+                    response.resultingState.isDefined,
+                    "event handler replied with empty state"
+                  )
+                  protosValidator.requireValidState(response.getResultingState)
+                  NewState(event, response.getResultingState, newEventMeta)
+                })
             })
-
-        case unhandled =>
-          Success(unhandled)
-      }
+            .map(_.get)
+            .lastOption
+            .getOrElse(NoOp)
+        else NoOp
+      })
       .recoverWith(makeFailedStatusPf)
 
     handlerOutput match {

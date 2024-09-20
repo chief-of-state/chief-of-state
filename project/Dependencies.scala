@@ -30,6 +30,7 @@ object Dependencies {
     val OpenTelemetryExtensionVersion: String          = "1.42.1"
     val ScalaXmlVersion: String                        = "2.3.0"
     val JacksonVersion: String                         = "2.17.2"
+    val NettyVersion: String                           = "4.1.113.Final"
   }
 
   import Dependencies.Versions._
@@ -80,7 +81,9 @@ object Dependencies {
     "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-api" % OpenTelemetryInstrumentationApiVersion,
     "io.opentelemetry" % "opentelemetry-sdk-extension-autoconfigure" % OpenTelemetrySdkConfigVersion,
     "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-annotations" % OpenTelemetryInstrumentationApiVersion,
-    "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetrySdkVersion
+    "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetrySdkVersion,
+    // Netty dependencies
+    "io.netty" % "netty-all" % NettyVersion
   )
 
   val testJars: Seq[ModuleID] = Seq(
