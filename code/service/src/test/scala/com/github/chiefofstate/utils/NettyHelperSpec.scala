@@ -12,12 +12,12 @@ class NettyHelperSpec extends BaseSpec {
   "buildChannel" should {
     "create a plaintext channel" in {
       noException shouldBe thrownBy {
-        NettyHelper.builder("x", 1, false)
+        NettyHelper.channelBuilder("x", 1, false)
       }
     }
     "create a tls channel" in {
       noException shouldBe thrownBy {
-        NettyHelper.builder("x", 1, true)
+        NettyHelper.channelBuilder("x", 1, true)
       }
     }
   }

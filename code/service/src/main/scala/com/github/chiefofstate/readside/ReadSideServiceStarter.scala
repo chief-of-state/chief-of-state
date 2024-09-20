@@ -52,7 +52,7 @@ class ReadSideServiceStarter(
       // and register interceptors
       val rpcClient: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(
-          NettyHelper.builder(config.host, config.port, config.useTls).build
+          NettyHelper.channelBuilder(config.host, config.port, config.useTls).build
         )
       // instantiate a remote read side processor with the gRPC client
       val remoteReadSideProcessor: HandlerImpl =
