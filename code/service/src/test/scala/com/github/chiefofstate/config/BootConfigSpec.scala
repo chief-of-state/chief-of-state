@@ -6,16 +6,14 @@
 
 package com.github.chiefofstate.config
 
-import com.github.chiefofstate.helper.{BaseSpec, EnvironmentHelper}
+import com.github.chiefofstate.helper.BaseSpec
 import com.typesafe.config.Config
-
-import scala.jdk.CollectionConverters._
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
 
 class BootConfigSpec extends BaseSpec {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
-    EnvironmentHelper.clearEnv()
   }
 
   ".getDeploymentMode" should {
@@ -38,18 +36,20 @@ class BootConfigSpec extends BaseSpec {
     }
 
     "read the env var" in {
-      val envs = Map(BootConfig.DEPLOYMENT_MODE -> BootConfig.DEPLOYMENT_MODE_K8S.key)
-      EnvironmentHelper.setEnv(envs.asJava)
+      val env = new EnvironmentVariables()
+      env.set(BootConfig.DEPLOYMENT_MODE, BootConfig.DEPLOYMENT_MODE_K8S.key).setup()
       BootConfig.getDeploymentMode shouldBe BootConfig.DEPLOYMENT_MODE_K8S
+      env.teardown()
     }
   }
 
   ".get" should {
     "run e2e" in {
-      val envs = Map(BootConfig.DEPLOYMENT_MODE -> BootConfig.DEPLOYMENT_MODE_DOCKER.key)
-      EnvironmentHelper.setEnv(envs.asJava)
+      val env = new EnvironmentVariables()
+      env.set(BootConfig.DEPLOYMENT_MODE, BootConfig.DEPLOYMENT_MODE_DOCKER.key).setup()
       val config: Config = BootConfig.get()
       config.getString("deployment-mode") shouldBe "docker"
+      env.teardown()
     }
   }
 }
