@@ -7,7 +7,7 @@ object Dependencies {
 
   // Package versions
   object Versions {
-    val ScalaVersion: String                = "2.13.14"
+    val ScalaVersion: String                = "2.13.15"
     val PekkoVersion: String                = "1.1.2"
     val ScalapbCommonProtoVersion: String   = "2.9.6-0"
     val SilencerVersion: String             = "1.7.17"
