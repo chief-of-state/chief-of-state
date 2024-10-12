@@ -4,6 +4,10 @@ name: PR
 
 on:
   pull_request:
+    paths-ignore:
+      - '**/README.md'
+      - '**/readme.md'
+
 
 jobs:
   build:
