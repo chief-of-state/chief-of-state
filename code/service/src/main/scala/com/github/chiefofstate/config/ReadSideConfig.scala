@@ -24,6 +24,7 @@ import com.github.chiefofstate.config.ReadSideFailurePolicy.{
  * @param autoStart  specifies whether the read side should start processing messages or be in pause mode
  * @param enabled specifies whether the read side is enabled or not. This means that the readside will not be added at runtime to the list of
  *                read sides that need to run. This is useful when deactivating a faulty read side
+ * @param failurePolicy specifies the failure policy
  */
 final case class ReadSideConfig(
     @JsonProperty(required = true)
