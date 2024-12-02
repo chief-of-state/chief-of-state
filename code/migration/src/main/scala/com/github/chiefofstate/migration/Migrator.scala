@@ -9,14 +9,14 @@ package com.github.chiefofstate.migration
 import org.slf4j.{Logger, LoggerFactory}
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 import slick.sql.SqlAction
 
 import java.time.Instant
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 /**
  * Runs the provided migrations
@@ -134,7 +134,10 @@ object Migrator {
       .transactionally
 
     val future: Future[Int] = dbConfig.db.run(stmt)
-    Try(Await.result(future, Duration.Inf))
+    Try { Await.result(future, Duration.Inf) } match {
+      case Failure(exception) => Failure(exception)
+      case Success(value)     => Success(())
+    }
   }
 
   /**
@@ -192,6 +195,9 @@ object Migrator {
 
     Try {
       Await.result(dbConfig.db.run(stmt), Duration.Inf)
+    } match {
+      case Failure(exception) => Failure(exception)
+      case Success(value)     => Success(())
     }
   }
 
