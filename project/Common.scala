@@ -27,9 +27,9 @@ object Common extends AutoPlugin {
       organizationName     := "Chief Of State.",
       organizationHomepage := Some(url("https://github.com/chief-of-state")),
       startYear            := Some(2020),
-      licenses += ("MIT", new URL("https://opensource.org/licenses/MIT")),
+      licenses += ("MIT", url("https://opensource.org/licenses/MIT")),
       headerLicenseStyle := HeaderLicenseStyle.SpdxSyntax,
-      headerLicense := Some(HeaderLicense.Custom("""|Copyright (c) 2022 ChiefOfState.
+      headerLicense := Some(HeaderLicense.Custom("""|Copyright (c) 2020 ChiefOfState.
                                                     |
                                                     |""".stripMargin)),
       developers += Developer(
@@ -50,25 +50,14 @@ object Common extends AutoPlugin {
         "java.base/java.lang=ALL-UNNAMED"
       ),
       scalacOptions ++= Seq(
-        "-target:8",
+        "-Xtarget:11",
+        "-nowarn",
         "-Xfatal-warnings",
         "-deprecation",
-        "-Xlint",
-        "-P:silencer:checkUnused",
-        "-P:silencer:pathFilters=.protogen[/].*",
-        "-P:silencer:globalFilters=Unused import;deprecated",
-        "-P:silencer:globalFilters=Marked as deprecated in proto file;Could not find any member to link;unbalanced or unclosed heading"
+        "-explain"
       ),
       resolvers ++= Resolver.sonatypeOssRepos("public"),
       resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
-      libraryDependencies ++= Seq(
-        compilerPlugin(
-          ("com.github.ghik" % "silencer-plugin" % Versions.SilencerVersion)
-            .cross(CrossVersion.full)
-        ),
-        ("com.github.ghik" % "silencer-lib" % Versions.SilencerVersion % Provided)
-          .cross(CrossVersion.full)
-      ),
       scalafmtOnCompile := true,
       // require test coverage
       coverageMinimumStmtTotal := 65,

@@ -32,7 +32,7 @@ class MetadataInterceptorSpec extends BaseSpec {
       // declare a variable and interceptor to capture the headers
       var responseHeaders: Option[Metadata] = None
 
-      (serviceImpl.sayHello _).expects(*).onCall { hello: HelloRequest =>
+      (serviceImpl.sayHello _).expects(*).onCall { (hello: HelloRequest) =>
         responseHeaders = Option(MetadataInterceptor.REQUEST_META.get())
         Future.successful(HelloReply().withMessage(hello.name))
       }

@@ -45,7 +45,7 @@ class JdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
       // mock read handler that returns success
       val readHandler = mock[Handler]
 
-      (readHandler.processEvent _).expects(*, *, *, *).returning(true).once
+      (readHandler.processEvent _).expects(*, *, *, *).returning(true).once()
 
       val jdbcHandler =
         new com.github.chiefofstate.readside.JdbcHandler("tag", "processor", readHandler)
@@ -65,7 +65,7 @@ class JdbcHandlerSpec extends BaseSpec with ForAllTestContainer {
       // mock read handler that returns success
       val readHandler = mock[Handler]
 
-      (readHandler.processEvent _).expects(*, *, *, *).returning(false).once
+      (readHandler.processEvent _).expects(*, *, *, *).returning(false).once()
 
       val jdbcHandler =
         new com.github.chiefofstate.readside.JdbcHandler("tag", "processor", readHandler)

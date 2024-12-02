@@ -62,7 +62,7 @@ class MigratorSpec extends BaseSpec with ForAllTestContainer {
   def getMockVersion(versionNumber: Int): Version = {
     val mockVersion = mock[Version]
 
-    (() => mockVersion.versionNumber).expects().returning(versionNumber).anyNumberOfTimes
+    (() => mockVersion.versionNumber).expects().returning(versionNumber).anyNumberOfTimes()
 
     mockVersion
   }

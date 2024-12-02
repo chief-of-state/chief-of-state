@@ -7,7 +7,7 @@ object Dependencies {
 
   // Package versions
   object Versions {
-    val ScalaVersion: String                = "2.13.15"
+    val ScalaVersion: String                = "3.3.4"
     val PekkoVersion: String                = "1.1.2"
     val ScalapbCommonProtoVersion: String   = "2.9.6-0"
     val SilencerVersion: String             = "1.7.19"
@@ -28,11 +28,13 @@ object Dependencies {
     val OpenTelemetryInstrumentationApiVersion: String = "2.10.0"
     val OpenTelemetrySdkTestingVersion: String         = "1.44.1"
     val OpenTelemetryExtensionVersion: String          = "1.44.1"
+    val OpenTelemetryApiVersion: String                = "1.44.1"
     val ScalaXmlVersion: String                        = "2.3.0"
     val JacksonVersion: String                         = "2.18.2"
     val NettyVersion: String                           = "4.1.115.Final"
   }
 
+  // include the dependencies
   import Dependencies.Versions._
 
   val excludeGRPC = ExclusionRule(organization = "io.grpc")
@@ -81,7 +83,10 @@ object Dependencies {
     "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-api" % OpenTelemetryInstrumentationApiVersion,
     "io.opentelemetry" % "opentelemetry-sdk-extension-autoconfigure" % OpenTelemetrySdkConfigVersion,
     "io.opentelemetry.instrumentation" % "opentelemetry-instrumentation-annotations" % OpenTelemetryInstrumentationApiVersion,
-    "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetrySdkVersion,
+    "io.opentelemetry" % "opentelemetry-sdk"         % OpenTelemetrySdkVersion,
+    "io.opentelemetry" % "opentelemetry-sdk-trace"   % OpenTelemetrySdkVersion,
+    "io.opentelemetry" % "opentelemetry-sdk-metrics" % OpenTelemetrySdkVersion,
+    "io.opentelemetry" % "opentelemetry-api"         % OpenTelemetryApiVersion,
     // Netty dependencies
     "io.netty" % "netty-all" % NettyVersion
   )
