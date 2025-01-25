@@ -50,6 +50,10 @@ aforementioned.
 If a company is still using the Namely version and wants to migrate to this, it will have to be at least on the [namely v0.9.2-rc.1](https://github.com/namely/chief-of-state/releases/tag/v0.9.2-rc.1) version.
 One can refer to the [documentation](#documentation) for set up.
 
+From version `v2.4.11` ongoing, Chief-Of-State has been completely migrated from Akka dependencies to Apache Pekko.
+In that regard any project before that version cannot be upgraded to the latest versions because of lack of migration kit
+at the moment.
+
 ## Features
 
 - Journal and Snapshot serialization using google protocol buffer message format
