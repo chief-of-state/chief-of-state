@@ -12,7 +12,7 @@ lazy val root: Project = project
     Compile / mainClass                       := Some("com.github.chiefofstate.Entrypoint"),
     makeBatScripts                            := Seq(),
     executableScriptName                      := "entrypoint",
-    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "2.13.2" % "runtime",
+    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "2.13.3" % "runtime",
     Universal / javaOptions ++= Seq(
       // Setting the OpenTelemetry java agent options
       // reference: https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters
