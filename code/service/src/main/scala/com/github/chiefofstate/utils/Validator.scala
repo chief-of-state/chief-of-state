@@ -14,8 +14,7 @@ import com.github.chiefofstate.config.WriteSideConfig
  *
  * @param writeSideConfig the write side configuration
  */
-case class ProtosValidator(writeSideConfig: WriteSideConfig) {
-
+case class Validator(writeSideConfig: WriteSideConfig) {
   private val isValidationEnabled: Boolean   = writeSideConfig.enableProtoValidation
   private val validEventsProtos: Seq[String] = writeSideConfig.eventsProtos
   private val validStatesProtos: Seq[String] = writeSideConfig.statesProtos

@@ -1,6 +1,6 @@
 VERSION 0.8
 
-FROM busybox:1.36.1
+FROM busybox:1.37.0
 
 
 test-and-build:
@@ -110,7 +110,7 @@ sbt:
     RUN mkdir /logs && chmod 777 /logs
 
     # Install sbt
-    ARG SBT_VERSION=1.10.6
+    ARG SBT_VERSION=1.10.11
     ARG SBT_URL="https:/github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz"
 
     # Install sbt, add symlink

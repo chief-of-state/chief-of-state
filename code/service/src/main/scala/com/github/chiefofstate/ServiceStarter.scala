@@ -14,7 +14,7 @@ import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.Chief
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.readside.{ReadSideManager, ReadSideServiceStarter}
 import com.github.chiefofstate.services.{CosReadSideManagerService, CosService}
-import com.github.chiefofstate.utils.{NettyHelper, ProtosValidator, Util}
+import com.github.chiefofstate.utils.{Netty, Validator, Util}
 import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
 import com.typesafe.config.Config
 import io.grpc._
@@ -53,7 +53,7 @@ object ServiceStarter {
           log.info("Data store migration complete. About to start...")
 
           val channel: ManagedChannel =
-            NettyHelper
+            Netty
               .channelBuilder(
                 cosConfig.writeSideConfig.host,
                 cosConfig.writeSideConfig.port,
@@ -70,8 +70,8 @@ object ServiceStarter {
             EventHandler(cosConfig.grpcConfig, writeHandler)
 
           // instance of eventsAndStatesProtoValidation
-          val eventsAndStateProtoValidation: ProtosValidator =
-            ProtosValidator(cosConfig.writeSideConfig)
+          val eventsAndStateProtoValidation: Validator =
+            Validator(cosConfig.writeSideConfig)
 
           // initialize the sharding extension
           val sharding: ClusterSharding = ClusterSharding(context.system)
@@ -138,7 +138,7 @@ object ServiceStarter {
     val readSideManagerService = new CosReadSideManagerService(readSideManager)(grpcEc)
 
     // create the server builder
-    var builder = NettyHelper
+    var builder = Netty
       .serverBuilder(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port)
       .addService(setServiceWithInterceptors(ChiefOfStateService.bindService(coSService, grpcEc)))
 

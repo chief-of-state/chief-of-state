@@ -115,7 +115,7 @@ class UtilSpec extends BaseSpec {
       val status: Status = Status.ABORTED.withDescription("abort!")
       val exc            = new StatusException(status)
       // convert to a status exception of INVALID ARGUMENT
-      val actual: StatusException = Util.makeStatusException(exc)
+      val actual: StatusException = Util.toStatusException(exc)
       actual shouldBe exc
     }
     "transform status runtime exceptions" in {
@@ -123,7 +123,7 @@ class UtilSpec extends BaseSpec {
       val status: Status = Status.ABORTED.withDescription("abort!")
       val exc            = new StatusRuntimeException(status)
       // convert to a status exception of INVALID ARGUMENT
-      val actual: StatusException = Util.makeStatusException(exc)
+      val actual: StatusException = Util.toStatusException(exc)
 
       actual.getStatus shouldBe status
     }
@@ -131,14 +131,14 @@ class UtilSpec extends BaseSpec {
       // define an illegal arg exception
       val exc = new IllegalArgumentException("some illegal thing")
       // convert to a status exception of INVALID ARGUMENT
-      val actual: StatusException = Util.makeStatusException(exc)
+      val actual: StatusException = Util.toStatusException(exc)
 
       actual.getStatus.getCode shouldBe (io.grpc.Status.Code.INVALID_ARGUMENT)
       actual.getStatus.getDescription shouldBe "some illegal thing"
     }
     "convert general throwables to INTERNAL status" in {
       val exc                     = new Exception("boom")
-      val actual: StatusException = Util.makeStatusException(exc)
+      val actual: StatusException = Util.toStatusException(exc)
 
       actual.getStatus.getCode shouldBe (io.grpc.Status.Code.INTERNAL)
       actual.getStatus.getDescription shouldBe "boom"

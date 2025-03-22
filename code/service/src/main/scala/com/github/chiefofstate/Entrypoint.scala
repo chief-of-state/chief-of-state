@@ -17,6 +17,6 @@ object Entrypoint extends App {
 
   // boot the actor system
   val actorSystem: ActorSystem[NotUsed] =
-    ActorSystem(CosBehavior(config), "ChiefOfStateSystem", config)
+    ActorSystem(Behavior(config), "ChiefOfStateSystem", config)
   actorSystem.whenTerminated // remove compiler warnings
 }

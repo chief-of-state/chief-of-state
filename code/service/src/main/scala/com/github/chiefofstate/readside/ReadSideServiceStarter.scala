@@ -8,7 +8,7 @@ package com.github.chiefofstate.readside
 
 import com.github.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
-import com.github.chiefofstate.utils.NettyHelper
+import com.github.chiefofstate.utils.Netty
 import com.typesafe.config.{Config, ConfigException}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.pekko.actor.typed.ActorSystem
@@ -52,7 +52,7 @@ class ReadSideServiceStarter(
       // and register interceptors
       val rpcClient: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(
-          NettyHelper.channelBuilder(config.host, config.port, config.useTls).build
+          Netty.channelBuilder(config.host, config.port, config.useTls).build
         )
       // instantiate a remote read side processor with the gRPC client
       val remoteReadSideProcessor: HandlerImpl =
@@ -98,7 +98,6 @@ class ReadSideServiceStarter(
 }
 
 object ReadSideServiceStarter {
-
   def apply(
       system: ActorSystem[_],
       numShards: Int,
@@ -175,15 +174,15 @@ object ReadSideServiceStarter {
   )
 
   private[readside] object DbConfig {
-    def apply(jdbcCfg: Config): DbConfig =
+    def apply(config: Config): DbConfig =
       DbConfig(
-        jdbcUrl = jdbcCfg.getString("url"),
-        username = jdbcCfg.getString("user"),
-        password = jdbcCfg.getString("password"),
-        maxPoolSize = jdbcCfg.getInt("hikari-settings.max-pool-size"),
-        minIdleConnections = jdbcCfg.getInt("hikari-settings.min-idle-connections"),
-        idleTimeoutMs = jdbcCfg.getLong("hikari-settings.idle-timeout-ms"),
-        maxLifetimeMs = jdbcCfg.getLong("hikari-settings.max-lifetime-ms")
+        jdbcUrl = config.getString("url"),
+        username = config.getString("user"),
+        password = config.getString("password"),
+        maxPoolSize = config.getInt("hikari-settings.max-pool-size"),
+        minIdleConnections = config.getInt("hikari-settings.min-idle-connections"),
+        idleTimeoutMs = config.getLong("hikari-settings.idle-timeout-ms"),
+        maxLifetimeMs = config.getLong("hikari-settings.max-lifetime-ms")
       )
   }
 }

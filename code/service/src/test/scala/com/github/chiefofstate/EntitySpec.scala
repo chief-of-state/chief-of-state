@@ -19,7 +19,7 @@ import com.github.chiefofstate.protobuf.v1.tests.{Account, AccountOpened, OpenAc
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.protobuf.v1.writeside._
 import com.github.chiefofstate.serialization.SendReceive
-import com.github.chiefofstate.utils.{ProtosValidator, Util}
+import com.github.chiefofstate.utils.{Validator, Util}
 import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
 import com.google.protobuf.any
 import com.google.protobuf.any.Any
@@ -166,7 +166,7 @@ class EntitySpec extends BaseActorSpec(s"""
             require(request.getEventMeta.revisionNumber == priorMeta.revisionNumber + 1)
             HandleEventResponse().withResultingState(resultingState)
           }.recoverWith { case e: Throwable =>
-            Failure(Util.makeStatusException(e))
+            Failure(Util.toStatusException(e))
           }
           Future.fromTry(output)
         })
@@ -189,8 +189,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        ProtosValidator(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        Validator(cosConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -258,8 +258,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        utils.ProtosValidator(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        utils.Validator(cosConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -313,8 +313,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        utils.ProtosValidator(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        utils.Validator(cosConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -370,8 +370,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        utils.ProtosValidator(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        utils.Validator(cosConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -431,8 +431,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        utils.ProtosValidator(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        utils.Validator(cosConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -499,8 +499,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        utils.ProtosValidator(mainConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        utils.Validator(mainConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -576,8 +576,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        utils.ProtosValidator(mainConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        utils.Validator(mainConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -644,8 +644,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        ProtosValidator(mainConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        Validator(mainConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -713,8 +713,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        utils.ProtosValidator(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        utils.Validator(cosConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,
@@ -786,8 +786,8 @@ class EntitySpec extends BaseActorSpec(s"""
       val remoteEventHandler: EventHandler =
         writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
       val shardIndex = 0
-      val eventsAndStateProtosValidation: ProtosValidator =
-        utils.ProtosValidator(cosConfig.writeSideConfig)
+      val eventsAndStateProtosValidation: Validator =
+        utils.Validator(cosConfig.writeSideConfig)
 
       val aggregateRoot = Entity(
         persistenceId,

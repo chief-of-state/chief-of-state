@@ -21,7 +21,7 @@ import org.apache.pekko.management.cluster.bootstrap.ClusterBootstrap
 import org.apache.pekko.management.scaladsl.PekkoManagement
 import org.slf4j.{Logger, LoggerFactory}
 
-object CosBehavior {
+object Behavior {
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   def apply(config: Config): Behavior[NotUsed] = {

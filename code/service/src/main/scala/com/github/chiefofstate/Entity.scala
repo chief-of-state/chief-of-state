@@ -16,7 +16,7 @@ import com.github.chiefofstate.protobuf.v1.internal.{
 }
 import com.github.chiefofstate.protobuf.v1.persistence.{EventWrapper, StateWrapper}
 import com.github.chiefofstate.serialization.SendReceive
-import com.github.chiefofstate.utils.ProtosValidator
+import com.github.chiefofstate.utils.Validator
 import com.github.chiefofstate.utils.Util.{Instants, makeFailedStatusPf, toRpcStatus}
 import com.github.chiefofstate.writeside.ResponseType._
 import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
@@ -62,7 +62,7 @@ object Entity {
       cosConfig: CosConfig,
       commandHandler: CommandHandler,
       eventHandler: EventHandler,
-      protosValidator: ProtosValidator
+      protosValidator: Validator
   ): Behavior[SendReceive] = {
     Behaviors.setup { context =>
       {
@@ -97,7 +97,7 @@ object Entity {
       aggregateCommand: SendReceive,
       commandHandler: CommandHandler,
       eventHandler: EventHandler,
-      protosValidator: ProtosValidator
+      protosValidator: Validator
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     log.debug("begin handle command")
 
@@ -169,7 +169,7 @@ object Entity {
       replyTo: ActorRef[CommandReply],
       commandHandler: CommandHandler,
       eventHandler: EventHandler,
-      protosValidator: ProtosValidator,
+      protosValidator: Validator,
       data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 

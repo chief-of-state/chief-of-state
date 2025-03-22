@@ -11,7 +11,7 @@ import io.grpc.netty.{NegotiationType, NettyChannelBuilder, NettyServerBuilder}
 
 import java.net.InetSocketAddress
 
-object NettyHelper {
+object Netty {
 
   /**
    * returns a NettyChannelBuilder

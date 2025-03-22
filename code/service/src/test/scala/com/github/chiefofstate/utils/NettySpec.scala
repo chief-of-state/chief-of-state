@@ -8,16 +8,16 @@ package com.github.chiefofstate.utils
 
 import com.github.chiefofstate.helper.BaseSpec
 
-class NettyHelperSpec extends BaseSpec {
+class NettySpec extends BaseSpec {
   "buildChannel" should {
     "create a plaintext channel" in {
       noException shouldBe thrownBy {
-        NettyHelper.channelBuilder("x", 1, false)
+        Netty.channelBuilder("x", 1, false)
       }
     }
     "create a tls channel" in {
       noException shouldBe thrownBy {
-        NettyHelper.channelBuilder("x", 1, true)
+        Netty.channelBuilder("x", 1, true)
       }
     }
   }
