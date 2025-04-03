@@ -29,7 +29,7 @@ lazy val root: Project = project
       "-J-XX:MinRAMPercentage=60.0",
       "-J-XX:MaxRAMPercentage=90.0",
       "-J-XX:+HeapDumpOnOutOfMemoryError",
-      "-J-XX:+UseG1GC"
+      "-J-XX:+UseZGC"
     )
   )
   .dependsOn(chiefofstate)
