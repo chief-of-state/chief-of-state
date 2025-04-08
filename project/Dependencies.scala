@@ -100,7 +100,7 @@ object Dependencies {
     "org.scalamock"    %% "scalamock"                 % ScalaMockVersion       % Test,
     "io.grpc"           % "grpc-testing"              % grpcJavaVersion        % Test,
     "io.opentelemetry"  % "opentelemetry-sdk-testing" % OpenTelemetrySdkTestingVersion,
-    "uk.org.webcompere" % "system-stubs-core"         % "2.1.7"                % Test,
+    "uk.org.webcompere" % "system-stubs-core"         % "2.1.8"                % Test,
 
     // test containers
     "com.dimafeng" %% "testcontainers-scala-scalatest"  % TestContainers % Test,
