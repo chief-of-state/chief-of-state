@@ -22,16 +22,16 @@ object Dependencies {
 
     val JaninoVersion: String                          = "3.1.12"
     val LogstashLogbackVersion: String                 = "8.0"
-    val OpenTelemetrySdkVersion: String                = "1.48.0"
+    val OpenTelemetrySdkVersion: String                = "1.49.0"
     val TestContainers: String                         = "0.43.0"
-    val OpenTelemetrySdkConfigVersion: String          = "1.48.0"
+    val OpenTelemetrySdkConfigVersion: String          = "1.49.0"
     val OpenTelemetryInstrumentationApiVersion: String = "2.15.0"
-    val OpenTelemetrySdkTestingVersion: String         = "1.48.0"
-    val OpenTelemetryExtensionVersion: String          = "1.48.0"
-    val OpenTelemetryApiVersion: String                = "1.48.0"
+    val OpenTelemetrySdkTestingVersion: String         = "1.49.0"
+    val OpenTelemetryExtensionVersion: String          = "1.49.0"
+    val OpenTelemetryApiVersion: String                = "1.49.0"
     val ScalaXmlVersion: String                        = "2.3.0"
     val JacksonVersion: String                         = "2.18.3"
-    val NettyVersion: String                           = "4.1.119.Final"
+    val NettyVersion: String                           = "4.2.0.Final"
   }
 
   // include the dependencies
