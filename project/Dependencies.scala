@@ -31,7 +31,7 @@ object Dependencies {
     val OpenTelemetryApiVersion: String                = "1.49.0"
     val ScalaXmlVersion: String                        = "2.3.0"
     val JacksonVersion: String                         = "2.19.0"
-    val NettyVersion: String                           = "4.2.0.Final"
+    val NettyVersion: String                           = "4.2.1.Final"
   }
 
   // include the dependencies
