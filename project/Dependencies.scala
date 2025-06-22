@@ -8,7 +8,7 @@ object Dependencies {
   // Package versions
   object Versions {
     val ScalaVersion: String                = "3.3.6"
-    val PekkoVersion: String                = "1.1.3"
+    val PekkoVersion: String                = "1.1.4"
     val ScalapbCommonProtoVersion: String   = "2.9.6-0"
     val SilencerVersion: String             = "1.7.19"
     val LogbackVersion: String              = "1.5.18"
@@ -22,16 +22,16 @@ object Dependencies {
 
     val JaninoVersion: String                          = "3.1.12"
     val LogstashLogbackVersion: String                 = "8.0"
-    val OpenTelemetrySdkVersion: String                = "1.50.0"
+    val OpenTelemetrySdkVersion: String                = "1.51.0"
     val TestContainers: String                         = "0.43.0"
-    val OpenTelemetrySdkConfigVersion: String          = "1.50.0"
+    val OpenTelemetrySdkConfigVersion: String          = "1.51.0"
     val OpenTelemetryInstrumentationApiVersion: String = "2.16.0"
-    val OpenTelemetrySdkTestingVersion: String         = "1.50.0"
-    val OpenTelemetryExtensionVersion: String          = "1.50.0"
-    val OpenTelemetryApiVersion: String                = "1.50.0"
+    val OpenTelemetrySdkTestingVersion: String         = "1.51.0"
+    val OpenTelemetryExtensionVersion: String          = "1.51.0"
+    val OpenTelemetryApiVersion: String                = "1.51.0"
     val ScalaXmlVersion: String                        = "2.4.0"
     val JacksonVersion: String                         = "2.19.1"
-    val NettyVersion: String                           = "4.2.1.Final"
+    val NettyVersion: String                           = "4.2.2.Final"
   }
 
   // include the dependencies
