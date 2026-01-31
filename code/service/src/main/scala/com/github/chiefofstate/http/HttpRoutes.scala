@@ -9,7 +9,7 @@ package com.github.chiefofstate.http
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.service._
-import com.github.chiefofstate.services.CosService
+import com.github.chiefofstate.services.CosServiceApi
 import io.grpc.{Context, Metadata}
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import org.apache.pekko.http.scaladsl.server.Directives._
@@ -22,12 +22,12 @@ import scala.util.{Failure, Success}
 /**
  * HTTP routes for ChiefOfState service
  *
- * @param cosService the underlying CosService that handles commands
+ * @param cosService the underlying CosServiceApi that handles commands
  * @param writeSideConfig write side configuration for header propagation
  * @param ec execution context
  */
 class HttpRoutes(
-    cosService: CosService,
+    cosService: CosServiceApi,
     writeSideConfig: WriteSideConfig
 )(implicit ec: ExecutionContext)
     extends JsonSupport {

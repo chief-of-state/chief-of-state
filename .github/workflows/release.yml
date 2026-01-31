@@ -7,17 +7,41 @@ on:
     tags:
       - 'v*'
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
 
       - uses: nelonoel/branch-name@v1.0.1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - name: Install sbt
+        run: |
+          SBT_VERSION=1.11.7
+          curl -fsL "https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz" | sudo tar xfz - -C /usr/share
+          sudo ln -sf /usr/share/sbt/bin/sbt /usr/local/bin/sbt
+          sbt sbtVersion
+
+      - name: Build stage
+        run: sbt stage
+
+      - name: Create Version
+        id: version
+        run: |
+          # Strip git ref prefix and "v" from tag (e.g. refs/tags/v1.2.3 -> 1.2.3)
+          VERSION="${{ github.ref_name }}"
+          [[ "$VERSION" == v* ]] && VERSION="${VERSION#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Docker Login
         env:
@@ -26,32 +50,11 @@ jobs:
           DOCKER_PASS: ${{ secrets.GITHUB_TOKEN }}
         run: docker login $DOCKER_REGISTRY --username "$DOCKER_USER" --password "$DOCKER_PASS"
 
-      - name: Install earthly
-        uses: earthly/actions-setup@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: 0.8.1
-
-      - name: Earthly Version
-        run: earthly --version
-
-      - name: Create Version
-        id: version
-        run: |
-          # TODO: find a better way to version from tags
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-          # set to output var
-          echo ::set-output name=VERSION::${VERSION}
-
-      - name: Build
+      - name: Build and push Docker image
         env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          EARTHLY_SECRETS: "CODECOV_TOKEN"
-          EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH,VERSION"
-          FORCE_COLOR: 1
-          COMMIT_HASH: ${{ github.sha }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/chief-of-state
           VERSION: ${{ steps.version.outputs.VERSION }}
-        run: earthly -P --ci --push +release
+        run: |
+          docker build -t $IMAGE:$VERSION -t $IMAGE:latest .
+          docker push $IMAGE:$VERSION
+          docker push $IMAGE:latest

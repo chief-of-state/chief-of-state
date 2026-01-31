@@ -36,7 +36,8 @@ class CosService(
 )(implicit
     val askTimeout: Timeout,
     ec: ExecutionContext
-) extends ChiefOfStateServiceGrpc.ChiefOfStateService {
+) extends ChiefOfStateServiceGrpc.ChiefOfStateService
+    with CosServiceApi {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 

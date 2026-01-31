@@ -36,20 +36,22 @@ class BootConfigSpec extends BaseSpec {
     }
 
     "read the env var" in {
-      val env = new EnvironmentVariables()
-      env.set(BootConfig.DEPLOYMENT_MODE, BootConfig.DEPLOYMENT_MODE_K8S.key).setup()
-      BootConfig.getDeploymentMode shouldBe BootConfig.DEPLOYMENT_MODE_K8S
-      env.teardown()
+      new EnvironmentVariables()
+        .set(BootConfig.DEPLOYMENT_MODE, BootConfig.DEPLOYMENT_MODE_K8S.key)
+        .execute(() => {
+          BootConfig.getDeploymentMode shouldBe BootConfig.DEPLOYMENT_MODE_K8S
+        })
     }
   }
 
   ".get" should {
     "run e2e" in {
-      val env = new EnvironmentVariables()
-      env.set(BootConfig.DEPLOYMENT_MODE, BootConfig.DEPLOYMENT_MODE_DOCKER.key).setup()
-      val config: Config = BootConfig.get()
-      config.getString("deployment-mode") shouldBe "docker"
-      env.teardown()
+      new EnvironmentVariables()
+        .set(BootConfig.DEPLOYMENT_MODE, BootConfig.DEPLOYMENT_MODE_DOCKER.key)
+        .execute(() => {
+          val config: Config = BootConfig.get()
+          config.getString("deployment-mode") shouldBe "docker"
+        })
     }
   }
 }

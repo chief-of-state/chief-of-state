@@ -51,6 +51,9 @@ class BaseActorSpec(testKit: ActorTestKit) extends ActorTestKitBase(testKit) wit
    * Shuts down the ActorTestKit. If override be sure to call super.afterAll
    * or shut down the testkit explicitly with `testKit.shutdownTestKit()`.
    */
-  override protected def afterAll(): Unit =
+  override protected def afterAll(): Unit = {
+    // Small delay so sbt's forked test harness can finish reading results before shutdown
+    Thread.sleep(100)
     testKit.shutdownTestKit()
+  }
 }

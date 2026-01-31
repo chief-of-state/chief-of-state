@@ -46,22 +46,3 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
-
-      - name: Build stage
-        run: sbt stage
-
-      - name: Docker Login
-        env:
-          DOCKER_REGISTRY: ghcr.io
-          DOCKER_USER: ${{ github.actor }}
-          DOCKER_PASS: ${{ secrets.GITHUB_TOKEN }}
-        run: docker login $DOCKER_REGISTRY --username "$DOCKER_USER" --password "$DOCKER_PASS"
-
-      - name: Build and push Docker image
-        env:
-          IMAGE: ghcr.io/${{ github.repository_owner }}/chief-of-state
-          TAG: ${{ github.sha }}
-        run: |
-          docker build -t $IMAGE:$TAG -t $IMAGE:latest .
-          docker push $IMAGE:$TAG
-          docker push $IMAGE:latest

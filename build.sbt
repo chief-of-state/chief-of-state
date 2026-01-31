@@ -1,5 +1,7 @@
-test / parallelExecution := false
+Test / parallelExecution := false
 Test / fork              := true
+// Prevent race in forked test harness (EOFException) when forked JVM exits
+testForkedParallel       := false
 
 lazy val root: Project = project
   .in(file("."))
