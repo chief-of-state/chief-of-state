@@ -7,6 +7,8 @@
 package com.github.chiefofstate.services
 
 import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Scheduler
+import org.apache.pekko.actor.typed.scaladsl.AskPattern.schedulerFromActorSystem
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.cluster.sharding.typed.javadsl.{ClusterSharding => ClusterShardingJava}
 import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef, EntityTypeKey}
@@ -21,8 +23,17 @@ import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
 import com.github.chiefofstate.protobuf.v1.service.{
   ChiefOfStateServiceGrpc,
   GetStateRequest,
-  ProcessCommandRequest
+  ProcessCommandRequest,
+  SubscribeAllRequest,
+  SubscribeAllResponse,
+  SubscribeRequest,
+  SubscribeResponse,
+  UnsubscribeAllRequest,
+  UnsubscribeAllResponse,
+  UnsubscribeRequest,
+  UnsubscribeResponse
 }
+import com.github.chiefofstate.subscription.{EventPublisher, SubscriptionGuardian, TopicRegistry}
 import com.github.chiefofstate.serialization.{Message, SendReceive}
 import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
@@ -33,9 +44,10 @@ import com.google.rpc.status.Status
 import io.grpc.Status.Code
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.grpc.protobuf.StatusProto
-import io.grpc.stub.MetadataUtils
+import io.grpc.stub.{MetadataUtils, StreamObserver}
 import io.grpc.{ManagedChannel, Metadata, StatusException}
 
+import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext}
@@ -69,8 +81,9 @@ class CosServiceSpec extends BaseActorSpec(s"""
   val actorSystem: ActorSystem[Nothing] = testKit.system
   val replyTimeout: FiniteDuration      = FiniteDuration(1, TimeUnit.SECONDS)
 
-  // Provide implicit ExecutionContext for CosService
+  // Provide implicit ExecutionContext and Scheduler for CosService
   implicit val ec: ExecutionContext = actorSystem.executionContext
+  implicit val scheduler: Scheduler = schedulerFromActorSystem(actorSystem)
 
   val writeSideConfig: WriteSideConfig = WriteSideConfig(
     protocol = "grpc",
@@ -90,7 +103,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
   ".processCommand" should {
     "require entity ID" in {
       val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
-      val impl                             = new CosService(clusterSharding, writeSideConfig)
+      val impl = new CosService(clusterSharding, writeSideConfig)(None, None)
 
       val request = ProcessCommandRequest(entityId = "")
 
@@ -121,7 +134,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CosService(clusterSharding, writeSideConfig)
+      val impl = new CosService(clusterSharding, writeSideConfig)(None, None)
       // call method
       val request =
         ProcessCommandRequest()
@@ -168,7 +181,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CosService(clusterSharding, customWriteConfig)
+      val impl = new CosService(clusterSharding, customWriteConfig)(None, None)
       // bind service and intercept headers
       val serverName: String = InProcessServerBuilder.generateName();
       val service            = ChiefOfStateServiceGrpc.bindService(impl, ExecutionContext.global)
@@ -225,7 +238,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CosService(clusterSharding, writeSideConfig)
+      val impl = new CosService(clusterSharding, writeSideConfig)(None, None)
       // call method
       val request    = ProcessCommandRequest().withEntityId(entityId)
       val sendFuture = impl.processCommand(request)
@@ -250,7 +263,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
   ".getState" should {
     "require entity ID" in {
       val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
-      val impl                             = new CosService(clusterSharding, writeSideConfig)
+      val impl = new CosService(clusterSharding, writeSideConfig)(None, None)
 
       val request = GetStateRequest(entityId = "")
       val actualErr = intercept[StatusException] {
@@ -280,7 +293,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CosService(clusterSharding, writeSideConfig)
+      val impl = new CosService(clusterSharding, writeSideConfig)(None, None)
       // call method
       val request    = GetStateRequest().withEntityId(entityId)
       val sendFuture = impl.getState(request)
@@ -316,7 +329,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
       val testEntityRef: EntityRef[SendReceive] = TestEntityRef(typeKey, entityId, mockedEntity.ref)
       val clusterSharding                       = getClusterShard(testEntityRef)
       // instantiate the service
-      val impl = new CosService(clusterSharding, writeSideConfig)
+      val impl = new CosService(clusterSharding, writeSideConfig)(None, None)
       // call method
       val request    = GetStateRequest().withEntityId(entityId)
       val sendFuture = impl.getState(request)
@@ -335,6 +348,217 @@ class CosServiceSpec extends BaseActorSpec(s"""
         Await.result(sendFuture, Duration.Inf)
       }
       Util.toRpcStatus(actualError.getStatus) shouldBe errorStatus
+    }
+  }
+
+  def streamObserverCapturingError[T](errorRef: AtomicReference[Throwable]): StreamObserver[T] =
+    new StreamObserver[T] {
+      override def onNext(value: T): Unit      = ()
+      override def onError(t: Throwable): Unit = errorRef.set(t)
+      override def onCompleted(): Unit         = ()
+    }
+
+  ".subscribe" should {
+    "call onError(UNIMPLEMENTED) when subscription is not enabled" in {
+      val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
+      val impl     = new CosService(clusterSharding, writeSideConfig)(None, None)
+      val errorRef = new AtomicReference[Throwable](null)
+      val observer = streamObserverCapturingError[SubscribeResponse](errorRef)
+
+      impl.subscribe(SubscribeRequest(entityId = "entity-1"), observer)
+
+      val err = errorRef.get
+      err should not be null
+      err.asInstanceOf[StatusException].getStatus.getCode shouldBe Code.UNIMPLEMENTED
+      err.asInstanceOf[StatusException].getStatus.getDescription should include(
+        "Subscription is not enabled"
+      )
+    }
+    "call onError(INVALID_ARGUMENT) when entity_id is empty" in {
+      val dummyGuardian      = testKit.spawn(Behaviors.ignore[SubscriptionGuardian.Command])
+      val dummyTopicRegistry = testKit.spawn(Behaviors.ignore[TopicRegistry.Command])
+      val clusterSharding    = mock[FakeClusterSharding]
+      val impl = new CosService(clusterSharding, writeSideConfig)(
+        Some(dummyGuardian),
+        Some(dummyTopicRegistry)
+      )
+      val errorRef = new AtomicReference[Throwable](null)
+      val observer = streamObserverCapturingError[SubscribeResponse](errorRef)
+
+      impl.subscribe(SubscribeRequest(entityId = ""), observer)
+
+      val err = errorRef.get
+      err should not be null
+      err.asInstanceOf[StatusException].getStatus.getCode shouldBe Code.INVALID_ARGUMENT
+      err.asInstanceOf[StatusException].getStatus.getDescription shouldBe "entity_id is required"
+    }
+    "send SpawnStreamSetup to guardian when subscription is enabled" in {
+      val guardianProbe      = testKit.createTestProbe[SubscriptionGuardian.Command]()
+      val dummyTopicRegistry = testKit.spawn(Behaviors.ignore[TopicRegistry.Command])
+      val clusterSharding    = mock[FakeClusterSharding]
+      val impl = new CosService(clusterSharding, writeSideConfig)(
+        Some(guardianProbe.ref),
+        Some(dummyTopicRegistry)
+      )
+      val observer =
+        streamObserverCapturingError[SubscribeResponse](new AtomicReference[Throwable](null))
+
+      impl.subscribe(
+        SubscribeRequest(entityId = "entity-1", subscriptionId = "my-sub-id"),
+        observer
+      )
+
+      val cmd = guardianProbe.receiveMessage()
+      cmd match {
+        case s: SubscriptionGuardian.SpawnStreamSetup =>
+          s.subscriptionId shouldBe "my-sub-id"
+          s.topicName shouldBe EventPublisher.EntityEventsTopicPrefix + "entity-1"
+        case _ => fail("expected SpawnStreamSetup")
+      }
+    }
+  }
+
+  ".subscribeAll" should {
+    "call onError(UNIMPLEMENTED) when subscription is not enabled" in {
+      val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
+      val impl     = new CosService(clusterSharding, writeSideConfig)(None, None)
+      val errorRef = new AtomicReference[Throwable](null)
+      val observer = streamObserverCapturingError[SubscribeAllResponse](errorRef)
+
+      impl.subscribeAll(SubscribeAllRequest(), observer)
+
+      val err = errorRef.get
+      err should not be null
+      err.asInstanceOf[StatusException].getStatus.getCode shouldBe Code.UNIMPLEMENTED
+      err.asInstanceOf[StatusException].getStatus.getDescription should include(
+        "Subscription is not enabled"
+      )
+    }
+    "send SpawnStreamSetup to guardian when subscription is enabled" in {
+      val guardianProbe   = testKit.createTestProbe[SubscriptionGuardian.Command]()
+      val clusterSharding = mock[FakeClusterSharding]
+      val impl = new CosService(clusterSharding, writeSideConfig)(Some(guardianProbe.ref), None)
+      val observer =
+        streamObserverCapturingError[SubscribeAllResponse](new AtomicReference[Throwable](null))
+
+      impl.subscribeAll(
+        SubscribeAllRequest(subscriptionId = "all-sub-id"),
+        observer
+      )
+
+      val cmd = guardianProbe.receiveMessage()
+      cmd match {
+        case s: SubscriptionGuardian.SpawnStreamSetup =>
+          s.subscriptionId shouldBe "all-sub-id"
+          s.topicName shouldBe EventPublisher.AllEventsTopicName
+        case _ => fail("expected SpawnStreamSetup")
+      }
+    }
+  }
+
+  ".unsubscribe" should {
+    "return UNIMPLEMENTED when subscription is not enabled" in {
+      val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
+      val impl    = new CosService(clusterSharding, writeSideConfig)(None, None)
+      val request = UnsubscribeRequest(subscriptionId = "sub-1")
+
+      val actualErr = intercept[StatusException] {
+        Await.result(impl.unsubscribe(request), Duration.Inf)
+      }
+
+      actualErr.getStatus.getCode shouldBe Code.UNIMPLEMENTED
+      actualErr.getStatus.getDescription should include("Subscription is not enabled")
+    }
+    "return INVALID_ARGUMENT when subscription_id is empty" in {
+      val fakeGuardian = testKit.spawn(
+        Behaviors.receiveMessage[SubscriptionGuardian.Command] {
+          case SubscriptionGuardian.Unsubscribe(_, replyTo) =>
+            replyTo ! UnsubscribeResponse(subscriptionId = "")
+            Behaviors.same
+          case _ => Behaviors.same
+        }
+      )
+      val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
+      val impl    = new CosService(clusterSharding, writeSideConfig)(Some(fakeGuardian), None)
+      val request = UnsubscribeRequest(subscriptionId = "")
+
+      val actualErr = intercept[StatusException] {
+        Await.result(impl.unsubscribe(request), Duration.Inf)
+      }
+
+      actualErr.getStatus.getCode shouldBe Code.INVALID_ARGUMENT
+      actualErr.getStatus.getDescription shouldBe "subscription_id is required"
+    }
+    "return UnsubscribeResponse when subscription is enabled" in {
+      val subId = "sub-123"
+      val fakeGuardian = testKit.spawn(
+        Behaviors.receiveMessage[SubscriptionGuardian.Command] {
+          case SubscriptionGuardian.Unsubscribe(id, replyTo) =>
+            replyTo ! UnsubscribeResponse(subscriptionId = id)
+            Behaviors.same
+          case _ => Behaviors.same
+        }
+      )
+      val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
+      val impl    = new CosService(clusterSharding, writeSideConfig)(Some(fakeGuardian), None)
+      val request = UnsubscribeRequest(subscriptionId = subId)
+
+      val response = Await.result(impl.unsubscribe(request), Duration.Inf)
+
+      response.subscriptionId shouldBe subId
+    }
+  }
+
+  ".unsubscribeAll" should {
+    "return UNIMPLEMENTED when subscription is not enabled" in {
+      val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
+      val impl    = new CosService(clusterSharding, writeSideConfig)(None, None)
+      val request = UnsubscribeAllRequest(subscriptionId = "sub-all-1")
+
+      val actualErr = intercept[StatusException] {
+        Await.result(impl.unsubscribeAll(request), Duration.Inf)
+      }
+
+      actualErr.getStatus.getCode shouldBe Code.UNIMPLEMENTED
+      actualErr.getStatus.getDescription should include("Subscription is not enabled")
+    }
+    "return INVALID_ARGUMENT when subscription_id is empty" in {
+      val fakeGuardian = testKit.spawn(
+        Behaviors.receiveMessage[SubscriptionGuardian.Command] {
+          case SubscriptionGuardian.Unsubscribe(_, replyTo) =>
+            replyTo ! UnsubscribeResponse(subscriptionId = "")
+            Behaviors.same
+          case _ => Behaviors.same
+        }
+      )
+      val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
+      val impl    = new CosService(clusterSharding, writeSideConfig)(Some(fakeGuardian), None)
+      val request = UnsubscribeAllRequest(subscriptionId = "")
+
+      val actualErr = intercept[StatusException] {
+        Await.result(impl.unsubscribeAll(request), Duration.Inf)
+      }
+
+      actualErr.getStatus.getCode shouldBe Code.INVALID_ARGUMENT
+      actualErr.getStatus.getDescription shouldBe "subscription_id is required"
+    }
+    "return UnsubscribeAllResponse when subscription is enabled" in {
+      val subId = "sub-all-456"
+      val fakeGuardian = testKit.spawn(
+        Behaviors.receiveMessage[SubscriptionGuardian.Command] {
+          case SubscriptionGuardian.Unsubscribe(id, replyTo) =>
+            replyTo ! UnsubscribeResponse(subscriptionId = id)
+            Behaviors.same
+          case _ => Behaviors.same
+        }
+      )
+      val clusterSharding: ClusterSharding = mock[FakeClusterSharding]
+      val impl    = new CosService(clusterSharding, writeSideConfig)(Some(fakeGuardian), None)
+      val request = UnsubscribeAllRequest(subscriptionId = subId)
+
+      val response = Await.result(impl.unsubscribeAll(request), Duration.Inf)
+
+      response.subscriptionId shouldBe subId
     }
   }
 

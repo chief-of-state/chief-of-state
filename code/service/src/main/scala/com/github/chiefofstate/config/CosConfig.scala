@@ -30,13 +30,15 @@ final case class CosConfig(
     serverConfig: ServerConfig,
     grpcConfig: GrpcConfig,
     writeSideConfig: WriteSideConfig,
-    enableReadSide: Boolean
+    enableReadSide: Boolean,
+    enableSubscription: Boolean
 )
 
 object CosConfig {
-  private val serviceNameKey: String    = "chiefofstate.service-name"
-  private val askTimeoutKey: String     = "chiefofstate.ask-timeout"
-  private val enableReadSideKey: String = "chiefofstate.read-side.enabled"
+  private val serviceNameKey: String        = "chiefofstate.service-name"
+  private val askTimeoutKey: String         = "chiefofstate.ask-timeout"
+  private val enableReadSideKey: String     = "chiefofstate.read-side.enabled"
+  private val enableSubscriptionKey: String = "chiefofstate.subscription.enabled"
 
   /**
    * creates a new CosConfig instance with validation
@@ -67,7 +69,8 @@ object CosConfig {
       ServerConfig(config.getConfig("chiefofstate")),
       GrpcConfig(config),
       WriteSideConfig(config),
-      config.getBoolean(enableReadSideKey)
+      config.getBoolean(enableReadSideKey),
+      config.hasPath(enableSubscriptionKey) && config.getBoolean(enableSubscriptionKey)
     )
   }
 

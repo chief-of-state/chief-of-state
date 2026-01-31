@@ -8,6 +8,7 @@ package com.github.chiefofstate
 
 import com.github.chiefofstate.config.{CosConfig, SnapshotConfig}
 import com.github.chiefofstate.protobuf.v1.common.MetaData
+import com.github.chiefofstate.subscription.EventPublisher
 import com.github.chiefofstate.protobuf.v1.internal.{
   CommandReply,
   GetStateCommand,
@@ -54,6 +55,8 @@ object Entity {
    * @param cosConfig the main config
    * @param commandHandler the remote command handler
    * @param eventHandler the remote events handler handler
+   * @param protosValidator the proto validator
+   * @param eventPublisherRef optional ref to publish events for subscriptions (when subscription is enabled)
    * @return an pekko behaviour
    */
   def apply(
@@ -62,7 +65,8 @@ object Entity {
       cosConfig: CosConfig,
       commandHandler: WriteSideCommandHandler,
       eventHandler: WriteSideEventHandler,
-      protosValidator: Validator
+      protosValidator: Validator,
+      eventPublisherRef: Option[ActorRef[EventPublisher.Command]] = None
   ): Behavior[SendReceive] = {
     Behaviors.setup { context =>
       {
@@ -71,7 +75,15 @@ object Entity {
             persistenceId,
             emptyState = initialState(persistenceId),
             (state, command) =>
-              handleCommand(context, state, command, commandHandler, eventHandler, protosValidator),
+              handleCommand(
+                context,
+                state,
+                command,
+                commandHandler,
+                eventHandler,
+                protosValidator,
+                eventPublisherRef
+              ),
             (state, event) => handleEvent(state, event)
           )
           .withTagger(_ => Set(shardIndex.toString))
@@ -98,7 +110,8 @@ object Entity {
       aggregateCommand: SendReceive,
       commandHandler: WriteSideCommandHandler,
       eventHandler: WriteSideEventHandler,
-      protosValidator: Validator
+      protosValidator: Validator,
+      eventPublisherRef: Option[ActorRef[EventPublisher.Command]] = None
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     val entityId       = aggregateState.getMeta.entityId
     val revisionNumber = aggregateState.getMeta.revisionNumber
@@ -119,7 +132,8 @@ object Entity {
               commandHandler,
               eventHandler,
               protosValidator,
-              remoteCommand.data
+              remoteCommand.data,
+              eventPublisherRef
             )
 
           case SendCommand.Message.GetStateCommand(getStateCommand) =>
@@ -182,7 +196,8 @@ object Entity {
       commandHandler: WriteSideCommandHandler,
       eventHandler: WriteSideEventHandler,
       protosValidator: Validator,
-      data: Map[String, com.google.protobuf.any.Any]
+      data: Map[String, com.google.protobuf.any.Any],
+      eventPublisherRef: Option[ActorRef[EventPublisher.Command]] = None
   ): ReplyEffect[EventWrapper, StateWrapper] = {
 
     val handlerOutput: Try[Response] = commandHandler
@@ -243,7 +258,7 @@ object Entity {
         Effect.reply(replyTo)(CommandReply().withState(priorState))
 
       case Success(NewState(event, newState, eventMeta)) =>
-        persistEventAndReply(event, newState, eventMeta, replyTo)
+        persistEventAndReply(event, newState, eventMeta, replyTo, eventPublisherRef)
 
       case Failure(e: StatusException) =>
         // reply with the error status
@@ -271,17 +286,21 @@ object Entity {
       event: any.Any,
       resultingState: any.Any,
       eventMeta: MetaData,
-      replyTo: ActorRef[CommandReply]
+      replyTo: ActorRef[CommandReply],
+      eventPublisherRef: Option[ActorRef[EventPublisher.Command]] = None
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     log.debug(
       s"Persisting event for entity=${eventMeta.entityId}, revision=${eventMeta.revisionNumber}"
     )
 
+    val eventWrapper =
+      EventWrapper().withEvent(event).withResultingState(resultingState).withMeta(eventMeta)
+
     Effect
-      .persist(
-        EventWrapper().withEvent(event).withResultingState(resultingState).withMeta(eventMeta)
-      )
+      .persist(eventWrapper)
       .thenReply(replyTo)((updatedState: StateWrapper) => {
+        eventPublisherRef
+          .foreach(ref => ref ! EventPublisher.Publish(eventMeta.entityId, eventWrapper))
         log.debug(s"Event persisted successfully for entity=${eventMeta.entityId}")
         CommandReply().withState(updatedState)
       })
