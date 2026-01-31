@@ -1,4 +1,4 @@
-# .github/workflows/branch.yml
+# .github/workflows/pr.yml
 
 name: PR
 
@@ -8,39 +8,38 @@ on:
       - '**/README.md'
       - '**/readme.md'
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
 
       - uses: nelonoel/branch-name@v1.0.1
 
-      - name: Docker Login
-        env:
-          DOCKER_REGISTRY: ghcr.io
-          DOCKER_USER: ${{ github.actor }}
-          DOCKER_PASS: ${{ secrets.GITHUB_TOKEN }}
-        run: docker login $DOCKER_REGISTRY --username "$DOCKER_USER" --password "$DOCKER_PASS"
-
-      - name: Install earthly
-        uses: earthly/actions-setup@v1
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: 0.8.1
+          distribution: temurin
+          java-version: 21
+          cache: sbt
 
-      - name: Earthly Version
-        run: earthly --version
+      - name: Install sbt
+        run: |
+          SBT_VERSION=1.11.7
+          curl -fsL "https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz" | sudo tar xfz - -C /usr/share
+          sudo ln -sf /usr/share/sbt/bin/sbt /usr/local/bin/sbt
+          sbt sbtVersion
 
-      - name: Build
+      - name: Run tests with coverage
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          EARTHLY_SECRETS: "CODECOV_TOKEN"
-          COMMIT_HASH: ${{ github.sha }}
-          EARTHLY_BUILD_ARGS: "BRANCH_NAME,COMMIT_HASH"
-          FORCE_COLOR: 1
-        run: earthly -P --ci +test-and-build
+        run: sbt clean coverage test coverageReport coverageAggregate
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
