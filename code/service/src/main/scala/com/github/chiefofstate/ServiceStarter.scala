@@ -15,6 +15,7 @@ import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.Chief
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.readside.{ReadSideManager, ReadSideServiceStarter}
 import com.github.chiefofstate.services.{CosReadSideManagerService, CosService}
+import com.github.chiefofstate.subscription.{EventPublisher, SubscriptionGuardian, TopicRegistry}
 import com.github.chiefofstate.utils.{Netty, Validator, Util}
 import com.github.chiefofstate.writeside.{
   CommandHandler,
@@ -27,7 +28,7 @@ import com.github.chiefofstate.writeside.{
 import com.typesafe.config.Config
 import io.grpc._
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorSystem, Behavior}
+import org.apache.pekko.actor.typed.{ActorRef, ActorSystem, Behavior}
 import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.pattern.CircuitBreaker
@@ -143,6 +144,30 @@ object ServiceStarter {
           val eventsAndStateProtoValidation: Validator =
             Validator(cosConfig.writeSideConfig)
 
+          // subscription actors (when subscription is enabled)
+          val (eventPublisherRefOpt, subscriptionGuardianRefOpt, topicRegistryRefOpt) =
+            if (cosConfig.enableSubscription) {
+              log.info(
+                "Subscription enabled: starting TopicRegistry, EventPublisher, SubscriptionGuardian"
+              )
+              val topicRegistryRef =
+                context.spawn(TopicRegistry(), "CosTopicRegistry")
+              val eventPublisherRef =
+                context.spawn(EventPublisher(), "CosEventPublisher")
+              val subscriptionGuardianRef =
+                context.spawn(
+                  SubscriptionGuardian(topicRegistryRef),
+                  "CosSubscriptionGuardian"
+                )
+              (
+                Some(eventPublisherRef),
+                Some(subscriptionGuardianRef),
+                Some(topicRegistryRef)
+              )
+            } else {
+              (None, None, None)
+            }
+
           // initialize the sharding extension
           val sharding: ClusterSharding = ClusterSharding(context.system)
 
@@ -154,7 +179,8 @@ object ServiceStarter {
               cosConfig,
               remoteCommandHandler,
               remoteEventHandler,
-              eventsAndStateProtoValidation
+              eventsAndStateProtoValidation,
+              eventPublisherRefOpt
             )
           })
 
@@ -166,7 +192,14 @@ object ServiceStarter {
           startReadSides(context.system, cosConfig, readSideManager)
 
           // start the service
-          startServices(context.system, sharding, cosConfig, readSideManager)
+          startServices(
+            context.system,
+            sharding,
+            cosConfig,
+            readSideManager,
+            subscriptionGuardianRefOpt,
+            topicRegistryRefOpt
+          )
 
           Behaviors.same
 
@@ -188,22 +221,30 @@ object ServiceStarter {
    *
    * @param clusterSharding the akka cluster sharding
    * @param cosConfig the cos specific configuration
+   * @param subscriptionGuardianRefOpt optional subscription guardian (when subscription is enabled)
+   * @param topicRegistryRefOpt optional topic registry (when subscription is enabled)
    */
   private def startServices(
       system: ActorSystem[_],
       clusterSharding: ClusterSharding,
       cosConfig: CosConfig,
-      readSideManager: ReadSideManager
+      readSideManager: ReadSideManager,
+      subscriptionGuardianRefOpt: Option[ActorRef[SubscriptionGuardian.Command]] = None,
+      topicRegistryRefOpt: Option[ActorRef[TopicRegistry.Command]] = None
   ): ShutdownHookThread = {
-    implicit val askTimeout: Timeout = cosConfig.askTimeout
-    implicit val sys: ActorSystem[_] = system
+    implicit val askTimeout: Timeout                               = cosConfig.askTimeout
+    implicit val sys: ActorSystem[_]                               = system
+    implicit val scheduler: org.apache.pekko.actor.typed.Scheduler = system.scheduler
 
     // create the traced execution context for grpc
     val grpcEc: ExecutionContext = system.executionContext
 
     // instantiate the grpc service, bind to the execution context
     val coSService: CosService =
-      new CosService(clusterSharding, cosConfig.writeSideConfig)(askTimeout, grpcEc)
+      new CosService(clusterSharding, cosConfig.writeSideConfig)(
+        subscriptionGuardianRefOpt,
+        topicRegistryRefOpt
+      )(askTimeout, grpcEc, scheduler)
 
     // create an instance of the read side state manager service
     val readSideManagerService = new CosReadSideManagerService(readSideManager)(grpcEc)

@@ -10,32 +10,62 @@ import com.github.chiefofstate.Entity
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.common.Header
+import com.github.chiefofstate.protobuf.v1.internal.*
 import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
-import com.github.chiefofstate.protobuf.v1.internal._
+import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
-import com.github.chiefofstate.protobuf.v1.service._
+import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc
+import com.github.chiefofstate.protobuf.v1.service.GetStateRequest
+import com.github.chiefofstate.protobuf.v1.service.GetStateResponse
+import com.github.chiefofstate.protobuf.v1.service.ProcessCommandRequest
+import com.github.chiefofstate.protobuf.v1.service.ProcessCommandResponse
+import com.github.chiefofstate.protobuf.v1.service.SubscribeAllRequest
+import com.github.chiefofstate.protobuf.v1.service.SubscribeAllResponse
+import com.github.chiefofstate.protobuf.v1.service.SubscribeRequest
+import com.github.chiefofstate.protobuf.v1.service.SubscribeResponse
+import com.github.chiefofstate.protobuf.v1.service.UnsubscribeAllRequest
+import com.github.chiefofstate.protobuf.v1.service.UnsubscribeAllResponse
+import com.github.chiefofstate.protobuf.v1.service.UnsubscribeRequest
+import com.github.chiefofstate.protobuf.v1.service.UnsubscribeResponse
 import com.github.chiefofstate.serialization.SendReceive
+import com.github.chiefofstate.subscription.EventPublisher
+import com.github.chiefofstate.subscription.SubscriptionGuardian
+import com.github.chiefofstate.subscription.TopicRegistry
 import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto
+import io.grpc.Metadata
+import io.grpc.Status
+import io.grpc.StatusException
 import io.grpc.protobuf.StatusProto
-import io.grpc.{Metadata, Status, StatusException}
+import io.grpc.stub.StreamObserver
 import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.apache.pekko.actor.typed.ActorRef
-import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
+import org.apache.pekko.actor.typed.Scheduler
+import org.apache.pekko.actor.typed.scaladsl.AskPattern.*
+import org.apache.pekko.cluster.sharding.typed.scaladsl.ClusterSharding
+import org.apache.pekko.cluster.sharding.typed.scaladsl.EntityRef
 import org.apache.pekko.util.Timeout
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import scalapb.GeneratedMessage
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 class CosService(
     clusterSharding: ClusterSharding,
     writeSideConfig: WriteSideConfig
+)(
+    subscriptionGuardianRef: Option[ActorRef[SubscriptionGuardian.Command]] = None,
+    topicRegistryRef: Option[ActorRef[TopicRegistry.Command]] = None
 )(implicit
     val askTimeout: Timeout,
-    ec: ExecutionContext
+    ec: ExecutionContext,
+    scheduler: Scheduler
 ) extends ChiefOfStateServiceGrpc.ChiefOfStateService
     with CosServiceApi {
 
@@ -126,6 +156,170 @@ class CosService(
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
       .flatMap((value: CommandReply) => Future.fromTry(CosService.handleCommandReply(value)))
       .map(c => GetStateResponse().withState(c.getState).withMeta(c.getMeta))
+  }
+
+  /**
+   * Used to register a subscription to live stream of events for a given entity
+   */
+  @WithSpan(value = "CosService.subscribe")
+  override def subscribe(
+      request: SubscribeRequest,
+      responseObserver: StreamObserver[SubscribeResponse]
+  ): Unit =
+    (subscriptionGuardianRef, topicRegistryRef) match {
+      case (Some(guardianRef), Some(_)) =>
+        val entityId = request.entityId
+        if (entityId.isEmpty) {
+          responseObserver.onError(
+            Status.INVALID_ARGUMENT.withDescription("entity_id is required").asException()
+          )
+        } else {
+          val subscriptionId = subscriptionIdOrNew(request.subscriptionId)
+          spawnStreamHandler(
+            subscriptionId,
+            EventPublisher.EntityEventsTopicPrefix + entityId,
+            responseObserver,
+            toSubscribeResponse(subscriptionId),
+            guardianRef
+          )
+        }
+      case _ =>
+        responseObserver.onError(
+          Status.UNIMPLEMENTED
+            .withDescription("Subscription is not enabled; configure subscription to use streaming")
+            .asException()
+        )
+    }
+
+  /**
+   * Used to subscribe to live streams of events across all entities
+   */
+  @WithSpan(value = "CosService.subscribeAll")
+  override def subscribeAll(
+      request: SubscribeAllRequest,
+      responseObserver: StreamObserver[SubscribeAllResponse]
+  ): Unit =
+    subscriptionGuardianRef match {
+      case Some(guardianRef) =>
+        val subscriptionId = subscriptionIdOrNew(request.subscriptionId)
+        spawnStreamHandler(
+          subscriptionId,
+          EventPublisher.AllEventsTopicName,
+          responseObserver,
+          toSubscribeAllResponse(subscriptionId),
+          guardianRef
+        )
+      case None =>
+        responseObserver.onError(
+          Status.UNIMPLEMENTED
+            .withDescription("Subscription is not enabled; configure subscription to use streaming")
+            .asException()
+        )
+    }
+
+  /**
+   * Used to unsubscribe from live streams of events for a given entity
+   */
+  @WithSpan(value = "CosService.unsubscribe")
+  override def unsubscribe(request: UnsubscribeRequest): Future[UnsubscribeResponse] =
+    subscriptionGuardianRef match {
+      case Some(guardianRef) =>
+        if (request.subscriptionId.isEmpty) {
+          Future.failed(
+            new StatusException(
+              Status.INVALID_ARGUMENT.withDescription("subscription_id is required")
+            )
+          )
+        } else {
+          guardianRef.ask[UnsubscribeResponse](replyTo =>
+            SubscriptionGuardian.Unsubscribe(request.subscriptionId, replyTo)
+          )(askTimeout, scheduler)
+        }
+      case None =>
+        Future.failed(
+          new StatusException(
+            Status.UNIMPLEMENTED
+              .withDescription(
+                "Subscription is not enabled; configure subscription to use streaming"
+              )
+          )
+        )
+    }
+
+  /**
+   * Used to unsubscribe from live streams of events across all entities
+   */
+  @WithSpan(value = "CosService.unsubscribeAll")
+  override def unsubscribeAll(request: UnsubscribeAllRequest): Future[UnsubscribeAllResponse] =
+    subscriptionGuardianRef match {
+      case Some(guardianRef) =>
+        if (request.subscriptionId.isEmpty) {
+          Future.failed(
+            new StatusException(
+              Status.INVALID_ARGUMENT.withDescription("subscription_id is required")
+            )
+          )
+        } else {
+          guardianRef
+            .ask(replyTo => SubscriptionGuardian.Unsubscribe(request.subscriptionId, replyTo))(
+              askTimeout,
+              scheduler
+            )
+            .map(_ => UnsubscribeAllResponse(subscriptionId = request.subscriptionId))(ec)
+        }
+      case None =>
+        Future.failed(
+          new StatusException(
+            Status.UNIMPLEMENTED
+              .withDescription(
+                "Subscription is not enabled; configure subscription to use streaming"
+              )
+          )
+        )
+    }
+
+  private def subscriptionIdOrNew(fromRequest: String): String =
+    if (fromRequest.nonEmpty) fromRequest
+    else java.util.UUID.randomUUID().toString
+
+  private def toSubscribeResponse(subscriptionId: String)(
+      event: EventWrapper
+  ): SubscribeResponse =
+    SubscribeResponse(
+      subscriptionId = subscriptionId,
+      event = event.event,
+      resultingState = event.resultingState,
+      meta = event.meta
+    )
+
+  private def toSubscribeAllResponse(subscriptionId: String)(
+      event: EventWrapper
+  ): SubscribeAllResponse =
+    SubscribeAllResponse(
+      subscriptionId = subscriptionId,
+      event = event.event,
+      resultingState = event.resultingState,
+      meta = event.meta
+    )
+
+  private def spawnStreamHandler[T](
+      subscriptionId: String,
+      topicName: String,
+      responseObserver: StreamObserver[T],
+      toResponse: EventWrapper => T,
+      guardianRef: ActorRef[SubscriptionGuardian.Command]
+  ): Unit = {
+    val onEvent: EventWrapper => Unit = { event =>
+      try {
+        responseObserver.onNext(toResponse(event))
+      } catch {
+        case t: Throwable =>
+          log.warn("Failed to send event to stream, client may have disconnected", t)
+          try responseObserver.onError(t)
+          catch { case _: Throwable => }
+      }
+    }
+    guardianRef ! SubscriptionGuardian.SpawnStreamSetup(subscriptionId, topicName, onEvent)
   }
 }
 
