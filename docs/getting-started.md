@@ -4,7 +4,7 @@ This guide describes the anatomy of a typical Chief of State application and the
 
 ## 📦 Generating the Protos
 
-Chief of State defines its public interfaces as [gRPC](https://grpc.io/) services and objects as [Protobufs](https://developers.google.com/protocol-buffers) in `.proto` files. You'll need to generate these for your application language to interact with Chief of State and to implement the required write-handler and read-handler methods (more on those below).
+Chief of State defines its public interfaces as [gRPC](https://grpc.io/) services and objects as [protocol-buffers](https://developers.google.com/protocol-buffers) in `.proto` files. You'll need to generate these for your application language to interact with Chief of State and to implement the required write-handler and read-handler methods (more on those below).
 
 [The protos are on GitHub](https://github.com/chief-of-state/chief-of-state-protos)
 
