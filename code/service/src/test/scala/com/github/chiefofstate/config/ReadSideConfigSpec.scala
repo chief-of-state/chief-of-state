@@ -43,4 +43,69 @@ class ReadSideConfigSpec extends BaseSpec {
       readSideConfig.isValid should be(false)
     }
   }
+
+  "read side config protocol validation" should {
+    "accept grpc protocol" in {
+      val readSideConfig = ReadSideConfig(
+        readSideId = "read-side-1",
+        protocol = "grpc",
+        host = "localhost",
+        port = 50053
+      )
+      readSideConfig.isProtocolValid should be(true)
+      readSideConfig.isValid should be(true)
+    }
+
+    "accept http protocol" in {
+      val readSideConfig = ReadSideConfig(
+        readSideId = "read-side-1",
+        protocol = "http",
+        host = "localhost",
+        port = 8080
+      )
+      readSideConfig.isProtocolValid should be(true)
+      readSideConfig.isValid should be(true)
+    }
+
+    "accept case-insensitive protocol" in {
+      var readSideConfig = ReadSideConfig(
+        readSideId = "read-side-1",
+        protocol = "GRPC",
+        host = "localhost",
+        port = 50053
+      )
+      readSideConfig.isProtocolValid should be(true)
+
+      readSideConfig = ReadSideConfig(
+        readSideId = "read-side-1",
+        protocol = "HTTP",
+        host = "localhost",
+        port = 8080
+      )
+      readSideConfig.isProtocolValid should be(true)
+    }
+
+    "reject invalid protocol" in {
+      val readSideConfig = ReadSideConfig(
+        readSideId = "read-side-1",
+        protocol = "websocket",
+        host = "localhost",
+        port = 8080
+      )
+      readSideConfig.isProtocolValid should be(false)
+      readSideConfig.isValid should be(false)
+    }
+  }
+
+  "read side config with http protocol" should {
+    "be valid with host and port" in {
+      val readSideConfig = ReadSideConfig(
+        readSideId = "read-side-1",
+        protocol = "http",
+        host = "read-handler",
+        port = 8080
+      )
+      readSideConfig.isValid should be(true)
+    }
+  }
 }

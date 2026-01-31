@@ -77,15 +77,30 @@ class ReadSideServiceStarter(
           None
         }
 
-      // construct a remote gRPC read side client for this read side
-      // and register interceptors
-      val rpcClient: ReadSideHandlerServiceBlockingStub =
-        new ReadSideHandlerServiceBlockingStub(
-          Netty.channelBuilder(config.host, config.port, config.useTls).build
-        )
-      // instantiate a remote read side processor with the gRPC client
-      val remoteReadSideProcessor: HandlerImpl =
-        new HandlerImpl(config.readSideId, rpcClient, readSideCircuitBreaker)
+      // Create the appropriate handler based on protocol
+      val remoteReadSideProcessor: Handler = config.protocol.toLowerCase match {
+        case "grpc" =>
+          // construct a remote gRPC read side client for this read side
+          val rpcClient: ReadSideHandlerServiceBlockingStub =
+            new ReadSideHandlerServiceBlockingStub(
+              Netty.channelBuilder(config.host, config.port, config.useTls).build
+            )
+          // instantiate a remote read side processor with the gRPC client
+          new HandlerImpl(config.readSideId, rpcClient, readSideCircuitBreaker)
+
+        case "http" =>
+          // construct base URL from host, port, and useTls
+          val scheme  = if (config.useTls) "https" else "http"
+          val baseUrl = s"$scheme://${config.host}:${config.port}"
+          logger.info(s"Using HTTP handler for ${config.readSideId} at $baseUrl")
+          // instantiate an HTTP handler
+          new HttpHandlerImpl(config.readSideId, baseUrl, readSideCircuitBreaker)(system, ec)
+
+        case unknown =>
+          throw new IllegalArgumentException(
+            s"Unknown protocol '$unknown' for readside ${config.readSideId}. Must be 'grpc' or 'http'"
+          )
+      }
       // instantiate the read side projection with the remote processor
       val projection =
         new ReadSide(

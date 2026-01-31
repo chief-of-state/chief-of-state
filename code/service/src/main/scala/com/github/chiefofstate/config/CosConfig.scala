@@ -18,6 +18,7 @@ import scala.concurrent.duration.DurationInt
  * @param askTimeout the timeout needed by the aggreegate to reply when handling a command
  * @param snapshotConfig the snapshot configuration
  * @param shardConfig the events configuration
+ * @param serverConfig the server configuration (gRPC and/or HTTP)
  * @param grpcConfig the grpc config
  * @param writeSideConfig the commands/events handler config
  */
@@ -26,6 +27,7 @@ final case class CosConfig(
     askTimeout: Timeout,
     snapshotConfig: SnapshotConfig,
     shardConfig: ShardConfig,
+    serverConfig: ServerConfig,
     grpcConfig: GrpcConfig,
     writeSideConfig: WriteSideConfig,
     enableReadSide: Boolean
@@ -62,6 +64,7 @@ object CosConfig {
       Timeout(askTimeoutSeconds.seconds),
       SnapshotConfig(config),
       ShardConfig(config),
+      ServerConfig(config.getConfig("chiefofstate")),
       GrpcConfig(config),
       WriteSideConfig(config),
       config.getBoolean(enableReadSideKey)

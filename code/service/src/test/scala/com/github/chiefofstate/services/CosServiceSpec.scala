@@ -73,6 +73,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
   implicit val ec: ExecutionContext = actorSystem.executionContext
 
   val writeSideConfig: WriteSideConfig = WriteSideConfig(
+    protocol = "grpc",
     host = "",
     port = 0,
     useTls = false,

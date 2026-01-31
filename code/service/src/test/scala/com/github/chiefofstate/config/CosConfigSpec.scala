@@ -26,6 +26,9 @@ class CosConfigSpec extends BaseSpec {
               events {
                 tagname: "cos"
               }
+              server {
+                protocol = "grpc"
+              }
               grpc {
                 client {
                   deadline-timeout = 100
@@ -33,6 +36,12 @@ class CosConfigSpec extends BaseSpec {
                 server {
                   address = "0.0.0.0"
                   port = 9000
+                }
+              }
+              http {
+                server {
+                  address = "0.0.0.0"
+                  port = 9001
                 }
               }
               write-side {

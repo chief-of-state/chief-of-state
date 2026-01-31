@@ -1,119 +1,120 @@
-# Configuration options
+# ⚙️ Configuration Options
 
-This section describes the environment variables for configuration.
+This section describes the environment variables used to configure Chief of State.
 
-See the following deployment-specific guides for relevant configurations:
+See the deployment-specific guides for relevant configurations:
 
 - [Docker Deployment](./docker-deployment.md)
 - [Kubernetes Deployment](./kubernetes-deployment.md)
 
-### Global environment variables
+When using HTTP (`COS_SERVER_PROTOCOL` = `http` or `both`), see the [OpenAPI 3 spec](./openapi.yaml) for the HTTP API documentation.
 
-| environment variable              | description                                                                                                                                                       | default      |
+## 🌐 Global Environment Variables
+
+| Environment Variable              | Description                                                                                                                                                       | Default      |
 |-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| LOG_LEVEL                         | The possible values are: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_                                                                                         | DEBUG        |
-| LOG_STYLE                         | Logging format: _**STANDARD**_, _**SIMPLE**_, _**JSON**_                                                                                                          | _**JSON**_   |
-| COS_ADDRESS                       | container host                                                                                                                                                    | 0.0.0.0      |
-| COS_PORT                          | container port                                                                                                                                                    | 9000         |
-| COS_DEPLOYMENT_MODE               | "docker" or "kubernetes"                                                                                                                                          | "docker"     |
-| COS_DB_USER                       | journal, snapshot and read side offsets store username                                                                                                            | postgres     |
-| COS_DB_PASSWORD                   | journal, snapshot and read side offsets store password                                                                                                            | changeme     |
-| COS_DB_HOST                       | journal, snapshot and read side offsets store host                                                                                                                | localhost    |
-| COS_DB_PORT                       | journal, snapshot and read side offsets store port                                                                                                                | 5432         |
-| COS_DB_NAME                       | journal, snapshot and read side offsets store db name                                                                                                             | postgres     |
-| COS_DB_SCHEMA                     | journal, snapshot and read side offsets store db schema                                                                                                           | public       |
-| COS_DB_POOL_MAX_SIZE              | controls the maximum size that the pool is allowed to reach, including both idle and in-use connections. The default value should be ok for most apps.            | 5            |
-| COS_DB_POOL_MIN_IDLE_CONNECTIONS  | controls the minimum number of idle connections to maintain in the pool. The default value should be ok for most apps.                                            | 1            |
-| COS_DB_POOL_IDLE_TIMEOUT_MS       | controls the maximum amount of time in milliseconds that a connection is allowed to sit idle in the pool. The default value should be ok for most apps            | 60000        |
-| COS_DB_POOL_MAX_LIFETIME_MS       | controls the maximum lifetime of a connection in the pool. The default value should be ok for most apps.                                                          | 120000       |
-| COS_SNAPSHOT_FREQUENCY            | Save snapshots automatically every Number of Events                                                                                                               | 100          |
-| COS_DISABLE_SNAPSHOT              | Disable snapshots. The default value is `false`. Use this setting with care                                                                                       | false        |
-| COS_NUM_SNAPSHOTS_TO_RETAIN       | Number of Aggregate Snapshot to persist to disk for swift recovery                                                                                                | 2            |
-| COS_READ_SIDE_ENABLED             | turn on readside or not                                                                                                                                           | false        |
-| COS_READ_SIDE_BREAKER_ENABLED     | Enable circuit breaker for read-side gRPC calls. When open, event processing returns without calling the remote handler.                                          | false        |
-| COS_READ_SIDE_BREAKER_MAX_FAILURES | Maximum number of failures before opening the circuit (1–100 when enabled).                                                                                     | 5            |
-| COS_READ_SIDE_BREAKER_CALL_TIMEOUT | Timeout for each read-side gRPC call; use a duration (e.g. `10s`).                                                                                              | 10s          |
-| COS_READ_SIDE_BREAKER_RESET_TIMEOUT | Time before attempting to close an open circuit; use a duration (e.g. `1m`).                                                                                   | 1m           |
-| COS_ENCRYPTION_CLASS              | java class to use for encryption                                                                                                                                  | <none>       |
-| COS_WRITE_SIDE_HOST               | address of the gRPC writeSide handler service                                                                                                                     | <none>       |
-| COS_WRITE_SIDE_PORT               | port for the gRPC writeSide handler service                                                                                                                       | <none>       |
-| COS_WRITE_SIDE_USE_TLS            | use TLS for outbound gRPC calls to write side                                                                                                                     | false        |
-| COS_WRITE_SIDE_PROTO_VALIDATION   | enable validation of the handler service states and events proto message FQN. If not set to `true` the validation will be skipped.                                | false        |
-| COS_WRITE_SIDE_STATE_PROTOS       | handler service states proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values              | <none>       |
-| COS_WRITE_SIDE_EVENT_PROTOS       | handler service events proto message FQN (fully qualified typeUrl). Format: `packagename.messagename`. This will be a comma separated list of values              | <none>       |
-| COS_SERVICE_NAME                  | service name                                                                                                                                                      | chiefofstate |
-| COS_WRITE_SIDE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to write side handler                                                                                                            | <none>       |
-| COS_WRITE_PERSISTED_HEADERS       | CSV of gRPC headers to persist to journal (experimental)                                                                                                          | <none>       |
-| COS_WRITE_SIDE_BREAKER_ENABLED    | Enable circuit breaker for write-side gRPC calls. When open, calls fail fast without calling the remote handler.                                                  | false        |
-| COS_WRITE_SIDE_BREAKER_MAX_FAILURES | Maximum number of failures before opening the circuit (1–100 when enabled).                                                                                     | 5            |
-| COS_WRITE_SIDE_BREAKER_CALL_TIMEOUT | Timeout for each gRPC call; use a duration (e.g. `60s`). Should align with gRPC deadline.                                                                       | 60s          |
-| COS_WRITE_SIDE_BREAKER_RESET_TIMEOUT | Time before attempting to close an open circuit; use a duration (e.g. `1m`).                                                                                  | 1m           |
-| COS_JOURNAL_LOGICAL_DELETION      | Event deletion is triggered after saving a new snapshot. Old events would be deleted prior to old snapshots being deleted.                                        | false        |
-| COS_COMMAND_HANDLER_TIMEOUT       | Timeout required for the Aggregate to process command and reply. The value is in seconds.                                                                         | 5            |
-| COS_GRPC_CALLS_TIMEOUT            | The deadline timeout, a duration of time after which the RPC times out. It is expressed in milliseconds. Fail to accomplish this will result in timeout exception | 1mn          |
+| LOG_LEVEL                         | Log level: _**DEBUG**_, _**INFO**_, _**WARN**_, _**ERROR**_                                                                                                       | DEBUG        |
+| LOG_STYLE                         | Log format: _**STANDARD**_, _**SIMPLE**_, _**JSON**_                                                                                                               | _**JSON**_   |
+| COS_SERVER_PROTOCOL               | Server protocol: _**grpc**_, _**http**_, or _**both**_                                                                                                             | grpc         |
+| COS_ADDRESS                       | gRPC server host                                                                                                                                                  | 0.0.0.0      |
+| COS_PORT                          | gRPC server port                                                                                                                                                  | 9000         |
+| COS_HTTP_ADDRESS                  | HTTP server host (when HTTP enabled)                                                                                                                              | 0.0.0.0      |
+| COS_HTTP_PORT                     | HTTP server port (when HTTP enabled)                                                                                                                              | 9001         |
+| COS_DEPLOYMENT_MODE               | `"docker"` or `"kubernetes"`                                                                                                                                      | `"docker"`   |
+| COS_DB_USER                       | Journal, snapshot, and read-side offsets store username                                                                                                           | postgres     |
+| COS_DB_PASSWORD                   | Journal, snapshot, and read-side offsets store password                                                                                                           | changeme     |
+| COS_DB_HOST                       | Journal, snapshot, and read-side offsets store host                                                                                                               | localhost    |
+| COS_DB_PORT                       | Journal, snapshot, and read-side offsets store port                                                                                                               | 5432         |
+| COS_DB_NAME                       | Journal, snapshot, and read-side offsets store database name                                                                                                      | postgres     |
+| COS_DB_SCHEMA                     | Journal, snapshot, and read-side offsets store schema                                                                                                             | public       |
+| COS_DB_POOL_MAX_SIZE              | Maximum pool size (idle + in-use connections). Default is fine for most apps.                                                                                     | 5            |
+| COS_DB_POOL_MIN_IDLE_CONNECTIONS  | Minimum number of idle connections in the pool. Default is fine for most apps.                                                                                    | 1            |
+| COS_DB_POOL_IDLE_TIMEOUT_MS       | Maximum time (ms) a connection can sit idle in the pool. Default is fine for most apps.                                                                           | 60000        |
+| COS_DB_POOL_MAX_LIFETIME_MS       | Maximum lifetime (ms) of a connection in the pool. Default is fine for most apps.                                                                                 | 120000       |
+| COS_SNAPSHOT_FREQUENCY            | Save snapshots automatically every N events                                                                                                                       | 100          |
+| COS_DISABLE_SNAPSHOT              | Disable snapshots. Use with care.                                                                                                                                 | false        |
+| COS_NUM_SNAPSHOTS_TO_RETAIN       | Number of aggregate snapshots to persist for swift recovery                                                                                                       | 2            |
+| COS_READ_SIDE_ENABLED             | Enable or disable read sides                                                                                                                                      | false        |
+| COS_READ_SIDE_BREAKER_ENABLED     | Enable circuit breaker for read-side calls. When open, event processing returns without calling the remote handler.                                                | false        |
+| COS_READ_SIDE_BREAKER_MAX_FAILURES | Maximum failures before opening the circuit (1–100 when enabled)                                                                                                  | 5            |
+| COS_READ_SIDE_BREAKER_CALL_TIMEOUT | Timeout for each read-side call; use a duration (e.g. `10s`).                                                                                                     | 10s          |
+| COS_READ_SIDE_BREAKER_RESET_TIMEOUT | Time before attempting to close an open circuit; use a duration (e.g. `1m`).                                                                                    | 1m           |
+| COS_ENCRYPTION_CLASS              | Java class to use for encryption                                                                                                                                  | (none)  |
+| COS_WRITE_SIDE_PROTOCOL           | Protocol for write-side handler: _**grpc**_ or _**http**_                                                                                                          | grpc         |
+| COS_WRITE_SIDE_HOST               | Host of the write-side handler service                                                                                                                            | (none)  |
+| COS_WRITE_SIDE_PORT               | Port of the write-side handler service                                                                                                                            | (none)  |
+| COS_WRITE_SIDE_USE_TLS            | Use TLS for outbound calls (gRPC: TLS; HTTP: https)                                                                                                                | false        |
+| COS_WRITE_SIDE_PROTO_VALIDATION   | Validate handler service states and events proto FQN. If not `true`, validation is skipped.                                                                       | false        |
+| COS_WRITE_SIDE_STATE_PROTOS       | Handler state proto FQN (fully qualified typeUrl). Format: `packagename.messagename`. Comma-separated list.                                                        | (none)  |
+| COS_WRITE_SIDE_EVENT_PROTOS       | Handler event proto FQN (fully qualified typeUrl). Format: `packagename.messagename`. Comma-separated list.                                                        | (none)  |
+| COS_SERVICE_NAME                  | Service name                                                                                                                                                      | chiefofstate |
+| COS_WRITE_SIDE_PROPAGATED_HEADERS | CSV of gRPC headers to propagate to the write-side handler                                                                                                        | (none)  |
+| COS_WRITE_PERSISTED_HEADERS       | CSV of gRPC headers to persist to the journal (experimental)                                                                                                       | (none)  |
+| COS_WRITE_SIDE_BREAKER_ENABLED    | Enable circuit breaker for write-side calls. When open, calls fail fast without calling the remote handler.                                                       | false        |
+| COS_WRITE_SIDE_BREAKER_MAX_FAILURES | Maximum failures before opening the circuit (1–100 when enabled)                                                                                                | 5            |
+| COS_WRITE_SIDE_BREAKER_CALL_TIMEOUT | Timeout for each call; use a duration (e.g. `60s`). Should align with gRPC deadline.                                                                           | 60s          |
+| COS_WRITE_SIDE_BREAKER_RESET_TIMEOUT | Time before attempting to close an open circuit; use a duration (e.g. `1m`).                                                                                   | 1m           |
+| COS_JOURNAL_LOGICAL_DELETION      | Event deletion is triggered after saving a new snapshot. Old events are deleted before old snapshots.                                                              | false        |
+| COS_COMMAND_HANDLER_TIMEOUT       | Timeout for the aggregate to process a command and reply (seconds)                                                                                                | 5            |
+| COS_GRPC_CALLS_TIMEOUT            | RPC deadline (milliseconds). Failure to meet this results in a timeout exception.                                                                                 | 1mn          |
 
-### Telemetry configuration
+## 📡 Telemetry Configuration
 
-This library leverages the [io.opentelemetry](https://opentelemetry.io/docs/java/) library for both metrics and tracing
-instrumentation. We only bundle in
-the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) gRPC
-exporter which should be used to push metrics and traces to
-an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
-that should then propagate the same to desired monitoring services. Collection of telemetry data will be enabled when
-the
-`OTEL_JAVAAGENT_ENABLED` is set to `true`.
+Chief of State uses [OpenTelemetry](https://opentelemetry.io/docs/java/) for metrics and tracing. It bundles the [OTLP](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md) gRPC exporter, which pushes metrics and traces to an [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) that forwards them to your monitoring stack.
 
-_Note: By default, telemetry data will be collected so set this env var to `false` when there is no need for telemetry
-data._
+Telemetry is enabled when `OTEL_JAVAAGENT_ENABLED` is set to `true`.
 
-#### Basic configuration
+> **Note:** By default, telemetry data is collected. Set `OTEL_JAVAAGENT_ENABLED=false` when you don't need it.
 
-The following options can be configured via environment variables.
+### Basic Configuration
 
 | Property                    | Required                                         | Description                                                                                                                                                                |
 |-----------------------------|--------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| OTEL_SERVICE_NAME           | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | Name to be used to differentiate different chief of state deployments                                                                                                      |
-| OTEL_EXPORTER_OTLP_ENDPOINT | no(when `OTEL_JAVAAGENT_ENABLED` is set to true) | The grpc endpoint to be use to connect to an [opentelemetry collector](https://opentelemetry.io/docs/collector/) eg.`http://otlp.collector:4317`                           |
-| OTEL_JAVAAGENT_ENABLED      | yes                                              | Set to `false` will disable the telemetry instrumentation                                                                                                                  |
-| OTEL_PROPAGATORS            | no (default value is `tracecontext,baggage`)     | More information can be found [here](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#propagator) on how to set it up |
+| OTEL_SERVICE_NAME           | No (when `OTEL_JAVAAGENT_ENABLED` is true)       | Name to differentiate Chief of State deployments                                                                                                                           |
+| OTEL_EXPORTER_OTLP_ENDPOINT | No (when `OTEL_JAVAAGENT_ENABLED` is true)       | gRPC endpoint for the OpenTelemetry Collector, e.g. `http://otlp.collector:4317`                                                                                           |
+| OTEL_JAVAAGENT_ENABLED      | Yes                                              | Set to `false` to disable telemetry instrumentation                                                                                                                        |
+| OTEL_PROPAGATORS            | No (default: `tracecontext,baggage`)             | See [propagator setup](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#propagator)                                   |
 
-#### Advanced configuration
+### Advanced Configuration
 
-Advanced users can use any of the
-following [environment variables](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters)
-to tweak the OpenTelemetry Agent before starting CoS.
+Advanced users can use any [OpenTelemetry environment variables](https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters) to tweak the agent before starting Chief of State.
 
-### Read side configurations
+## 📖 Read Side Configuration
 
-The CoS can handle as many as read sides one desires. There are two ways to configure the read sides
+Chief of State supports any number of read sides. Each read side can use either **gRPC** or **HTTP** to receive events.
 
-#### Via yaml configuration file(s) - Recommended
+You can configure read sides in two ways:
 
-CoS read side are configured using a readside configuration files.
-One can bundle all the readside configuration files into a _single yaml file_ or in separate files and have them in a
-_folder_.
-The following settings are required to define a read side yaml configuration file:
+### Via YAML Configuration File(s) — Recommended
+
+Read sides are configured using YAML files. You can put all read-side configs in a **single YAML file** or in **separate files** inside a folder.
+
+**Required settings:**
 
 | Setting       | Required                      | Description                                                                                                                                                                                                                                                        |
 |---------------|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| readSideId    | yes                           | Specifies the read side unique identifier. The read side must only contain alphanumeric characters plus hyphens and underscores. No spacing is allowed.                                                                                                            |
-| host          | yes                           | Specifies the read side host address                                                                                                                                                                                                                               |
-| port          | yes                           | Specifies the read side port number                                                                                                                                                                                                                                |
-| useTls        | no (default value is `false`) | Specifies whether to use TLS to connect to the read side                                                                                                                                                                                                           |
-| autoStart     | no (default value is `true`)  | Set to `true` means that the Read side on start is ready to process events. However, when it set to `false` means that the Read side is paused on start. One can use the [cli](https://github.com/chief-of-state/cos-cli) to resume processing.                    |
-| enabled       | no (default value is `true`)  | Specifies whether the read side is enabled (`true`) or not (`false`). The default value is `true`. The difference with `autoStart` is to enable the read side one needs to set this setting and restart CoS while `autoStart` starts the read side in paused mode. |
-| failurePolicy | no                            | Specifies the failure policy. The possible values are: `STOP`, `SKIP`, `REPLAY_SKIP`, `REPLAY_STOP`                                                                                                                                                                |
+| readSideId    | Yes                           | Unique identifier. Alphanumeric plus hyphens and underscores only. No spaces.                                                                                                                                                                                       |
+| protocol      | No (default: `grpc`)          | Protocol: `grpc` or `http`                                                                                                                                                                                                                                         |
+| host          | Yes                           | Read-side host (used for both gRPC and HTTP)                                                                                                                                                                                                                        |
+| port          | Yes                           | Read-side port (used for both gRPC and HTTP)                                                                                                                                                                                                                        |
+| useTls        | No (default: `false`)         | Use TLS. For gRPC: TLS negotiation. For HTTP: uses `https` instead of `http`.                                                                                                                                                                                       |
+| autoStart     | No (default: `true`)          | `true` = ready to process on start. `false` = paused on start. Use the [CLI](https://github.com/chief-of-state/cos-cli) to resume.                                                                                                                                  |
+| enabled       | No (default: `true`)          | Enable or disable the read side. Unlike `autoStart`, changing this requires a restart. `autoStart` only controls whether it starts paused.                                                                                                                           |
+| failurePolicy | No                            | Failure policy: `STOP`, `SKIP`, `REPLAY_SKIP`, `REPLAY_STOP`                                                                                                                                                                                                        |
 
-###### Failure Policy
-- `STOP`: this will completely stop the given readside when the processing of an event failed
-- `SKIP`: this will skip the failed processed event and advanced the offset to continue to the next event.
-- `REPLAY_SKIP`: this will attempt to replay the failed processed event five times and skip to the next event
-- `REPLAY_STOP`: this will attempt to replay the failed processed event five times and stop the given readside
+#### Failure Policies
 
-##### Example: read-side-config.yml (multiple read side config in a single yaml file)
+- **`STOP`** — Completely stop the read side when event processing fails
+- **`SKIP`** — Skip the failed event, advance the offset, and continue
+- **`REPLAY_SKIP`** — Replay the failed event up to five times, then skip
+- **`REPLAY_STOP`** — Replay the failed event up to five times, then stop
+
+#### Example: `read-side-config.yml` (multiple read sides in one file)
 
 ```yaml
+# gRPC read side
 readSideId: read-side-1
+protocol: grpc
 host: read-handler
 port: 50053
 useTls: false
@@ -121,78 +122,83 @@ autoStart: true
 enabled: true
 failurePolicy: SKIP
 ---
+# HTTP read side (URL: http(s)://host:port)
 readSideId: read-side-2
+protocol: http
 host: read-handler
-port: 50054
+port: 8080
 useTls: false
+autoStart: true
+enabled: true
+failurePolicy: REPLAY_SKIP
+---
+# HTTP read side with TLS
+readSideId: read-side-3
+protocol: http
+host: read-handler
+port: 8081
+useTls: true
 autoStart: true
 enabled: false
 ```
 
-###### Note
+> **Tip:** Use the `---` YAML separator to define multiple read sides in one file.
 
-As you can see in the sample read side config one can specify multiple read side in the yaml file using the `---` yaml
-separator.
+Set the config path with:
 
-Once the read side configuration is defined one can set its path using the following environment variable.
-The following format defines how a CoS read side environment variable is configured:
+| Environment Variable | Description                                                                                    |
+|----------------------|------------------------------------------------------------------------------------------------|
+| COS_READ_SIDE_CONFIG | Path to the read-side config file, or a folder containing read-side YAML configs               |
 
-| environment variable | description                                                                                                          |
-|----------------------|----------------------------------------------------------------------------------------------------------------------|
-| COS_READ_SIDE_CONFIG | Specifies the read side config file path. This can also be a folder containing all the various readside yaml configs |
+**Examples:**
 
-##### Example
+- Config file at `/etc/read-side-config.yml`:
+  ```shell
+  COS_READ_SIDE_CONFIG=/etc/read-side-config.yml
+  ```
 
-###### Scenario 1
+- Config folder at `/etc`:
+  ```shell
+  COS_READ_SIDE_CONFIG=/etc
+  ```
 
-Assuming the readside config file `read-side-config.yml` is saved in the `/etc` folder. So one can set it as follows:
+### Via Environment Variables
 
-```shell
-COS_READ_SIDE_CONFIG=/etc/read-side-config.yml
-```
+> **Note:** This approach is not scalable and can be error-prone. Prefer YAML config files.
 
-###### Scenario 2
-
-Assuming the readside config files are saved in the `/etc` folder. So one can set it as follows:
-
-```shell
-COS_READ_SIDE_CONFIG=/etc
-```
-
-#### Via environment variables
-
-###### Note
-
-_This way of configuring read sides via environment variables is not scalable and can be error-prone. It is recommended
-to use
-the yaml configuration file(s) approach stated above._
-
-CoS read side are configured using environment variables.
-The following format defines how a CoS read side environment variable is configured:
-
-| environment variable                                | description                     | default |
+| Environment Variable                                | Description                     | Default |
 |-----------------------------------------------------|---------------------------------|---------|
-| COS_READ_SIDE_CONFIG__<SETTING_NAME>__<READSIDE_ID> | readside configuration settings | <none>  |
+| `COS_READ_SIDE_CONFIG__<SETTING>__<READSIDE_ID>` | Read-side configuration settings | (none)  |
 
-- <SETTING_NAME> - Accepted values are:
-    - **HOST** - Read side host
-    - **PORT** - Read side port
-    - **USE_TLS** - Use TLS for read side calls. The default value is set to `false`
-    - **AUTO_START** - Set to `true` means that the Read side on start is ready to process events. However, when it set
-      to `false` means that the Read side is paused on start or no not. One can use
-      the [cli](https://github.com/chief-of-state/cos-cli) to resume processing. The default value is set to `true`
-    - **ENABLED** - Set to `true` means that the given Read side is enabled and `false` means that the read side is
-      disabled. The default value is set to `true`. The difference with `autoStart` is to enable the read side one needs to set this setting and restart CoS while `autoStart` starts the read side in paused mode.
-    - **FAILURE_POLICY** - Set the failure policy. The various policies can be found [here](#failure-policy)
-- <READSIDE_ID> - Unique id for the read side instance. Replace this placeholder with your actual ID.
+**<SETTING>** values:
 
-#### Example
+- **PROTOCOL** — `grpc` or `http` (default: `grpc`)
+- **HOST** — Read-side host (used for both gRPC and HTTP)
+- **PORT** — Read-side port (used for both gRPC and HTTP)
+- **USE_TLS** — Use TLS. For HTTP, uses `https` instead of `http` (default: `false`)
+- **AUTO_START** — `true` = ready on start; `false` = paused on start. Use the [CLI](https://github.com/chief-of-state/cos-cli) to resume (default: `true`)
+- **ENABLED** — `true` = enabled; `false` = disabled. Changing this requires a restart; `autoStart` only controls pause state (default: `true`)
+- **FAILURE_POLICY** — See [Failure Policies](#failure-policies) above
+
+**<READSIDE_ID>** — Unique ID for the read side. Replace with your actual ID.
+
+**Example:**
 
 ```shell
+# gRPC read side
+COS_READ_SIDE_CONFIG__PROTOCOL__DB_WRITER=grpc
 COS_READ_SIDE_CONFIG__HOST__DB_WRITER=db-writer
 COS_READ_SIDE_CONFIG__PORT__DB_WRITER=50053
 COS_READ_SIDE_CONFIG__USE_TLS__DB_WRITER=false
 COS_READ_SIDE_CONFIG__AUTO_START__DB_WRITER=false
 COS_READ_SIDE_CONFIG__ENABLED__DB_WRITER=false
 COS_READ_SIDE_CONFIG__FAILURE_POLICY__DB_WRITER=REPLAY_SKIP
+
+# HTTP read side (URL: http(s)://host:port)
+COS_READ_SIDE_CONFIG__PROTOCOL__HTTP_HANDLER=http
+COS_READ_SIDE_CONFIG__HOST__HTTP_HANDLER=handler
+COS_READ_SIDE_CONFIG__PORT__HTTP_HANDLER=8080
+COS_READ_SIDE_CONFIG__AUTO_START__HTTP_HANDLER=true
+COS_READ_SIDE_CONFIG__ENABLED__HTTP_HANDLER=true
+COS_READ_SIDE_CONFIG__FAILURE_POLICY__HTTP_HANDLER=SKIP
 ```

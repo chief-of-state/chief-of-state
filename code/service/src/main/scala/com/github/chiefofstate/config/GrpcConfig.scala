@@ -18,7 +18,7 @@ case class GrpcConfig(client: GrpcClient, server: GrpcServer)
 
 case class GrpcClient(timeout: Int)
 
-case class GrpcServer(host: String, port: Int)
+case class GrpcServer(address: String, port: Int)
 
 object GrpcConfig {
 

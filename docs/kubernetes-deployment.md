@@ -1,21 +1,19 @@
-# Deployment to Kubernetes
+# ☸️ Kubernetes Deployment
 
-Chief of State leverages
-the [Akka Kubernetes Integration](https://doc.akka.io/docs/akka-management/current/kubernetes-deployment/index.html) for
-cluster bootstrap and node discovery. See below for common configuration.
+Chief of State uses the [Pekko Kubernetes integration](https://pekko.apache.org/docs/pekko-management/current/kubernetes-deployment/) for cluster bootstrap and node discovery. Below are common configuration options.
 
-### Environment Variables
+## Environment Variables
 
-The following env vars can be set in addition to the [general configurations](./configuration.md).
+In addition to the [general configuration](./configuration.md), you can set these environment variables:
 
-| environment variable     | description                                                                                            |
+| Environment Variable     | Description                                                                                            |
 |--------------------------|--------------------------------------------------------------------------------------------------------|
-| COS_DEPLOYMENT_MODE      | set to "kubernetes" to instruct COS to leverage the k8s API                                            |
-| POD_IP                   | IP of the pod running chief of state (see note below)                                                  |
-| COS_KUBERNETES_APP_LABEL | Set to the app label of the k8s pod, which Akka will use to discover all sibling nodes in the cluster. |
-| COS_REPLICA_COUNT        | must match the replica count on your deployment. Defaults to "1"                                       |
+| COS_DEPLOYMENT_MODE      | Set to `"kubernetes"` so Chief of State uses the Kubernetes API                                        |
+| POD_IP                   | IP of the pod running Chief of State (see note below)                                                  |
+| COS_KUBERNETES_APP_LABEL | App label of the Kubernetes pod, used to discover sibling nodes in the cluster                         |
+| COS_REPLICA_COUNT        | Must match the replica count in your deployment. Default: `"1"`                                        |
 
-`POD_IP` environment variable can be dynamically set with the following container environment instruction:
+**POD_IP** can be set dynamically with:
 
 ```yaml
 env:
@@ -26,20 +24,18 @@ env:
         fieldPath: status.podIP
 ```
 
-### Service Account and Role
+## Service Account and Role
 
-Akka leverages the K8s API to discover sibling nodes in your COS cluster.
+Chief of State uses the Kubernetes API to discover sibling nodes. Your pods need these permissions:
 
-Your COS pod requires the following permissions for pods:
+- **get**
+- **watch**
+- **list**
 
-- get
-- watch
-- list
-
-This can be accomplished with the following K8s Service Account, Role, and RoleBinding:
+Create a Service Account, Role, and RoleBinding:
 
 ```yaml
-# create the cluster role that can read pods
+# Role to read pods
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -52,7 +48,7 @@ rules:
 
 ---
 
-# create a service account for chief of state
+# Service account for Chief of State
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -61,7 +57,7 @@ metadata:
 
 ---
 
-# bind your pod reader role to your service account
+# Bind the role to the service account
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
@@ -77,7 +73,7 @@ subjects:
     namespace: default
 ```
 
-... then assign the service account to your deployment like so ...
+Then assign the service account to your deployment:
 
 ```yaml
 apiVersion: "apps/v1"
@@ -96,16 +92,14 @@ spec:
       labels:
         app: my-app-chief-of-state
     spec:
-      # set the service account for this pod
       serviceAccountName: chief-of-state-sa
 ```
 
-### Readiness and Liveness probe
+## Readiness and Liveness Probes
 
-Chief Of State provides readiness and liveness checks out of the box. See below the paths and port for configuring them.
+Chief of State provides readiness and liveness probes. Configure them like this:
 
 ```yaml
-...
 readinessProbe:
   httpGet:
     path: /ready
@@ -115,41 +109,36 @@ readinessProbe:
   initialDelaySeconds: 10
 livenessProbe:
   httpGet:
-    path: "/alive"
+    path: /alive
     port: management
   periodSeconds: 10
   failureThreshold: 5
   initialDelaySeconds: 20
 ports:
-  # akka-management and bootstrap
   - name: management
     containerPort: 8558
     protocol: TCP
-...
 ```
 
-### Resources allocations
+## Resource Allocations
 
-It is recommended to always set the kubernetes [resource](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) usage such as cpu and memory.
-By default, Chief Of State allocates a proportion of your container memory based upon the following jvm settings:
-- -XX:MinRAMPercentage 
-- -XX:MaxRAMPercentage
+Always set Kubernetes [resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#requests-and-limits) for CPU and memory.
 
-However, for advanced usage, one can override the JVM options that by setting
-on the container the environment variable named `JAVA_OPTS`.
+By default, Chief of State uses these JVM settings:
 
-Example:
+- `-Xms300m` — Initial heap size (base memory when idle)
+- `-XX:MinRAMPercentage` — Minimum heap as a percentage of container memory
+- `-XX:MaxRAMPercentage` — Maximum heap as a percentage of container memory
+
+To override JVM options, set the `JAVA_OPTS` environment variable on the container:
+
 ```yaml
-...
 env:
-- name: JAVA_OPTS
-  value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=90.0 -XX:+HeapDumpOnOutOfMemoryError"
-...
-resources: 
-    limits:
-        memory: 512Mi
-    requests:
-        memory: 256Mi
+  - name: JAVA_OPTS
+    value: "-Xms300m -XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=90.0 -XX:+HeapDumpOnOutOfMemoryError"
+resources:
+  limits:
+    memory: 512Mi
+  requests:
+    memory: 256Mi
 ```
-
-

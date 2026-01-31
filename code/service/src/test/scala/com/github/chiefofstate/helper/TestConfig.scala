@@ -24,6 +24,9 @@ object TestConfig {
       events {
         tagname: "cos"
       }
+      server {
+        protocol = "grpc"
+      }
       grpc {
         client {
           deadline-timeout = 3000
@@ -31,6 +34,12 @@ object TestConfig {
         server {
           address = "0.0.0.0"
           port = 9000
+        }
+      }
+      http {
+        server {
+          address = "0.0.0.0"
+          port = 9001
         }
       }
       write-side {

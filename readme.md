@@ -1,159 +1,133 @@
 # Chief of State
 
-[![Stability: Maintenance](https://masterminds.github.io/stability/maintenance.svg)](https://masterminds.github.io/stability/maintenance.html)
-
-_Chief Of State is considered feature complete and mature. 
-No future feature development is planned, though bugs and security issues are fixed._
-
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/chief-of-state/chief-of-state/master.yml?branch=main)
 ![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/chief-of-state/chief-of-state?include_prereleases)
 [![GitHub](https://img.shields.io/github/license/chief-of-state/chief-of-state)](https://github.com/chief-of-state/chief-of-state/blob/master/LICENSE)
 
-## Table of Content
+## 📑 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Production](#production)
-- [Anatomy](#anatomy-of-a-chief-of-state-app)
-  - [Service](#chief-of-state-service)
-  - [Write Model](#write-handler)
-  - [Read Model](#read-handler)
-- [Documentation](#documentation)
-- [Community](#community)
-- [Contribution](#contribution)
-- [License](#license)
-- [Sample Projects](#sample-projects)
+- [Overview](#-overview)
+- [Features](#-features)
+- [Production](#-production)
+- [Anatomy](#-anatomy-of-a-chief-of-state-app)
+  - [Chief of State Service](#chief-of-state-service)
+  - [Write Handler](#write-handler)
+  - [Read Handler](#read-handler)
+- [Documentation](#-documentation)
+- [Community](#-community)
+- [Contribution](#-contribution)
+- [License](#-license)
+- [Sample Projects](#-sample-projects)
 
-## Overview
+## 🎯 Overview
 
-Chief-of-State (CoS) is an Open Source clustered persistence tool for building event sourced applications. CoS supports CQRS and
-event-sourcing through simple, language-agnostic interfaces via gRPC, and it allows developers to describe their schema
-with Protobuf. Under the hood, CoS leverages [Apache Pekko](https://pekko.apache.org/)
-to scale out and guarantee performant, reliable persistence.
+Chief of State (CoS) is an open-source clustered persistence tool for building event-sourced applications. CoS supports CQRS and event-sourcing through simple, language-agnostic interfaces via **gRPC** or **HTTP/JSON**, and it lets you describe your schema with Protobuf. Under the hood, CoS leverages [Apache Pekko](https://pekko.apache.org/) to scale out and deliver performant, reliable persistence.
 
-Chief-of-State was built with the following principles:
+Chief of State was built with these principles:
 
-* Wire format should be the same as persistence
-* Scaling should not require re-architecture
-* Developers shouldn't face race conditions or database locks
-* Rules should be enforced with interfaces
-* Event sourcing is valuable, but challenging to implement
-* An ideal event-sourcing datastore would offer random access by key, streaming, and atomic writes
+- Wire format should be the same as persistence
+- Scaling should not require re-architecture
+- Developers shouldn't face race conditions or database locks
+- Rules should be enforced with interfaces
+- Event sourcing is valuable but challenging to implement
+- An ideal event-sourcing datastore would offer random access by key, streaming, and atomic writes
 
-Chief-of-State was created in year 2020 at [Namely](https://github.com/namely/chief-of-state) based upon the principles
-aforementioned.
+Chief of State was created in 2020 at [Namely](https://github.com/namely/chief-of-state) based on the principles above.
 
-### Note
+### 📌 Note
 
-If a company is still using the Namely version and wants to migrate to this, it will have to be at least on the [namely v0.9.2-rc.1](https://github.com/namely/chief-of-state/releases/tag/v0.9.2-rc.1) version.
-One can refer to the [documentation](#documentation) for set up.
+If your company is still using the Namely version and wants to migrate to this fork, you must be at least on [namely v0.9.2-rc.1](https://github.com/namely/chief-of-state/releases/tag/v0.9.2-rc.1). See the [documentation](#-documentation) for setup instructions.
 
-From version `v2.4.11` ongoing, Chief-Of-State has been completely migrated from Akka dependencies to Apache Pekko.
-In that regard any project before that version cannot be upgraded to the latest versions because of lack of migration kit
-at the moment.
+From version `v2.4.11` onward, Chief of State has been fully migrated from Akka to Apache Pekko. Projects on versions before that cannot be upgraded to the latest releases due to the lack of a migration kit at this time.
 
-## Features
+## ✨ Features
 
-- Journal and Snapshot serialization using google protocol buffer message format
-- Preconfigured clustering and domain entity sharding with the split-brain-resolver algorithm
-- Automatic caching and entity passivation
-- Automatic configuration of postgres storage on boot
-- Opentelemetry integration for tracing and metrics
-- Journal Compaction
-- Direct integration to Kubernetes to form a cluster using the kubernetes API
-- Read Side Management using the [CLI tool](https://github.com/chief-of-state/cos-cli)
+- **Journal & Snapshot** — Serialization using Google Protocol Buffer message format
+- **Clustering** — Preconfigured clustering and domain entity sharding with the split-brain-resolver algorithm
+- **Caching** — Automatic caching and entity passivation
+- **Storage** — Automatic configuration of PostgreSQL storage on boot
+- **Observability** — OpenTelemetry integration for tracing and metrics
+- **Compaction** — Journal compaction support
+- **Kubernetes** — Direct integration to form a cluster using the Kubernetes API
+- **Read Side Management** — Via the [CLI tool](https://github.com/chief-of-state/cos-cli):
   - Skip offset per shard and across the whole CoS cluster
-  - Pause read sides per shard and across the whole CoS cluster
-  - Resume read sides per shard and across the whole CoS cluster
-  - Restart read sides per shard and across the whole CoS cluster
-  - List read sides' offsets per shard and across the whole CoS cluster
+  - Pause, resume, and restart read sides per shard or cluster-wide
+  - List read sides' offsets per shard and across the cluster
 
-## Production
-Chief-of-State has been used in production by notable companies since its birth in 2020.
+## 🏭 Production
 
-## Anatomy of a Chief-of-State app
+Chief of State has been used in production by notable companies since 2020.
 
-Developers implement two gRPC interfaces: a write handler(gRPC service) to handle `commands/events` and, optionally, _many_ read handlers(gRPC services) for
-reacting to state changes by consuming the events processed by the write handler.
+## 🏗️ Anatomy of a Chief of State App
 
-![Architecture Diagram](./img/cos-anatomy.png?raw=true "Title")
+You implement two handler interfaces (gRPC or HTTP): a **write handler** to process `commands` and `events`, and optionally **many read handlers** that react to state changes by consuming events from the write handler.
 
-### Chief Of State Service
+![Architecture Diagram](./img/cos-anatomy.png?raw=true "Chief of State Architecture")
 
-The main entry point of a chief-of-state based application is the
-[Service](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/service.proto). Developers will
-interact with chief of state via:
+### Chief of State Service
 
-- `ProcessCommand` is used by the application to send commands to process via [Write Handler](#write-handler).
-- `GetState` is used by the application to retrieve the current state of a persistent entity
+The main entry point is the [Service](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/service.proto). You interact with Chief of State via:
+
+- **`ProcessCommand`** — Send commands to be processed by the [Write Handler](#write-handler)
+- **`GetState`** — Retrieve the current state of a persistent entity
 
 ### Write Handler
 
-Developers describe state mutations by implementing two RPC’s in
-the [WriteSideHandlerService](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/writeside.proto):
+You describe state mutations by implementing two RPCs in the [WriteSideHandlerService](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/writeside.proto):
 
-- `HandleCommand` accepts a command and the prior state of an entity and returns an Event. For example, given a command
-  to UpdateUserEmail and a User, this RPC might return UserEmailUpdated.
-- `HandleEvent` accepts an event and the prior state of an entity and returns a new state. For example, given a
-  UserEmailUpdated event and a User, this RPC would return a new User instance with the email updated.
+- **`HandleCommand`** — Accepts a command and the prior state, returns an event. For example, given `UpdateUserEmail` and a `User`, it might return `UserEmailUpdated`.
+- **`HandleEvent`** — Accepts an event and the prior state, returns the new state. For example, given `UserEmailUpdated` and a `User`, it returns a new `User` instance with the email updated.
 
 ### Read Handler
 
-In response to state mutations, COS is able to send changes to
-many [ReadSideHandlerService](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/readside.proto)
-implementations, which may take any action. CoS guarantees at-least-once delivery of events and resulting state to each
-read side in the order they were persisted.
+In response to state mutations, CoS sends changes to many [ReadSideHandlerService](https://github.com/chief-of-state/chief-of-state-protos/blob/main/chief_of_state/v1/readside.proto) implementations. CoS guarantees at-least-once delivery of events and resulting state to each read side, in the order they were persisted.
 
-Some potential read side handlers might:
+Read side handlers can:
 
-- Write state changes to a special data store like elastic
-- Publish changes to kafka topics
+- Write state changes to a data store (e.g., Elasticsearch)
+- Publish changes to Kafka topics
 - Send notifications to users in response to specific events
 
-## Documentation
-
-The following docs are available:
+## 📚 Documentation
 
 - [Getting Started](./docs/getting-started.md)
-- [Configuration options](./docs/configuration.md)
+- [Configuration Options](./docs/configuration.md)
 - [Docker Deployment](./docs/docker-deployment.md)
 - [Kubernetes Deployment](./docs/kubernetes-deployment.md)
+- [HTTP API (OpenAPI 3)](./docs/openapi.yaml)
 
-## Community
+## 💬 Community
 
-You can join these groups and chat to discuss and ask Chief Of State related questions on:
+Join the discussion and ask Chief of State–related questions:
 
 [![GitHub Discussions](https://img.shields.io/github/discussions/chief-of-state/chief-of-state?style=flat-square)](https://github.com/chief-of-state/chief-of-state/discussions)
 
-## Contribution
+## 🤝 Contribution
 
 Contributions are welcome!
 
-The project adheres to [Semantic Versioning](https://semver.org) and [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
-If you see an issue that you'd like to see fixed, the best way to make it happen is to help out by submitting a pull request implementing it. To test your implementation locally follow the steps below:
-
-
-### Locally build / test
+The project adheres to [Semantic Versioning](https://semver.org) and [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). If you see an issue you'd like to fix, the best way is to submit a pull request. To test your changes locally:
 
 ```bash
-# install earthly cli
-brew install earthly/earthly/earthly (for mac users)
+# Install Earthly CLI (macOS)
+brew install earthly/earthly/earthly
 
-# locally build the image
+# Build the Docker image
 earthly +build-image
 
-# run tests
+# Run tests
 earthly -P --no-output +test-local
 ```
 
-## License
+> **Tip:** See the [Earthly docs](https://docs.earthly.dev/) for installation on Linux and Windows.
+
+## 📄 License
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-Chief-of-State is free, and it will remain so without any paid license requirement.
+Chief of State is free and will remain so, with no paid license requirement.
 
-
-## Sample Projects
+## 🚀 Sample Projects
 
 - [Python](https://github.com/chief-of-state/cos-python-sample)
 - [Go](https://github.com/Tochemey/cos-go-sample)

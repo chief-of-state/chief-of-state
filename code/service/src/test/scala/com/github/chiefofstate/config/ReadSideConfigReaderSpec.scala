@@ -157,9 +157,10 @@ class ReadSideConfigReaderSpec extends BaseSpec {
         .set("COS_READ_SIDE_CONFIG__AUTO_START__RS3", "true")
         .setup()
 
-      val readSide1: ReadSideConfig = ReadSideConfig("RS1", "host1", 1)
-      val readSide2: ReadSideConfig = ReadSideConfig("RS2", "host2", 2)
-      val readSide3: ReadSideConfig = ReadSideConfig("RS3", "host3", 3, useTls = true)
+      val readSide1: ReadSideConfig = ReadSideConfig(readSideId = "RS1", host = "host1", port = 1)
+      val readSide2: ReadSideConfig = ReadSideConfig(readSideId = "RS2", host = "host2", port = 2)
+      val readSide3: ReadSideConfig =
+        ReadSideConfig(readSideId = "RS3", host = "host3", port = 3, useTls = true)
 
       val actual: Seq[ReadSideConfig]   = ReadSideConfigReader.readFromEnvVars
       val expected: Seq[ReadSideConfig] = Seq(readSide1, readSide2, readSide3)

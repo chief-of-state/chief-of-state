@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.config
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.{JsonIgnoreProperties, JsonProperty}
 import com.github.chiefofstate.config.ReadSideFailurePolicy.{
   ReplaySkipDirective,
   ReplayStopDirective,
@@ -18,17 +18,21 @@ import com.github.chiefofstate.config.ReadSideFailurePolicy.{
  * ReadSideConfig defines the configuration of CoS readside
  *
  * @param readSideId the readSide ID
- * @param host       the read side server host to receive read side requests
- * @param port       the read side server port
- * @param useTls     specifies whether SSL is enabled on the read side server
+ * @param protocol the protocol to use: "grpc" or "http" (default: "grpc")
+ * @param host       the read side server host (used for both gRPC and HTTP)
+ * @param port       the read side server port (used for both gRPC and HTTP)
+ * @param useTls     specifies whether SSL is enabled (for gRPC: TLS negotiation; for HTTP: https scheme)
  * @param autoStart  specifies whether the read side should start processing messages or be in pause mode
  * @param enabled specifies whether the read side is enabled or not. This means that the readside will not be added at runtime to the list of
  *                read sides that need to run. This is useful when deactivating a faulty read side
  * @param failurePolicy specifies the failure policy
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 final case class ReadSideConfig(
     @JsonProperty(required = true)
     readSideId: String,
+    @JsonProperty
+    protocol: String = "grpc",
     @JsonProperty(required = true)
     host: String = "",
     @JsonProperty(required = true)
@@ -58,8 +62,21 @@ final case class ReadSideConfig(
    * @return true when the read side config is valid and false on the contrary
    */
   def isValid: Boolean = {
-    val idPattern = "^[A-Za-z0-9]([A-Za-z0-9_-]*[A-Za-z0-9])?$"
-    readSideId.matches(idPattern) && isFailurePolicyValid
+    val idPattern     = "^[A-Za-z0-9]([A-Za-z0-9_-]*[A-Za-z0-9])?$"
+    val idValid       = readSideId.matches(idPattern)
+    val policyValid   = isFailurePolicyValid
+    val protocolValid = isProtocolValid
+
+    idValid && policyValid && protocolValid
+  }
+
+  /**
+   * checks whether the protocol is valid
+   *
+   * @return true when protocol is "grpc" or "http"
+   */
+  def isProtocolValid: Boolean = {
+    protocol.toLowerCase == "grpc" || protocol.toLowerCase == "http"
   }
 
   /**
@@ -73,8 +90,7 @@ final case class ReadSideConfig(
   }
 
   override def toString: String = {
-    s"id=$readSideId, host=$host, port=$port, " +
-      s"useTls=$useTls, autoStart=$autoStart, " +
-      s"enabled=$enabled, failurePolicy=$failurePolicy"
+    s"id=$readSideId, protocol=$protocol, host=$host, port=$port, " +
+      s"useTls=$useTls, autoStart=$autoStart, enabled=$enabled, failurePolicy=$failurePolicy"
   }
 }

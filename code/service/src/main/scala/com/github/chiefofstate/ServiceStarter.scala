@@ -6,7 +6,8 @@
 
 package com.github.chiefofstate
 
-import com.github.chiefofstate.config.CosConfig
+import com.github.chiefofstate.config.{CosConfig, ServerProtocol}
+import com.github.chiefofstate.http.HttpRoutes
 import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.internal.{MigrationFailed, MigrationSucceeded}
 import com.github.chiefofstate.protobuf.v1.manager.ReadSideManagerServiceGrpc.ReadSideManagerService
@@ -15,12 +16,20 @@ import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc
 import com.github.chiefofstate.readside.{ReadSideManager, ReadSideServiceStarter}
 import com.github.chiefofstate.services.{CosReadSideManagerService, CosService}
 import com.github.chiefofstate.utils.{Netty, Validator, Util}
-import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
+import com.github.chiefofstate.writeside.{
+  CommandHandler,
+  EventHandler,
+  HttpCommandHandler,
+  HttpEventHandler,
+  WriteSideCommandHandler,
+  WriteSideEventHandler
+}
 import com.typesafe.config.Config
 import io.grpc._
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior}
 import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
+import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.persistence.typed.PersistenceId
 import org.apache.pekko.util.Timeout
@@ -53,18 +62,6 @@ object ServiceStarter {
           // We only proceed when the data stores and various migrations are done successfully.
           log.info("Data store migration complete. About to start...")
 
-          val channel: ManagedChannel =
-            Netty
-              .channelBuilder(
-                cosConfig.writeSideConfig.host,
-                cosConfig.writeSideConfig.port,
-                cosConfig.writeSideConfig.useTls
-              )
-              .build()
-
-          val writeHandler: WriteSideHandlerServiceBlockingStub =
-            new WriteSideHandlerServiceBlockingStub(channel)
-
           // Create circuit breaker for write-side if enabled
           val writeSideCircuitBreaker: Option[CircuitBreaker] =
             if (cosConfig.writeSideConfig.circuitBreakerConfig.enabled) {
@@ -88,10 +85,59 @@ object ServiceStarter {
               None
             }
 
-          val remoteCommandHandler: CommandHandler =
-            CommandHandler(cosConfig.grpcConfig, writeHandler, writeSideCircuitBreaker)
-          val remoteEventHandler: EventHandler =
-            EventHandler(cosConfig.grpcConfig, writeHandler, writeSideCircuitBreaker)
+          // Create command and event handlers based on protocol
+          val (
+            remoteCommandHandler: WriteSideCommandHandler,
+            remoteEventHandler: WriteSideEventHandler
+          ) =
+            cosConfig.writeSideConfig.protocol.toLowerCase match {
+              case "grpc" =>
+                log.info("Using gRPC protocol for write-side handlers")
+                val channel: ManagedChannel =
+                  Netty
+                    .channelBuilder(
+                      cosConfig.writeSideConfig.host,
+                      cosConfig.writeSideConfig.port,
+                      cosConfig.writeSideConfig.useTls
+                    )
+                    .build()
+
+                val writeHandler: WriteSideHandlerServiceBlockingStub =
+                  new WriteSideHandlerServiceBlockingStub(channel)
+
+                (
+                  CommandHandler(cosConfig.grpcConfig, writeHandler, writeSideCircuitBreaker),
+                  EventHandler(cosConfig.grpcConfig, writeHandler, writeSideCircuitBreaker)
+                )
+
+              case "http" =>
+                log.info("Using HTTP protocol for write-side handlers")
+                val scheme = if (cosConfig.writeSideConfig.useTls) "https" else "http"
+                val baseUrl =
+                  s"$scheme://${cosConfig.writeSideConfig.host}:${cosConfig.writeSideConfig.port}"
+                log.info(s"Write-side HTTP base URL: $baseUrl")
+
+                implicit val sys: ActorSystem[_]  = context.system
+                implicit val ec: ExecutionContext = context.executionContext
+
+                (
+                  HttpCommandHandler(
+                    baseUrl,
+                    cosConfig.grpcConfig.client.timeout,
+                    writeSideCircuitBreaker
+                  ),
+                  HttpEventHandler(
+                    baseUrl,
+                    cosConfig.grpcConfig.client.timeout,
+                    writeSideCircuitBreaker
+                  )
+                )
+
+              case unknown =>
+                throw new IllegalArgumentException(
+                  s"Unknown write-side protocol '$unknown'. Must be 'grpc' or 'http'"
+                )
+            }
 
           // instance of eventsAndStatesProtoValidation
           val eventsAndStateProtoValidation: Validator =
@@ -150,6 +196,7 @@ object ServiceStarter {
       readSideManager: ReadSideManager
   ): ShutdownHookThread = {
     implicit val askTimeout: Timeout = cosConfig.askTimeout
+    implicit val sys: ActorSystem[_] = system
 
     // create the traced execution context for grpc
     val grpcEc: ExecutionContext = system.executionContext
@@ -161,27 +208,77 @@ object ServiceStarter {
     // create an instance of the read side state manager service
     val readSideManagerService = new CosReadSideManagerService(readSideManager)(grpcEc)
 
-    // create the server builder
-    var builder = Netty
-      .serverBuilder(cosConfig.grpcConfig.server.host, cosConfig.grpcConfig.server.port)
-      .addService(setServiceWithInterceptors(ChiefOfStateService.bindService(coSService, grpcEc)))
+    // Start gRPC server if protocol is grpc or both
+    val grpcServerOpt: Option[Server] = cosConfig.serverConfig.protocol match {
+      case ServerProtocol.Grpc | ServerProtocol.Both =>
+        // create the server builder
+        var builder = Netty
+          .serverBuilder(cosConfig.serverConfig.grpc.address, cosConfig.serverConfig.grpc.port)
+          .addService(
+            setServiceWithInterceptors(ChiefOfStateService.bindService(coSService, grpcEc))
+          )
 
-    // only start the read side manager if readSide is enabled
-    if (cosConfig.enableReadSide)
-      builder = builder.addService(
-        setServiceWithInterceptors(
-          ReadSideManagerService.bindService(readSideManagerService, grpcEc)
+        // only start the read side manager if readSide is enabled
+        if (cosConfig.enableReadSide)
+          builder = builder.addService(
+            setServiceWithInterceptors(
+              ReadSideManagerService.bindService(readSideManagerService, grpcEc)
+            )
+          )
+
+        // attach service to netty server
+        val server: Server = builder.build().start()
+        log.info(
+          s"ChiefOfState gRPC server started on ${cosConfig.serverConfig.grpc.address}:${cosConfig.serverConfig.grpc.port}"
         )
-      )
+        Some(server)
 
-    // attach service to netty server
-    val server: Server = builder.build().start()
+      case ServerProtocol.Http =>
+        log.info("gRPC server disabled (protocol=http)")
+        None
+    }
 
-    log.info("ChiefOfState Services started, listening on " + cosConfig.grpcConfig.server.port)
-    server.awaitTermination()
-    sys.addShutdownHook {
-      log.info("shutting down ChiefOfState Services....")
-      server.shutdown()
+    // Start HTTP server if protocol is http or both
+    val httpBindingFutureOpt = cosConfig.serverConfig.protocol match {
+      case ServerProtocol.Http | ServerProtocol.Both =>
+        val httpRoutes = new HttpRoutes(coSService, cosConfig.writeSideConfig)(grpcEc)
+        val bindingFuture = Http()(system)
+          .newServerAt(cosConfig.serverConfig.http.address, cosConfig.serverConfig.http.port)
+          .bind(httpRoutes.routes)
+
+        bindingFuture.onComplete {
+          case scala.util.Success(binding) =>
+            log.info(
+              s"ChiefOfState HTTP server started on ${binding.localAddress.getHostString}:${binding.localAddress.getPort}"
+            )
+          case scala.util.Failure(ex) =>
+            log.error(
+              s"Failed to bind HTTP server to ${cosConfig.serverConfig.http.address}:${cosConfig.serverConfig.http.port}",
+              ex
+            )
+            scala.sys.exit(1)
+        }(grpcEc)
+
+        Some(bindingFuture)
+
+      case ServerProtocol.Grpc =>
+        log.info("HTTP server disabled (protocol=grpc)")
+        None
+    }
+
+    // Wait for gRPC server termination (if running)
+    grpcServerOpt.foreach(_.awaitTermination())
+
+    scala.sys.addShutdownHook {
+      log.info("Shutting down ChiefOfState services...")
+      grpcServerOpt.foreach(_.shutdown())
+      httpBindingFutureOpt.foreach { bindingFuture =>
+        import scala.concurrent.Await
+        import scala.concurrent.duration._
+        bindingFuture.foreach { binding =>
+          Await.result(binding.unbind(), 5.seconds)
+        }(grpcEc)
+      }
     }
   }
 

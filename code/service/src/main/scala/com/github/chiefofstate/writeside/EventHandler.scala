@@ -29,7 +29,7 @@ case class EventHandler(
     grpcConfig: GrpcConfig,
     writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub,
     circuitBreaker: Option[CircuitBreaker] = None
-) {
+) extends WriteSideEventHandler {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 

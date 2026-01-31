@@ -19,7 +19,7 @@ import com.github.chiefofstate.serialization.SendReceive
 import com.github.chiefofstate.utils.Validator
 import com.github.chiefofstate.utils.Util.{Instants, makeFailedStatusPf, toRpcStatus}
 import com.github.chiefofstate.writeside.ResponseType._
-import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
+import com.github.chiefofstate.writeside.{WriteSideCommandHandler, WriteSideEventHandler}
 import com.google.protobuf.any
 import com.google.protobuf.empty.Empty
 import io.grpc.{Status, StatusException}
@@ -60,8 +60,8 @@ object Entity {
       persistenceId: PersistenceId,
       shardIndex: Int,
       cosConfig: CosConfig,
-      commandHandler: CommandHandler,
-      eventHandler: EventHandler,
+      commandHandler: WriteSideCommandHandler,
+      eventHandler: WriteSideEventHandler,
       protosValidator: Validator
   ): Behavior[SendReceive] = {
     Behaviors.setup { context =>
@@ -96,8 +96,8 @@ object Entity {
       context: ActorContext[SendReceive],
       aggregateState: StateWrapper,
       aggregateCommand: SendReceive,
-      commandHandler: CommandHandler,
-      eventHandler: EventHandler,
+      commandHandler: WriteSideCommandHandler,
+      eventHandler: WriteSideEventHandler,
       protosValidator: Validator
   ): ReplyEffect[EventWrapper, StateWrapper] = {
     val entityId       = aggregateState.getMeta.entityId
@@ -179,8 +179,8 @@ object Entity {
       priorState: StateWrapper,
       command: RemoteCommand,
       replyTo: ActorRef[CommandReply],
-      commandHandler: CommandHandler,
-      eventHandler: EventHandler,
+      commandHandler: WriteSideCommandHandler,
+      eventHandler: WriteSideEventHandler,
       protosValidator: Validator,
       data: Map[String, com.google.protobuf.any.Any]
   ): ReplyEffect[EventWrapper, StateWrapper] = {

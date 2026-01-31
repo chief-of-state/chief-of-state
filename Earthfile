@@ -50,7 +50,7 @@ compile:
 
 prepare-image:
     # bundle into a runnable container
-    FROM eclipse-temurin:21.0.4_7-jre
+    FROM eclipse-temurin:21.0.9_10-jre
 
     USER root
 
@@ -101,7 +101,7 @@ test-all:
 
 sbt:
     # TODO: move this to a central image
-    FROM eclipse-temurin:21.0.4_7-jdk-jammy
+    FROM eclipse-temurin:21.0.9_10-jdk-jammy
 
     USER root
 
@@ -110,8 +110,8 @@ sbt:
     RUN mkdir /logs && chmod 777 /logs
 
     # Install sbt
-    ARG SBT_VERSION=1.10.6
-    ARG SBT_URL="https:/github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz"
+    ARG SBT_VERSION=1.11.7
+    ARG SBT_URL="https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz"
 
     # Install sbt, add symlink
     RUN \

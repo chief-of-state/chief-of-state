@@ -15,6 +15,7 @@ import com.google.protobuf.any.Any
 class ValidatorSpec extends BaseSpec {
 
   val sharedConfig: WriteSideConfig = WriteSideConfig(
+    protocol = "grpc",
     host = "localhost",
     port = 1000,
     useTls = false,

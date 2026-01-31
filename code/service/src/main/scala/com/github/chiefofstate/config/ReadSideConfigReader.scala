@@ -87,6 +87,7 @@ object ReadSideConfigReader {
    */
   def readFromEnvVars: Seq[ReadSideConfig] = {
     // define the various env vars settings to read
+    val READ_SIDE_PROTOCOL_KEY: String   = "PROTOCOL"
     val READ_SIDE_HOST_KEY: String       = "HOST"
     val READ_SIDE_PORT_KEY: String       = "PORT"
     val READ_SIDE_TLS_KEY: String        = "USE_TLS"
@@ -119,6 +120,9 @@ object ReadSideConfigReader {
     groupedEnvVars.map { case (readSideId, settings) =>
       val readSideConfig: ReadSideConfig =
         settings.foldLeft(ReadSideConfig(readSideId)) {
+
+          case (config, (READ_SIDE_PROTOCOL_KEY, value)) =>
+            config.copy(protocol = value)
 
           case (config, (READ_SIDE_HOST_KEY, value)) =>
             config.copy(host = value)

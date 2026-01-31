@@ -32,7 +32,7 @@ case class CommandHandler(
     grpcConfig: GrpcConfig,
     writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub,
     circuitBreaker: Option[CircuitBreaker] = None
-) {
+) extends WriteSideCommandHandler {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
 

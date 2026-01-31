@@ -1,13 +1,13 @@
-# Deployment in Docker
+# 🐳 Docker Deployment
 
-The following section describes deployment in docker, including local development with docker-compose.
+This guide describes deploying Chief of State in Docker, including local development with Docker Compose.
 
-### Docker-specific Environment Variables
+## Docker-Specific Environment Variables
 
-The following env vars can be set in addition to the [general configurations](./configuration.md).
+In addition to the [general configuration](./configuration.md), you can set these environment variables:
 
-| environment variable | description                                                             | default      |
+| Environment Variable | Description                                                             | Default      |
 |----------------------|-------------------------------------------------------------------------|--------------|
-| COS_DEPLOYMENT_MODE  | "docker"                                                                | "docker"     |
-| COS_SERVICE_NAME     | set this to the name of chief of state service in your docker compose   | chiefofstate |
-| COS_REPLICA_COUNT    | wait for this many replicas before starting (not recommended to change) | 1            |
+| COS_DEPLOYMENT_MODE  | Deployment mode (use `"docker"`)                                        | `"docker"`   |
+| COS_SERVICE_NAME     | Name of the Chief of State service in your Docker Compose file          | chiefofstate |
+| COS_REPLICA_COUNT    | Number of replicas to wait for before starting (not recommended to change) | 1         |
