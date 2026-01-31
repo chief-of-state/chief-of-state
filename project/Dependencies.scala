@@ -12,13 +12,13 @@ object Dependencies {
     val PekkoHttpVersion: String            = "1.1.0"
     val ScalapbCommonProtoVersion: String   = "2.9.6-0"
     val SilencerVersion: String             = "1.7.19"
-    val LogbackVersion: String              = "1.5.26"
+    val LogbackVersion: String              = "1.5.27"
     val ScalaTestVersion: String            = "3.2.19"
     val PekkoManagementVersion: String      = "1.2.0"
-    val PekkoProjectionVersion: String     = "1.1.0"
+    val PekkoProjectionVersion: String      = "1.1.0"
     val PostgresDriverVersion: String       = "42.7.9"
     val SlickVersion: String                = "3.6.1"
-    val PekkoPersistenceJdbcVersion: String  = "1.1.1"
+    val PekkoPersistenceJdbcVersion: String = "1.1.1"
     val ScalaMockVersion: String            = "7.4.1"
 
     val JaninoVersion: String                          = "3.1.12"
@@ -67,8 +67,8 @@ object Dependencies {
     "org.apache.pekko" %% "pekko-persistence-jdbc"             % PekkoPersistenceJdbcVersion,
     "org.apache.pekko" %% "pekko-persistence-query"            % PekkoVersion,
     // Pekko HTTP dependencies
-    "org.apache.pekko" %% "pekko-http"                         % PekkoHttpVersion,
-    "org.apache.pekko" %% "pekko-http-spray-json"              % PekkoHttpVersion,
+    "org.apache.pekko" %% "pekko-http"            % PekkoHttpVersion,
+    "org.apache.pekko" %% "pekko-http-spray-json" % PekkoHttpVersion,
     // Slick dependencies
     "com.typesafe.slick"     %% "slick"                    % SlickVersion,
     "com.typesafe.slick"     %% "slick-hikaricp"           % SlickVersion,
