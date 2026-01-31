@@ -12,14 +12,14 @@ object Dependencies {
     val PekkoHttpVersion: String            = "1.1.0"
     val ScalapbCommonProtoVersion: String   = "2.9.6-0"
     val SilencerVersion: String             = "1.7.19"
-    val LogbackVersion: String              = "1.5.26"
+    val LogbackVersion: String              = "1.5.27"
     val ScalaTestVersion: String            = "3.2.19"
     val PekkoManagementVersion: String      = "1.2.0"
     val PekkoProjectionVersion: String      = "1.1.0"
     val PostgresDriverVersion: String       = "42.7.9"
     val SlickVersion: String                = "3.6.1"
     val PekkoPersistenceJdbcVersion: String = "1.1.1"
-    val ScalaMockVersion: String            = "7.4.1"
+    val ScalaMockVersion: String            = "7.4.2"
 
     val JaninoVersion: String                          = "3.1.12"
     val LogstashLogbackVersion: String                 = "8.1"
@@ -31,7 +31,7 @@ object Dependencies {
     val OpenTelemetryExtensionVersion: String          = "1.55.0"
     val OpenTelemetryApiVersion: String                = "1.55.0"
     val ScalaXmlVersion: String                        = "2.4.0"
-    val JacksonVersion: String                         = "2.19.2"
+    val JacksonVersion: String                         = "2.19.4"
     val NettyVersion: String                           = "4.2.9.Final"
   }
 

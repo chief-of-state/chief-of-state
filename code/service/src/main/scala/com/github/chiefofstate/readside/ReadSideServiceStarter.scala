@@ -6,7 +6,12 @@
 
 package com.github.chiefofstate.readside
 
-import com.github.chiefofstate.config.{CircuitBreakerConfig, ReadSideConfig, ReadSideConfigReader}
+import com.github.chiefofstate.config.{
+  CircuitBreakerConfig,
+  GrpcConfig,
+  ReadSideConfig,
+  ReadSideConfigReader
+}
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.github.chiefofstate.utils.Netty
 import com.typesafe.config.{Config, ConfigException}
@@ -80,10 +85,13 @@ class ReadSideServiceStarter(
       // Create the appropriate handler based on protocol
       val remoteReadSideProcessor: Handler = config.protocol.toLowerCase match {
         case "grpc" =>
-          // construct a remote gRPC read side client for this read side
+          // construct a remote gRPC read side client for this read side (same keepalive as write-side)
+          val grpcClientKeepalive = GrpcConfig(system.settings.config).client.keepalive
           val rpcClient: ReadSideHandlerServiceBlockingStub =
             new ReadSideHandlerServiceBlockingStub(
-              Netty.channelBuilder(config.host, config.port, config.useTls).build
+              Netty
+                .channelBuilder(config.host, config.port, config.useTls, grpcClientKeepalive)
+                .build
             )
           logger.info(
             s"Using gRPC handler for ${config.readSideId} at ${config.host}:${config.port} (timeout=${config.timeout}ms)"
