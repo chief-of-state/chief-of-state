@@ -99,7 +99,8 @@ object ServiceStarter {
                     .channelBuilder(
                       cosConfig.writeSideConfig.host,
                       cosConfig.writeSideConfig.port,
-                      cosConfig.writeSideConfig.useTls
+                      cosConfig.writeSideConfig.useTls,
+                      cosConfig.grpcConfig.client.keepalive
                     )
                     .build()
 
