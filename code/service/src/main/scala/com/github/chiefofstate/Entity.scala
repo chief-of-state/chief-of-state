@@ -91,6 +91,7 @@ object Entity {
    * @param eventHandler the remote events handler
    * @return a side effect
    */
+  @WithSpan(value = "Entity.handleCommand")
   private[chiefofstate] def handleCommand(
       context: ActorContext[SendReceive],
       aggregateState: StateWrapper,
@@ -99,33 +100,44 @@ object Entity {
       eventHandler: EventHandler,
       protosValidator: Validator
   ): ReplyEffect[EventWrapper, StateWrapper] = {
-    log.debug("begin handle command")
+    val entityId       = aggregateState.getMeta.entityId
+    val revisionNumber = aggregateState.getMeta.revisionNumber
+    log.debug(s"Handling command for entity=$entityId, revision=$revisionNumber")
 
-    val sendCommand: SendCommand = aggregateCommand.message.asInstanceOf[SendCommand]
+    // Safe pattern matching instead of unsafe cast
+    aggregateCommand.message match {
+      case sendCommand: SendCommand =>
+        val headers = sendCommand.tracingHeaders
+        log.trace(s"aggregate root headers $headers")
 
-    val headers = sendCommand.tracingHeaders
-    log.trace(s"aggregate root headers $headers")
+        sendCommand.message match {
+          case SendCommand.Message.RemoteCommand(remoteCommand) =>
+            handleRemoteCommand(
+              aggregateState,
+              remoteCommand,
+              aggregateCommand.actorRef,
+              commandHandler,
+              eventHandler,
+              protosValidator,
+              remoteCommand.data
+            )
 
-    val output: ReplyEffect[EventWrapper, StateWrapper] = sendCommand.message match {
-      case SendCommand.Message.RemoteCommand(remoteCommand) =>
-        handleRemoteCommand(
-          aggregateState,
-          remoteCommand,
-          aggregateCommand.actorRef,
-          commandHandler,
-          eventHandler,
-          protosValidator,
-          remoteCommand.data
-        )
+          case SendCommand.Message.GetStateCommand(getStateCommand) =>
+            handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.actorRef)
 
-      case SendCommand.Message.GetStateCommand(getStateCommand) =>
-        handleGetStateCommand(getStateCommand, aggregateState, aggregateCommand.actorRef)
+          case SendCommand.Message.Empty =>
+            val errStatus = Status.INTERNAL.withDescription("no command sent")
+            Effect.reply(aggregateCommand.actorRef)(
+              CommandReply().withError(toRpcStatus(errStatus))
+            )
+        }
 
-      case SendCommand.Message.Empty =>
-        val errStatus = Status.INTERNAL.withDescription("no command sent")
+      case other =>
+        log.error(s"Unexpected message type: ${other.getClass.getName}")
+        val errStatus =
+          Status.INTERNAL.withDescription(s"unexpected message type: ${other.getClass.getName}")
         Effect.reply(aggregateCommand.actorRef)(CommandReply().withError(toRpcStatus(errStatus)))
     }
-    output
   }
 
   /**
@@ -192,31 +204,37 @@ object Entity {
           })
 
         // process the events
-        if (events.nonEmpty)
-          events
-            .map(event => {
-              val newEventMeta: MetaData = MetaData()
-                .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
-                .withRevisionDate(Instant.now().toTimestamp)
-                .withData(data)
-                .withEntityId(priorState.getMeta.entityId)
-                .withHeaders(command.persistedHeaders)
+        if (events.nonEmpty) {
+          // Process events and collect results, handling failures explicitly
+          val eventResults = events.map(event => {
+            val newEventMeta: MetaData = MetaData()
+              .withRevisionNumber(priorState.getMeta.revisionNumber + 1)
+              .withRevisionDate(Instant.now().toTimestamp)
+              .withData(data)
+              .withEntityId(priorState.getMeta.entityId)
+              .withHeaders(command.persistedHeaders)
 
-              eventHandler
-                .handleEvent(event, priorState.getState, newEventMeta)
-                .map(response => {
-                  require(
-                    response.resultingState.isDefined,
-                    "event handler replied with empty state"
-                  )
-                  protosValidator.requireValidState(response.getResultingState)
-                  NewState(event, response.getResultingState, newEventMeta)
-                })
-            })
-            .map(_.get)
-            .lastOption
-            .getOrElse(NoOp)
-        else NoOp
+            eventHandler
+              .handleEvent(event, priorState.getState, newEventMeta)
+              .map(response => {
+                require(
+                  response.resultingState.isDefined,
+                  "event handler replied with empty state"
+                )
+                protosValidator.requireValidState(response.getResultingState)
+                NewState(event, response.getResultingState, newEventMeta)
+              })
+          })
+
+          // Find first failure or return last successful state
+          eventResults.find(_.isFailure) match {
+            case Some(Failure(ex)) =>
+              throw ex // propagate first failure by throwing
+            case _ =>
+              // All succeeded, take the last one
+              eventResults.lastOption.flatMap(_.toOption).getOrElse(NoOp)
+          }
+        } else NoOp
       })
       .recoverWith(makeFailedStatusPf)
 
@@ -248,18 +266,25 @@ object Entity {
    * @param replyTo the caller ref receiving the reply when persistence is successful
    * @return a reply effect
    */
+  @WithSpan(value = "Entity.persistEventAndReply")
   private[chiefofstate] def persistEventAndReply(
       event: any.Any,
       resultingState: any.Any,
       eventMeta: MetaData,
       replyTo: ActorRef[CommandReply]
   ): ReplyEffect[EventWrapper, StateWrapper] = {
+    log.debug(
+      s"Persisting event for entity=${eventMeta.entityId}, revision=${eventMeta.revisionNumber}"
+    )
 
     Effect
       .persist(
         EventWrapper().withEvent(event).withResultingState(resultingState).withMeta(eventMeta)
       )
-      .thenReply(replyTo)((updatedState: StateWrapper) => CommandReply().withState(updatedState))
+      .thenReply(replyTo)((updatedState: StateWrapper) => {
+        log.debug(s"Event persisted successfully for entity=${eventMeta.entityId}")
+        CommandReply().withState(updatedState)
+      })
   }
 
   /**
@@ -270,7 +295,11 @@ object Entity {
    * @param event the event to handle
    * @return the resulting state
    */
+  @WithSpan(value = "Entity.handleEvent")
   private[chiefofstate] def handleEvent(state: StateWrapper, event: EventWrapper): StateWrapper = {
+    log.debug(
+      s"Applying event for entity=${event.getMeta.entityId}, revision=${event.getMeta.revisionNumber}"
+    )
     state.update(_.meta := event.getMeta, _.state := event.getResultingState)
   }
 

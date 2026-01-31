@@ -12,6 +12,7 @@ import com.github.chiefofstate.protobuf.v1.readside.{HandleReadSideRequest, Hand
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.instrumentation.annotations.WithSpan
+import org.apache.pekko.pattern.{CircuitBreaker, CircuitBreakerOpenException}
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.{Failure, Success, Try}
@@ -22,10 +23,12 @@ import scala.util.{Failure, Success, Try}
  *
  * @param processorId the unique Id for this read side
  * @param readSideHandlerServiceBlockingStub a blocking client for a ReadSideHandler
+ * @param circuitBreaker optional circuit breaker for resilience
  */
 private[readside] class HandlerImpl(
     processorId: String,
-    readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub
+    readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub,
+    circuitBreaker: Option[CircuitBreaker] = None
 ) extends Handler {
 
   private val COS_EVENT_TAG_HEADER = "x-cos-event-tag"
@@ -49,7 +52,8 @@ private[readside] class HandlerImpl(
       resultingState: com.google.protobuf.any.Any,
       meta: MetaData
   ): Boolean = {
-    val response: Try[HandleReadSideResponse] = Try {
+    // Build the gRPC call
+    def makeGrpcCall(): HandleReadSideResponse = {
       val headers = new Metadata()
       headers.put(
         Metadata.Key.of(COS_ENTITY_ID_HEADER, Metadata.ASCII_STRING_MARSHALLER),
@@ -68,6 +72,16 @@ private[readside] class HandlerImpl(
         )
     }
 
+    // Wrap call with circuit breaker if present
+    val response: Try[HandleReadSideResponse] = circuitBreaker match {
+      case Some(breaker) =>
+        Try {
+          breaker.withSyncCircuitBreaker(makeGrpcCall())
+        }
+      case None =>
+        Try(makeGrpcCall())
+    }
+
     // return the response
     response match {
       // return true when the remote server responds with "true"
@@ -79,6 +93,13 @@ private[readside] class HandlerImpl(
       case Success(_) =>
         logger.warn(
           s"read side returned failure, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
+        )
+        false
+
+      // Circuit breaker is open - fail fast
+      case Failure(_: CircuitBreakerOpenException) =>
+        logger.warn(
+          s"read side circuit breaker open, processor=$processorId, id=${meta.entityId}, revisionNumber=${meta.revisionNumber}"
         )
         false
 

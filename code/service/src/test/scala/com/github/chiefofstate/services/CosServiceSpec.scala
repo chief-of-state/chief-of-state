@@ -69,6 +69,9 @@ class CosServiceSpec extends BaseActorSpec(s"""
   val actorSystem: ActorSystem[Nothing] = testKit.system
   val replyTimeout: FiniteDuration      = FiniteDuration(1, TimeUnit.SECONDS)
 
+  // Provide implicit ExecutionContext for CosService
+  implicit val ec: ExecutionContext = actorSystem.executionContext
+
   val writeSideConfig: WriteSideConfig = WriteSideConfig(
     host = "",
     port = 0,
@@ -77,7 +80,8 @@ class CosServiceSpec extends BaseActorSpec(s"""
     eventsProtos = Seq(),
     statesProtos = Seq(),
     propagatedHeaders = Seq(),
-    persistedHeaders = Seq()
+    persistedHeaders = Seq(),
+    circuitBreakerConfig = com.github.chiefofstate.config.CircuitBreakerConfig.disabled()
   )
 
   val cosConfig = TestConfig.cosConfig

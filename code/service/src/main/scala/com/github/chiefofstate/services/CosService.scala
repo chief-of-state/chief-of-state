@@ -20,18 +20,22 @@ import com.google.protobuf.any
 import com.google.rpc.status.Status.toJavaProto
 import io.grpc.protobuf.StatusProto
 import io.grpc.{Metadata, Status, StatusException}
+import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef}
 import org.apache.pekko.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
 import scalapb.GeneratedMessage
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class CosService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideConfig)(implicit
-    val askTimeout: Timeout
+class CosService(
+    clusterSharding: ClusterSharding,
+    writeSideConfig: WriteSideConfig
+)(implicit
+    val askTimeout: Timeout,
+    ec: ExecutionContext
 ) extends ChiefOfStateServiceGrpc.ChiefOfStateService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -39,10 +43,12 @@ class CosService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
   /**
    * Used to process command sent by an application
    */
+  @WithSpan(value = "CosService.processCommand")
   override def processCommand(request: ProcessCommandRequest): Future[ProcessCommandResponse] = {
-    log.debug(ChiefOfStateServiceGrpc.METHOD_PROCESS_COMMAND.getFullMethodName)
-
     val entityId: String = request.entityId
+    log.debug(
+      s"Processing command for entity=$entityId, commandType=${request.command.map(_.typeUrl).getOrElse("unknown")}"
+    )
 
     // fetch the gRPC metadata
     val metadata: Metadata = MetadataInterceptor.REQUEST_META.get()
@@ -78,16 +84,25 @@ class CosService(clusterSharding: ClusterSharding, writeSideConfig: WriteSideCon
       })
       .map((msg: GeneratedMessage) => msg.asInstanceOf[CommandReply])
       .flatMap((value: CommandReply) => Future.fromTry(CosService.handleCommandReply(value)))
-      .map(c => ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta))
+      .map { c =>
+        log.debug(
+          s"Command processed successfully for entity=$entityId, revision=${c.getMeta.revisionNumber}"
+        )
+        ProcessCommandResponse().withState(c.getState).withMeta(c.getMeta)
+      }
+      .recoverWith { case ex =>
+        log.error(s"Command processing failed for entity=$entityId: ${ex.getMessage}", ex)
+        Future.failed(ex)
+      }
   }
 
   /**
    * Used to get the current state of that entity
    */
+  @WithSpan(value = "CosService.getState")
   override def getState(request: GetStateRequest): Future[GetStateResponse] = {
-    log.debug(ChiefOfStateServiceGrpc.METHOD_GET_STATE.getFullMethodName)
-
     val entityId: String = request.entityId
+    log.debug(s"Getting state for entity=$entityId")
 
     // ascertain the entity id
     CosService

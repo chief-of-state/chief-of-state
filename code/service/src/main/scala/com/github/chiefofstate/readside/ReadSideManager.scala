@@ -360,22 +360,41 @@ class ReadSideManager(system: ActorSystem[_], numShards: Int) extends StateManag
    * The operation will automatically restart the read side.
    *
    * @param readSideId the read side unique id
-   * @return true when successful or false when failed
    */
   override def skipOffsets(readSideId: String): Unit = {
-    // let us loop through all the available shards and fetch the various offsets
-    // and restart the read side for each shard
-    (0 until numShards).foreach { shardNumber =>
-      // create the projection ID
+    val mgmt = ProjectionManagement(system)
+
+    // Process all shards and collect results
+    val skipFutures: Seq[Future[Unit]] = (0 until numShards).map { shardNumber =>
       val projectionId = ProjectionId(readSideId, shardNumber.toString)
-      val currentOffset: Future[Option[Sequence]] =
-        ProjectionManagement(system).getOffset[Sequence](projectionId)
-      // process the value of the future
-      currentOffset.foreach {
-        case Some(s) =>
-          ProjectionManagement(system).updateOffset[Sequence](projectionId, Sequence(s.value + 1))
-        case None => // already removed
-      }
+
+      mgmt
+        .getOffset[Sequence](projectionId)
+        .flatMap {
+          case Some(s) =>
+            logger.info(
+              s"Skipping offset for readSideId=$readSideId, shardNumber=$shardNumber, currentOffset=${s.value}"
+            )
+            mgmt.updateOffset[Sequence](projectionId, Sequence(s.value + 1)).map(_ => ())
+          case None =>
+            logger.warn(s"No offset found for readSideId=$readSideId, shardNumber=$shardNumber")
+            Future.successful(())
+        }
+        .recover { case ex =>
+          logger.error(
+            s"Failed to skip offset for readSideId=$readSideId, shardNumber=$shardNumber: ${ex.getMessage}",
+            ex
+          )
+          ()
+        }
+    }
+
+    // Log overall completion status
+    Future.sequence(skipFutures).onComplete {
+      case Success(_) =>
+        logger.info(s"Successfully skipped offsets for all shards of readSideId=$readSideId")
+      case Failure(ex) =>
+        logger.error(s"Failed to skip offsets for readSideId=$readSideId: ${ex.getMessage}", ex)
     }
   }
 

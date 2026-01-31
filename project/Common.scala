@@ -22,6 +22,9 @@ object Common extends AutoPlugin {
 
   override def globalSettings =
     Seq(
+      // Let Slick 3.6.1 be used even when pekko-persistence-jdbc declares 3.5.1 (same major, early-semver)
+      libraryDependencySchemes += "com.typesafe.slick" %% "slick"         % "early-semver",
+      libraryDependencySchemes += "com.typesafe.slick" %% "slick-hikaricp" % "early-semver",
       scalaVersion         := Versions.ScalaVersion,
       organization         := "com.github.chiefofstate",
       organizationName     := "Chief Of State.",

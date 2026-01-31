@@ -8,6 +8,7 @@ package com.github.chiefofstate.readside
 
 import com.github.chiefofstate.config.ReadSideFailurePolicy
 import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
+import com.github.chiefofstate.types.FailurePolicy
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior}
 import org.apache.pekko.cluster.sharding.typed.ShardedDaemonProcessSettings
 import org.apache.pekko.cluster.sharding.typed.scaladsl.ShardedDaemonProcess
@@ -73,10 +74,13 @@ private[readside] class ReadSide(
       handler = () => new JdbcHandler(tagName, readSideId, readSideHandler)
     )
 
-    // let us set the failure policy
-    failurePolicy.toUpperCase match {
+    // Parse and apply failure policy using type-safe ADT
+    val policy = FailurePolicy.fromStringOrDefault(failurePolicy)
+
+    val configuredProjection = policy match {
       // this will completely stop the given readside when the processing of an event failed
-      case ReadSideFailurePolicy.StopDirective =>
+      case FailurePolicy.Stop =>
+        log.info(s"Configuring read side $readSideId with STOP policy")
         // here we disable restart because we are stopping the readside
         projection
           .withRecoveryStrategy(HandlerRecoveryStrategy.fail)
@@ -88,14 +92,18 @@ private[readside] class ReadSide(
           )
 
       // this will skip the failed processed event and advanced the offset to continue to the next event.
-      case ReadSideFailurePolicy.SkipDirective =>
+      case FailurePolicy.Skip =>
+        log.info(s"Configuring read side $readSideId with SKIP policy")
         projection.withRecoveryStrategy(HandlerRecoveryStrategy.skip)
 
-      // this will attempt to replay the failed processed event five times and stop the given readside
-      case ReadSideFailurePolicy.ReplayStopDirective =>
+      // this will attempt to replay the failed processed event and stop the given readside
+      case FailurePolicy.RetryAndStop(retries, delaySeconds) =>
+        log.info(
+          s"Configuring read side $readSideId with RETRY-AND-STOP policy (retries=$retries, delay=${delaySeconds}s)"
+        )
         // here we disable restart because we are stopping the readside
         projection
-          .withRecoveryStrategy(HandlerRecoveryStrategy.retryAndFail(5, 5.seconds))
+          .withRecoveryStrategy(HandlerRecoveryStrategy.retryAndFail(retries, delaySeconds.seconds))
           .withRestartBackoff(
             minBackoff = 3.seconds,
             maxBackoff = 30.seconds,
@@ -103,13 +111,17 @@ private[readside] class ReadSide(
             maxRestarts = 0
           )
 
-      // this will attempt to replay the failed processed event five times and skip to the next event
-      case ReadSideFailurePolicy.ReplaySkipDirective =>
-        projection.withRecoveryStrategy(HandlerRecoveryStrategy.retryAndSkip(5, 5.seconds))
-      case _ => () // we do nothing. Just use the default settings in the application.conf file
+      // this will attempt to replay the failed processed event and skip to the next event
+      case FailurePolicy.RetryAndSkip(retries, delaySeconds) =>
+        log.info(
+          s"Configuring read side $readSideId with RETRY-AND-SKIP policy (retries=$retries, delay=${delaySeconds}s)"
+        )
+        projection.withRecoveryStrategy(
+          HandlerRecoveryStrategy.retryAndSkip(retries, delaySeconds.seconds)
+        )
     }
 
-    ProjectionBehavior(projection)
+    ProjectionBehavior(configuredProjection)
   }
 }
 

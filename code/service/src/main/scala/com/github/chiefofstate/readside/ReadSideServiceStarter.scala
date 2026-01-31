@@ -6,12 +6,13 @@
 
 package com.github.chiefofstate.readside
 
-import com.github.chiefofstate.config.{ReadSideConfig, ReadSideConfigReader}
+import com.github.chiefofstate.config.{CircuitBreakerConfig, ReadSideConfig, ReadSideConfigReader}
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.github.chiefofstate.utils.Netty
 import com.typesafe.config.{Config, ConfigException}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.pattern.CircuitBreaker
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.ExecutionContextExecutor
@@ -26,13 +27,15 @@ import scala.util.{Failure, Success, Try}
  * @param readSideConfigs sequence of configs for specific read sides
  * @param numShards       number of shards for projections/tags
  * @param readSideManager specifies the readSide manager
+ * @param circuitBreakerConfig circuit breaker configuration for read-side
  */
 class ReadSideServiceStarter(
     system: ActorSystem[_],
     dbConfig: ReadSideServiceStarter.DbConfig,
     readSideConfigs: Seq[ReadSideConfig],
     numShards: Int,
-    readSideManager: ReadSideManager
+    readSideManager: ReadSideManager,
+    circuitBreakerConfig: CircuitBreakerConfig
 ) {
   private[readside] lazy val dataSource: HikariDataSource =
     ReadSideServiceStarter.getDataSource(dbConfig)
@@ -48,6 +51,32 @@ class ReadSideServiceStarter(
     readSideConfigs.filter(c => c.enabled).foreach { config =>
       logger.info(s"starting read side: ${config.toString}")
 
+      // Create circuit breaker for this read-side if enabled
+      val readSideCircuitBreaker: Option[CircuitBreaker] =
+        if (circuitBreakerConfig.enabled) {
+          val cbConfig = circuitBreakerConfig
+          logger.info(
+            s"Initializing read-side circuit breaker for ${config.readSideId}: " +
+              s"maxFailures=${cbConfig.maxFailures}, callTimeout=${cbConfig.callTimeout}, " +
+              s"resetTimeout=${cbConfig.resetTimeout}"
+          )
+          val breaker = new CircuitBreaker(
+            system.classicSystem.scheduler,
+            maxFailures = cbConfig.maxFailures,
+            callTimeout = cbConfig.callTimeout,
+            resetTimeout = cbConfig.resetTimeout
+          )(ec)
+            .onOpen(logger.warn(s"Read-side circuit breaker opened for ${config.readSideId}"))
+            .onClose(logger.info(s"Read-side circuit breaker closed for ${config.readSideId}"))
+            .onHalfOpen(
+              logger.info(s"Read-side circuit breaker half-open for ${config.readSideId}")
+            )
+          Some(breaker)
+        } else {
+          logger.info(s"Read-side circuit breaker disabled for ${config.readSideId}")
+          None
+        }
+
       // construct a remote gRPC read side client for this read side
       // and register interceptors
       val rpcClient: ReadSideHandlerServiceBlockingStub =
@@ -56,7 +85,7 @@ class ReadSideServiceStarter(
         )
       // instantiate a remote read side processor with the gRPC client
       val remoteReadSideProcessor: HandlerImpl =
-        new HandlerImpl(config.readSideId, rpcClient)
+        new HandlerImpl(config.readSideId, rpcClient, readSideCircuitBreaker)
       // instantiate the read side projection with the remote processor
       val projection =
         new ReadSide(
@@ -110,6 +139,16 @@ object ReadSideServiceStarter {
       DbConfig(jdbcCfg)
     }
 
+    // Circuit breaker config for read-side is optional - if missing, use disabled
+    val circuitBreakerConfig: CircuitBreakerConfig = {
+      val cbKey = "chiefofstate.read-side.circuit-breaker"
+      if (system.settings.config.hasPath(cbKey)) {
+        CircuitBreakerConfig(system.settings.config.getConfig(cbKey))
+      } else {
+        CircuitBreakerConfig.disabled()
+      }
+    }
+
     // fetch the read side config
     val configs: Seq[ReadSideConfig] = {
       // get the readside config file
@@ -129,7 +168,8 @@ object ReadSideServiceStarter {
       dbConfig = dbConfig,
       readSideConfigs = configs,
       numShards = numShards,
-      readSideManager
+      readSideManager,
+      circuitBreakerConfig
     )
   }
 

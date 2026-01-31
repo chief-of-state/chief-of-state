@@ -15,6 +15,7 @@ import com.github.chiefofstate.protobuf.v1.writeside.{HandleCommandRequest, Hand
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.instrumentation.annotations.WithSpan
+import org.apache.pekko.pattern.CircuitBreaker
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.concurrent.TimeUnit
@@ -25,10 +26,12 @@ import scala.util.Try
  *
  * @param grpcConfig the grpc config
  * @param writeHandlerServiceStub the grpc client stub
+ * @param circuitBreaker optional circuit breaker for resilience
  */
 case class CommandHandler(
     grpcConfig: GrpcConfig,
-    writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub
+    writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub,
+    circuitBreaker: Option[CircuitBreaker] = None
 ) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -50,7 +53,8 @@ case class CommandHandler(
     // let us set the client request headers
     val headers: Metadata = new Metadata()
 
-    Try {
+    // Build the gRPC call
+    def makeGrpcCall(): HandleCommandResponse = {
       remoteCommand.propagatedHeaders.foreach { header =>
         header.value match {
           case Value.StringValue(value) =>
@@ -74,6 +78,16 @@ case class CommandHandler(
             .withCommand(remoteCommand.getCommand)
             .withPriorEventMeta(priorState.getMeta)
         )
+    }
+
+    // Wrap call with circuit breaker if present
+    circuitBreaker match {
+      case Some(breaker) =>
+        Try {
+          breaker.withSyncCircuitBreaker(makeGrpcCall())
+        }
+      case None =>
+        Try(makeGrpcCall())
     }
   }
 }

@@ -22,7 +22,8 @@ class ValidatorSpec extends BaseSpec {
     eventsProtos = Seq(),
     statesProtos = Seq(),
     propagatedHeaders = Seq(),
-    persistedHeaders = Seq()
+    persistedHeaders = Seq(),
+    circuitBreakerConfig = com.github.chiefofstate.config.CircuitBreakerConfig.disabled()
   )
 
   "Events and State protos validation" should {

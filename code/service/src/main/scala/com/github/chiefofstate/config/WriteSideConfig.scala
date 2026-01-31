@@ -18,6 +18,7 @@ import com.typesafe.config.Config
  * @param statesProtos the list of the states proto messages package names
  * @param propagatedHeaders the list of gRPC headers to propagate
  * @param persistedHeaders the list of gRPC headers to persist
+ * @param circuitBreakerConfig circuit breaker configuration
  */
 case class WriteSideConfig(
     host: String,
@@ -27,7 +28,8 @@ case class WriteSideConfig(
     eventsProtos: Seq[String],
     statesProtos: Seq[String],
     propagatedHeaders: Seq[String],
-    persistedHeaders: Seq[String]
+    persistedHeaders: Seq[String],
+    circuitBreakerConfig: CircuitBreakerConfig
 )
 
 object WriteSideConfig {
@@ -40,6 +42,7 @@ object WriteSideConfig {
   private val statesProtosKey: String      = "chiefofstate.write-side.states-protos"
   private val propagatedHeadersKey: String = "chiefofstate.write-side.propagated-headers"
   private val persistedHeadersKey: String  = "chiefofstate.write-side.persisted-headers"
+  private val circuitBreakerKey: String    = "chiefofstate.write-side.circuit-breaker"
 
   /**
    * creates an instancee of WriteSideConfig
@@ -48,6 +51,12 @@ object WriteSideConfig {
    * @return a new instance of WriteSideConfig
    */
   def apply(config: Config): WriteSideConfig = {
+    // Circuit breaker config is optional - if missing, use disabled
+    val cbConfig = if (config.hasPath(circuitBreakerKey)) {
+      CircuitBreakerConfig(config.getConfig(circuitBreakerKey))
+    } else {
+      CircuitBreakerConfig.disabled()
+    }
 
     WriteSideConfig(
       host = config.getString(hostKey),
@@ -57,7 +66,8 @@ object WriteSideConfig {
       eventsProtos = csvSplitDistinct(config.getString(eventsProtosKey)),
       statesProtos = csvSplitDistinct(config.getString(statesProtosKey)),
       propagatedHeaders = csvSplitDistinct(config.getString(propagatedHeadersKey)),
-      persistedHeaders = csvSplitDistinct(config.getString(persistedHeadersKey))
+      persistedHeaders = csvSplitDistinct(config.getString(persistedHeadersKey)),
+      circuitBreakerConfig = cbConfig
     )
   }
 

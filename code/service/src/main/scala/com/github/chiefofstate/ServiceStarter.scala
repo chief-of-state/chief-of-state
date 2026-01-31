@@ -21,6 +21,7 @@ import io.grpc._
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorSystem, Behavior}
 import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
+import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.persistence.typed.PersistenceId
 import org.apache.pekko.util.Timeout
 import org.slf4j.{Logger, LoggerFactory}
@@ -64,10 +65,33 @@ object ServiceStarter {
           val writeHandler: WriteSideHandlerServiceBlockingStub =
             new WriteSideHandlerServiceBlockingStub(channel)
 
+          // Create circuit breaker for write-side if enabled
+          val writeSideCircuitBreaker: Option[CircuitBreaker] =
+            if (cosConfig.writeSideConfig.circuitBreakerConfig.enabled) {
+              val cbConfig = cosConfig.writeSideConfig.circuitBreakerConfig
+              log.info(
+                s"Initializing write-side circuit breaker: maxFailures=${cbConfig.maxFailures}, " +
+                  s"callTimeout=${cbConfig.callTimeout}, resetTimeout=${cbConfig.resetTimeout}"
+              )
+              val breaker = new CircuitBreaker(
+                context.system.classicSystem.scheduler,
+                maxFailures = cbConfig.maxFailures,
+                callTimeout = cbConfig.callTimeout,
+                resetTimeout = cbConfig.resetTimeout
+              )(context.executionContext)
+                .onOpen(log.warn("Write-side circuit breaker opened"))
+                .onClose(log.info("Write-side circuit breaker closed"))
+                .onHalfOpen(log.info("Write-side circuit breaker half-open"))
+              Some(breaker)
+            } else {
+              log.info("Write-side circuit breaker disabled")
+              None
+            }
+
           val remoteCommandHandler: CommandHandler =
-            CommandHandler(cosConfig.grpcConfig, writeHandler)
+            CommandHandler(cosConfig.grpcConfig, writeHandler, writeSideCircuitBreaker)
           val remoteEventHandler: EventHandler =
-            EventHandler(cosConfig.grpcConfig, writeHandler)
+            EventHandler(cosConfig.grpcConfig, writeHandler, writeSideCircuitBreaker)
 
           // instance of eventsAndStatesProtoValidation
           val eventsAndStateProtoValidation: Validator =
@@ -132,7 +156,7 @@ object ServiceStarter {
 
     // instantiate the grpc service, bind to the execution context
     val coSService: CosService =
-      new CosService(clusterSharding, cosConfig.writeSideConfig)
+      new CosService(clusterSharding, cosConfig.writeSideConfig)(askTimeout, grpcEc)
 
     // create an instance of the read side state manager service
     val readSideManagerService = new CosReadSideManagerService(readSideManager)(grpcEc)

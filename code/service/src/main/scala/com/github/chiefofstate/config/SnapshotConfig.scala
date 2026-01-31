@@ -31,16 +31,38 @@ object SnapshotConfig {
     "chiefofstate.snapshot-criteria.delete-events-on-snapshot"
 
   /**
-   * creates a new instance of SnaphotConfig
+   * creates a new instance of SnapshotConfig with validation
    * @param config the config object
    * @return the new instance of SnapshotConfig
+   * @throws IllegalArgumentException if configuration is invalid
    */
   def apply(config: Config): SnapshotConfig = {
+    val disableSnapshot        = config.getBoolean(disableSnapshotKey)
+    val retentionFrequency     = config.getInt(retentionFrequencyKey)
+    val retentionNr            = config.getInt(retentionNrKey)
+    val deleteEventsOnSnapshot = config.getBoolean(deleteEventsOnSnapshotKey)
+
+    // Only validate snapshot settings if snapshots are enabled
+    if (!disableSnapshot) {
+      require(
+        retentionFrequency > 0,
+        s"$retentionFrequencyKey must be positive when snapshots are enabled, got $retentionFrequency"
+      )
+      require(
+        retentionNr > 0,
+        s"$retentionNrKey must be positive when snapshots are enabled, got $retentionNr"
+      )
+      require(
+        retentionNr <= 100,
+        s"$retentionNrKey is too large (max 100), got $retentionNr"
+      )
+    }
+
     SnapshotConfig(
-      config.getBoolean(disableSnapshotKey),
-      config.getInt(retentionFrequencyKey),
-      config.getInt(retentionNrKey),
-      config.getBoolean(deleteEventsOnSnapshotKey)
+      disableSnapshot,
+      retentionFrequency,
+      retentionNr,
+      deleteEventsOnSnapshot
     )
   }
 }

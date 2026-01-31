@@ -89,7 +89,7 @@ class Migrator(val journalDbConfig: DatabaseConfig[JdbcProfile], schema: String)
           // find all subsequent versions available
           val versionsToUpgrade: Seq[Version] = getVersions(versionNumber + 1)
 
-          if (versionsToUpgrade.nonEmpty) {
+          if versionsToUpgrade.nonEmpty then {
             logger.info(
               s"upgrading COS schema, currentVersion: $versionNumber, newerVersions: ${versionsToUpgrade.size}"
             )
@@ -252,9 +252,9 @@ object Migrator {
   ): Try[Unit] = {
     Try {
       // if no prior version number, allow providing via env var
-      if (getCurrentVersionNumber(journalDbConfig).isEmpty) {
+      if getCurrentVersionNumber(journalDbConfig).isEmpty then {
         // if provided, bootstrap to this version number
-        if (sys.env.keySet.contains(COS_MIGRATIONS_INITIAL_VERSION)) {
+        if sys.env.keySet.contains(COS_MIGRATIONS_INITIAL_VERSION) then {
           val envValue: String = sys.env.getOrElse(COS_MIGRATIONS_INITIAL_VERSION, "").trim()
 
           require(envValue.nonEmpty, s"${COS_MIGRATIONS_INITIAL_VERSION} setting provided empty")

@@ -12,6 +12,7 @@ import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc
 import com.github.chiefofstate.protobuf.v1.writeside.{HandleEventRequest, HandleEventResponse}
 import com.google.protobuf.any
 import io.opentelemetry.instrumentation.annotations.WithSpan
+import org.apache.pekko.pattern.CircuitBreaker
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.util.concurrent.TimeUnit
@@ -22,10 +23,12 @@ import scala.util.Try
  *
  * @param grpcConfig the grpc config
  * @param writeHandlerServiceStub the grpc client stub
+ * @param circuitBreaker optional circuit breaker for resilience
  */
 case class EventHandler(
     grpcConfig: GrpcConfig,
-    writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub
+    writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub,
+    circuitBreaker: Option[CircuitBreaker] = None
 ) {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)
@@ -43,14 +46,25 @@ case class EventHandler(
       priorState: any.Any,
       eventMeta: MetaData
   ): Try[HandleEventResponse] = {
-    Try {
-      log.debug(s"sending request to the event handler, ${event.typeUrl}")
+    log.debug(s"sending request to the event handler, ${event.typeUrl}")
 
+    // Build the gRPC call
+    def makeGrpcCall(): HandleEventResponse = {
       writeHandlerServiceStub
         .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
         .handleEvent(
           HandleEventRequest().withEvent(event).withPriorState(priorState).withEventMeta(eventMeta)
         )
+    }
+
+    // Wrap call with circuit breaker if present
+    circuitBreaker match {
+      case Some(breaker) =>
+        Try {
+          breaker.withSyncCircuitBreaker(makeGrpcCall())
+        }
+      case None =>
+        Try(makeGrpcCall())
     }
   }
 }

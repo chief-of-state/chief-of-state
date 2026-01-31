@@ -45,42 +45,46 @@ object Migration {
   def apply(config: Config): Behavior[Message] = Behaviors.setup[Message] { _ =>
     Behaviors.receiveMessage[Message] {
       case SendReceive(message, replyTo) if message.isInstanceOf[StartMigration] =>
-        // get the underlying database
-        val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
-          JdbcConfig.journalConfig(config)
-
-        // get the database schema to use
-        val schema: String = config.getString("jdbc-default.schema")
-
-        // run the migration
+        // Use resource management to ensure database is always closed
         val result: Try[Unit] = {
-          // create an instance of the v6 migration
-          val v6: V6 = V6(journalJdbcConfig)
-          // instance of the migrator
-          val migrator: Migrator =
-            new Migrator(journalJdbcConfig, schema).addVersion(v6)
-          // run the migration
-          migrator.run()
+          // get the underlying database
+          val journalJdbcConfig: DatabaseConfig[JdbcProfile] =
+            JdbcConfig.journalConfig(config)
+
+          try {
+            // get the database schema to use
+            val schema: String = config.getString("jdbc-default.schema")
+
+            // create an instance of the v6 migration
+            val v6: V6 = V6(journalJdbcConfig)
+            // instance of the migrator
+            val migrator: Migrator =
+              new Migrator(journalJdbcConfig, schema).addVersion(v6)
+            // run the migration
+            migrator.run()
+          } finally {
+            // Always close the database connection to prevent memory leaks
+            try {
+              journalJdbcConfig.db.close()
+              log.debug("Database connection closed successfully")
+            } catch {
+              case ex: Exception =>
+                log.error(s"Error closing database connection: ${ex.getMessage}", ex)
+            }
+          }
         }
+
         result match {
           case Failure(exception) =>
-            // close the underlying database connection to avoid memory-leak
-            journalJdbcConfig.db.close()
-
+            log.error(s"Migration failed: ${exception.getMessage}", exception)
             // notify the bootstrapper actor that the migration has failed
             replyTo ! MigrationFailed().withErrorMessage(exception.getMessage)
-
             // stopping the actor
             Behaviors.stopped
 
           case Success(_) =>
-            // close the underlying database connection to avoid memory-leak
-            journalJdbcConfig.db.close()
-
             log.info("ChiefOfState migration successfully done...")
-
             replyTo ! MigrationSucceeded()
-
             Behaviors.same
         }
 
@@ -90,7 +94,6 @@ object Migration {
 
       case unhandled =>
         log.warn(s"cannot serialize ${unhandled.getClass.getName}")
-
         Behaviors.stopped
     }
   }

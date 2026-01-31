@@ -9,7 +9,6 @@ package com.github.chiefofstate.migration
 import slick.basic.DatabaseConfig
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
-import slick.jdbc.meta.MTable
 
 import java.net.InetSocketAddress
 import javax.net.SocketFactory
@@ -27,8 +26,13 @@ object DbUtil {
    * @return true if the table exists
    */
   def tableExists(dbConfig: DatabaseConfig[JdbcProfile], tableName: String): Boolean = {
-    val tables: Seq[MTable] = Await.result(dbConfig.db.run(MTable.getTables), Duration.Inf)
-    tables.filter(_.tableType == "TABLE").exists(_.name.name.equals(tableName))
+    // Use information_schema so we see tables in the connection's current schema (e.g. "cos"),
+    // not just the default schema. MTable.getTables() can be schema-dependent and miss tables.
+    val q =
+      sql"SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = $tableName"
+        .as[Int]
+        .headOption
+    Await.result(dbConfig.db.run(q), Duration.Inf).isDefined
   }
 
   /**

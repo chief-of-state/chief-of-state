@@ -25,7 +25,7 @@ package object migration {
      */
     def isUpper: Boolean = {
       s.toCharArray.forall(c => {
-        if (!c.isLetter) true
+        if !c.isLetter then true
         else c.isUpper
       })
     }
