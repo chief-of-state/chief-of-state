@@ -125,7 +125,7 @@ sbt:
     WORKDIR /sbt
 
     # This triggers a bunch of useful downloads.
-    RUN sbt sbtVersion
+    RUN sbt --allow-empty sbtVersion
 
     # install docker tools
     # https://docs.docker.com/engine/install/debian/
