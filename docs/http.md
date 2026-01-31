@@ -230,10 +230,10 @@ Chief of State sends one POST per event. Your handler processes the event and re
 
 ### Response
 
-| Status    | Meaning                                                         |
-|-----------|-----------------------------------------------------------------|
-| **200 OK**| Request processed. Response body controls offset commitment.    |
-| **Other** | Error. Chief of State retries according to `failurePolicy`.     |
+| Status     | Meaning                                                      |
+|------------|--------------------------------------------------------------|
+| **200 OK** | Request processed. Response body controls offset commitment. |
+| **Other**  | Error. Chief of State retries according to `failurePolicy`.  |
 
 #### Response body (200 OK)
 
