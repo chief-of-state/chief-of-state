@@ -7,15 +7,22 @@
 package com.github.chiefofstate.readside
 
 import com.github.chiefofstate.protobuf.v1.common.MetaData
+import com.github.chiefofstate.protobuf.v1.readside.HandleReadSideRequest
+import com.github.chiefofstate.protobuf.v1.readside.HandleReadSideResponse
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
-import com.github.chiefofstate.protobuf.v1.readside.{HandleReadSideRequest, HandleReadSideResponse}
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
 import io.opentelemetry.instrumentation.annotations.WithSpan
-import org.apache.pekko.pattern.{CircuitBreaker, CircuitBreakerOpenException}
-import org.slf4j.{Logger, LoggerFactory}
+import org.apache.pekko.pattern.CircuitBreaker
+import org.apache.pekko.pattern.CircuitBreakerOpenException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-import scala.util.{Failure, Success, Try}
+import java.util.concurrent.TimeUnit
+
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 /**
  * read side processor that sends messages to a gRPC server that implements
@@ -23,11 +30,13 @@ import scala.util.{Failure, Success, Try}
  *
  * @param processorId the unique Id for this read side
  * @param readSideHandlerServiceBlockingStub a blocking client for a ReadSideHandler
+ * @param timeout timeout for gRPC calls in milliseconds
  * @param circuitBreaker optional circuit breaker for resilience
  */
 private[readside] class HandlerImpl(
     processorId: String,
     readSideHandlerServiceBlockingStub: ReadSideHandlerServiceBlockingStub,
+    timeout: Long,
     circuitBreaker: Option[CircuitBreaker] = None
 ) extends Handler {
 
@@ -63,6 +72,7 @@ private[readside] class HandlerImpl(
 
       readSideHandlerServiceBlockingStub
         .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
+        .withDeadlineAfter(timeout, TimeUnit.MILLISECONDS)
         .handleReadSide(
           HandleReadSideRequest()
             .withEvent(event)

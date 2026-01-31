@@ -27,6 +27,7 @@ import scala.util.{Failure, Success, Try}
  *
  * @param processorId the unique ID for this read side
  * @param baseUrl the base URL of the HTTP endpoint (e.g., "http://handler:8080" or "https://handler:8443")
+ * @param timeout timeout for HTTP requests in milliseconds
  * @param circuitBreaker optional circuit breaker for resilience
  * @param system actor system for HTTP client
  * @param ec execution context
@@ -34,6 +35,7 @@ import scala.util.{Failure, Success, Try}
 private[readside] class HttpHandlerImpl(
     processorId: String,
     baseUrl: String,
+    timeout: Long,
     circuitBreaker: Option[CircuitBreaker] = None
 )(implicit system: ActorSystem[_], ec: ExecutionContext)
     extends Handler
@@ -105,15 +107,20 @@ private[readside] class HttpHandlerImpl(
               parseJson[HandleReadSideResponse](jsonString)
             }
           case statusCode =>
-            response.entity.discardBytes()
-            Future.failed(
-              new RuntimeException(s"HTTP request failed with status $statusCode")
-            )
+            // Log response body before discarding for debugging
+            Unmarshal(response.entity).to[String].map { body =>
+              logger.error(
+                s"HTTP read-side handler returned $statusCode for processor=$processorId, entity=${meta.entityId}, body=$body"
+              )
+              throw new RuntimeException(
+                s"HTTP request failed with status $statusCode: ${body.take(200)}"
+              )
+            }
         }
       } yield result
 
       // Block and wait for the response (matching gRPC blocking stub behavior)
-      Await.result(responseFuture, 30.seconds)
+      Await.result(responseFuture, timeout.milliseconds)
     }
 
     // Wrap call with circuit breaker if present

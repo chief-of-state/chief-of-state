@@ -91,6 +91,7 @@ object ReadSideConfigReader {
     val READ_SIDE_HOST_KEY: String       = "HOST"
     val READ_SIDE_PORT_KEY: String       = "PORT"
     val READ_SIDE_TLS_KEY: String        = "USE_TLS"
+    val READ_SIDE_TIMEOUT_KEY: String    = "TIMEOUT"
     val READ_SIDE_AUTO_START: String     = "AUTO_START"
     val READ_SIDE_ENABLED: String        = "ENABLED"
     val READ_SIDE_FAILURE_POLICY: String = "FAILURE_POLICY"
@@ -133,6 +134,9 @@ object ReadSideConfigReader {
           case (config, (READ_SIDE_TLS_KEY, value)) =>
             config.copy(useTls = value.toBooleanOption.getOrElse(false))
 
+          case (config, (READ_SIDE_TIMEOUT_KEY, value)) =>
+            config.copy(timeout = value.toLongOption.getOrElse(30000L))
+
           case (config, (READ_SIDE_AUTO_START, value)) =>
             config.copy(autoStart = value.toBooleanOption.getOrElse(false))
 
@@ -158,7 +162,7 @@ object ReadSideConfigReader {
 
       logger.info(
         s"Configuring read side '$readSideId', host=${readSideConfig.host}, port=${readSideConfig.port}, " +
-          s"useTls=${readSideConfig.useTls}, autoStart=${readSideConfig.autoStart}, " +
+          s"useTls=${readSideConfig.useTls}, timeout=${readSideConfig.timeout}ms, autoStart=${readSideConfig.autoStart}, " +
           s"enabled=${readSideConfig.enabled}, failurePolicy=${readSideConfig.failurePolicy}"
       )
 

@@ -242,9 +242,12 @@ object ServiceStarter {
     val httpBindingFutureOpt = cosConfig.serverConfig.protocol match {
       case ServerProtocol.Http | ServerProtocol.Both =>
         val httpRoutes = new HttpRoutes(coSService, cosConfig.writeSideConfig)(grpcEc)
+        // Seal routes to properly handle rejections and convert them to HTTP responses
+        import org.apache.pekko.http.scaladsl.server.Route
+        val sealedRoutes = Route.seal(httpRoutes.routes)
         val bindingFuture = Http()(system)
           .newServerAt(cosConfig.serverConfig.http.address, cosConfig.serverConfig.http.port)
-          .bind(httpRoutes.routes)
+          .bind(sealedRoutes)
 
         bindingFuture.onComplete {
           case scala.util.Success(binding) =>

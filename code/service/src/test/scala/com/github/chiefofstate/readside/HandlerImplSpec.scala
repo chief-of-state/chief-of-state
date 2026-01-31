@@ -90,7 +90,7 @@ class HandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub)
+      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub, 30000L)
 
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
@@ -147,7 +147,7 @@ class HandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub)
+      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub, 30000L)
 
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
@@ -202,7 +202,7 @@ class HandlerImplSpec extends BaseSpec {
       val readSideHandlerServiceStub: ReadSideHandlerServiceBlockingStub =
         new ReadSideHandlerServiceBlockingStub(serverChannel)
 
-      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub)
+      val readSideHandlerImpl = new HandlerImpl(readSideId, readSideHandlerServiceStub, 30000L)
       val triedHandleReadSideResponse =
         readSideHandlerImpl.processEvent(
           com.google.protobuf.any.Any.pack(accountOpened),

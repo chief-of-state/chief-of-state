@@ -7,7 +7,7 @@ See the deployment-specific guides for relevant configurations:
 - [Docker Deployment](./docker-deployment.md)
 - [Kubernetes Deployment](./kubernetes-deployment.md)
 
-When using HTTP (`COS_SERVER_PROTOCOL` = `http` or `both`), see the [OpenAPI 3 spec](./openapi.yaml) for the HTTP API documentation.
+When using HTTP (`COS_SERVER_PROTOCOL` = `http` or `both`), see the [HTTP API documentation](./http.md) for endpoints and JSON format.
 
 ## 🌐 Global Environment Variables
 
@@ -98,6 +98,7 @@ Read sides are configured using YAML files. You can put all read-side configs in
 | host          | Yes                           | Read-side host (used for both gRPC and HTTP)                                                                                                                                                                                                                        |
 | port          | Yes                           | Read-side port (used for both gRPC and HTTP)                                                                                                                                                                                                                        |
 | useTls        | No (default: `false`)         | Use TLS. For gRPC: TLS negotiation. For HTTP: uses `https` instead of `http`.                                                                                                                                                                                       |
+| timeout       | No (default: `30000`)         | Timeout in milliseconds. For gRPC: call deadline. For HTTP: request timeout.                                                                                                                                                                                         |
 | autoStart     | No (default: `true`)          | `true` = ready to process on start. `false` = paused on start. Use the [CLI](https://github.com/chief-of-state/cos-cli) to resume.                                                                                                                                  |
 | enabled       | No (default: `true`)          | Enable or disable the read side. Unlike `autoStart`, changing this requires a restart. `autoStart` only controls whether it starts paused.                                                                                                                           |
 | failurePolicy | No                            | Failure policy: `STOP`, `SKIP`, `REPLAY_SKIP`, `REPLAY_STOP`                                                                                                                                                                                                        |
@@ -112,32 +113,35 @@ Read sides are configured using YAML files. You can put all read-side configs in
 #### Example: `read-side-config.yml` (multiple read sides in one file)
 
 ```yaml
-# gRPC read side
+# gRPC read side (timeout = gRPC call deadline)
 readSideId: read-side-1
 protocol: grpc
 host: read-handler
 port: 50053
 useTls: false
+timeout: 30000
 autoStart: true
 enabled: true
 failurePolicy: SKIP
 ---
-# HTTP read side (URL: http(s)://host:port)
+# HTTP read side (URL: http(s)://host:port, timeout = request timeout)
 readSideId: read-side-2
 protocol: http
 host: read-handler
 port: 8080
 useTls: false
+timeout: 30000
 autoStart: true
 enabled: true
 failurePolicy: REPLAY_SKIP
 ---
-# HTTP read side with TLS
+# HTTP read side with TLS and custom timeout
 readSideId: read-side-3
 protocol: http
 host: read-handler
 port: 8081
 useTls: true
+timeout: 60000
 autoStart: true
 enabled: false
 ```
@@ -176,6 +180,7 @@ Set the config path with:
 - **HOST** — Read-side host (used for both gRPC and HTTP)
 - **PORT** — Read-side port (used for both gRPC and HTTP)
 - **USE_TLS** — Use TLS. For HTTP, uses `https` instead of `http` (default: `false`)
+- **TIMEOUT** — Timeout in milliseconds. For gRPC: call deadline. For HTTP: request timeout (default: `30000`)
 - **AUTO_START** — `true` = ready on start; `false` = paused on start. Use the [CLI](https://github.com/chief-of-state/cos-cli) to resume (default: `true`)
 - **ENABLED** — `true` = enabled; `false` = disabled. Changing this requires a restart; `autoStart` only controls pause state (default: `true`)
 - **FAILURE_POLICY** — See [Failure Policies](#failure-policies) above
@@ -185,11 +190,12 @@ Set the config path with:
 **Example:**
 
 ```shell
-# gRPC read side
+# gRPC read side (timeout = gRPC call deadline)
 COS_READ_SIDE_CONFIG__PROTOCOL__DB_WRITER=grpc
 COS_READ_SIDE_CONFIG__HOST__DB_WRITER=db-writer
 COS_READ_SIDE_CONFIG__PORT__DB_WRITER=50053
 COS_READ_SIDE_CONFIG__USE_TLS__DB_WRITER=false
+COS_READ_SIDE_CONFIG__TIMEOUT__DB_WRITER=30000
 COS_READ_SIDE_CONFIG__AUTO_START__DB_WRITER=false
 COS_READ_SIDE_CONFIG__ENABLED__DB_WRITER=false
 COS_READ_SIDE_CONFIG__FAILURE_POLICY__DB_WRITER=REPLAY_SKIP
@@ -198,6 +204,7 @@ COS_READ_SIDE_CONFIG__FAILURE_POLICY__DB_WRITER=REPLAY_SKIP
 COS_READ_SIDE_CONFIG__PROTOCOL__HTTP_HANDLER=http
 COS_READ_SIDE_CONFIG__HOST__HTTP_HANDLER=handler
 COS_READ_SIDE_CONFIG__PORT__HTTP_HANDLER=8080
+COS_READ_SIDE_CONFIG__TIMEOUT__HTTP_HANDLER=30000
 COS_READ_SIDE_CONFIG__AUTO_START__HTTP_HANDLER=true
 COS_READ_SIDE_CONFIG__ENABLED__HTTP_HANDLER=true
 COS_READ_SIDE_CONFIG__FAILURE_POLICY__HTTP_HANDLER=SKIP

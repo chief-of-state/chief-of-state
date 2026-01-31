@@ -93,10 +93,13 @@ case class HttpEventHandler(
               parseJson[HandleEventResponse](jsonString)
             }
           case statusCode =>
-            response.entity.discardBytes()
-            Future.failed(
-              new RuntimeException(s"HTTP event handler request failed with status $statusCode")
-            )
+            // Log response body before discarding for debugging
+            Unmarshal(response.entity).to[String].map { body =>
+              log.error(s"HTTP event handler returned $statusCode for ${event.typeUrl}, body=$body")
+              throw new RuntimeException(
+                s"HTTP event handler request failed with status $statusCode: ${body.take(200)}"
+              )
+            }
         }
       } yield result
 

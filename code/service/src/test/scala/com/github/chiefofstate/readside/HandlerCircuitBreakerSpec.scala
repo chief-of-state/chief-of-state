@@ -80,7 +80,7 @@ class HandlerCircuitBreakerSpec extends BaseSpec {
         resetTimeout = 10.seconds
       )(testKit.system.executionContext)
 
-      val handler = new HandlerImpl("test-processor", stub, Some(breaker))
+      val handler = new HandlerImpl("test-processor", stub, 30000L, Some(breaker))
       val result  = handler.processEvent(event, eventTag, resultingState, meta)
 
       result shouldBe true
@@ -117,7 +117,7 @@ class HandlerCircuitBreakerSpec extends BaseSpec {
         resetTimeout = 10.seconds
       )(testKit.system.executionContext)
 
-      val handler = new HandlerImpl("test-processor", stub, Some(breaker))
+      val handler = new HandlerImpl("test-processor", stub, 30000L, Some(breaker))
 
       // First call fails - opens the circuit
       val firstResult = handler.processEvent(event, eventTag, resultingState, meta)
@@ -152,7 +152,7 @@ class HandlerCircuitBreakerSpec extends BaseSpec {
       val channel = getChannel(serverName)
       val stub    = new ReadSideHandlerServiceBlockingStub(channel)
 
-      val handler = new HandlerImpl("test-processor", stub, None)
+      val handler = new HandlerImpl("test-processor", stub, 30000L, None)
       val result  = handler.processEvent(event, eventTag, resultingState, meta)
 
       result shouldBe true
@@ -189,7 +189,7 @@ class HandlerCircuitBreakerSpec extends BaseSpec {
         resetTimeout = 10.seconds
       )(testKit.system.executionContext)
 
-      val handler = new HandlerImpl("test-processor", stub, Some(breaker))
+      val handler = new HandlerImpl("test-processor", stub, 30000L, Some(breaker))
       val result  = handler.processEvent(event, eventTag, resultingState, meta)
 
       result shouldBe false
@@ -236,7 +236,7 @@ class HandlerCircuitBreakerSpec extends BaseSpec {
         resetTimeout = 10.seconds
       )(testKit.system.executionContext)
 
-      val handler = new HandlerImpl("test-processor", stub, Some(breaker))
+      val handler = new HandlerImpl("test-processor", stub, 30000L, Some(breaker))
 
       val firstResult = handler.processEvent(event, eventTag, resultingState, meta)
       firstResult shouldBe false

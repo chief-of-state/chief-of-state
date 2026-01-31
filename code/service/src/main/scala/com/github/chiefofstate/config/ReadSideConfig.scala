@@ -26,6 +26,7 @@ import com.github.chiefofstate.config.ReadSideFailurePolicy.{
  * @param enabled specifies whether the read side is enabled or not. This means that the readside will not be added at runtime to the list of
  *                read sides that need to run. This is useful when deactivating a faulty read side
  * @param failurePolicy specifies the failure policy
+ * @param timeout timeout for HTTP requests in milliseconds (default: 30000, only used when protocol is "http")
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 final case class ReadSideConfig(
@@ -44,7 +45,9 @@ final case class ReadSideConfig(
     @JsonProperty
     enabled: Boolean = true,
     @JsonProperty
-    failurePolicy: String = ""
+    failurePolicy: String = "",
+    @JsonProperty
+    timeout: Long = 30000
 ) {
 
   // let us set the valid failure policy values
@@ -91,6 +94,6 @@ final case class ReadSideConfig(
 
   override def toString: String = {
     s"id=$readSideId, protocol=$protocol, host=$host, port=$port, " +
-      s"useTls=$useTls, autoStart=$autoStart, enabled=$enabled, failurePolicy=$failurePolicy"
+      s"useTls=$useTls, autoStart=$autoStart, enabled=$enabled, failurePolicy=$failurePolicy, timeout=$timeout"
   }
 }

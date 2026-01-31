@@ -55,8 +55,9 @@ object Common extends AutoPlugin {
         "-deprecation",
         "-explain"
       ),
-      resolvers ++= Resolver.sonatypeOssRepos("public"),
-      resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
+      // OSSRH was sunset 2025-06-30; use Sonatype Central. Maven Central is included by default.
+      // Add Sonatype Central Snapshots if snapshot dependencies are required:
+      resolvers += Resolver.sonatypeCentralSnapshots,
       scalafmtOnCompile := true,
       // require test coverage
       coverageMinimumStmtTotal := 50,

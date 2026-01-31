@@ -95,7 +95,7 @@ Read side handlers can:
 - [Configuration Options](./docs/configuration.md)
 - [Docker Deployment](./docs/docker-deployment.md)
 - [Kubernetes Deployment](./docs/kubernetes-deployment.md)
-- [HTTP API (OpenAPI 3)](./docs/openapi.yaml)
+- [HTTP API](./docs/http.md)
 
 ## 💬 Community
 

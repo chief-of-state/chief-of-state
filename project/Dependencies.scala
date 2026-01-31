@@ -11,7 +11,6 @@ object Dependencies {
     val PekkoVersion: String                = "1.4.0"
     val PekkoHttpVersion: String            = "1.1.0"
     val ScalapbCommonProtoVersion: String   = "2.9.6-0"
-    val ScalapbJsonVersion: String          = "0.12.1"
     val SilencerVersion: String             = "1.7.19"
     val LogbackVersion: String              = "1.5.26"
     val ScalaTestVersion: String            = "3.2.19"
@@ -70,8 +69,6 @@ object Dependencies {
     // Pekko HTTP dependencies
     "org.apache.pekko" %% "pekko-http"                         % PekkoHttpVersion,
     "org.apache.pekko" %% "pekko-http-spray-json"              % PekkoHttpVersion,
-    // ScalaPB JSON support
-    "com.thesamet.scalapb" %% "scalapb-json4s"                 % ScalapbJsonVersion,
     // Slick dependencies
     "com.typesafe.slick"     %% "slick"                    % SlickVersion,
     "com.typesafe.slick"     %% "slick-hikaricp"           % SlickVersion,

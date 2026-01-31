@@ -85,16 +85,24 @@ class ReadSideServiceStarter(
             new ReadSideHandlerServiceBlockingStub(
               Netty.channelBuilder(config.host, config.port, config.useTls).build
             )
+          logger.info(
+            s"Using gRPC handler for ${config.readSideId} at ${config.host}:${config.port} (timeout=${config.timeout}ms)"
+          )
           // instantiate a remote read side processor with the gRPC client
-          new HandlerImpl(config.readSideId, rpcClient, readSideCircuitBreaker)
+          new HandlerImpl(config.readSideId, rpcClient, config.timeout, readSideCircuitBreaker)
 
         case "http" =>
           // construct base URL from host, port, and useTls
           val scheme  = if (config.useTls) "https" else "http"
           val baseUrl = s"$scheme://${config.host}:${config.port}"
-          logger.info(s"Using HTTP handler for ${config.readSideId} at $baseUrl")
+          logger.info(
+            s"Using HTTP handler for ${config.readSideId} at $baseUrl (timeout=${config.timeout}ms)"
+          )
           // instantiate an HTTP handler
-          new HttpHandlerImpl(config.readSideId, baseUrl, readSideCircuitBreaker)(system, ec)
+          new HttpHandlerImpl(config.readSideId, baseUrl, config.timeout, readSideCircuitBreaker)(
+            system,
+            ec
+          )
 
         case unknown =>
           throw new IllegalArgumentException(
