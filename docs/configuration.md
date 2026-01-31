@@ -57,7 +57,12 @@ When using HTTP (`COS_SERVER_PROTOCOL` = `http` or `both`), see the [HTTP API do
 | COS_WRITE_SIDE_BREAKER_RESET_TIMEOUT | Time before attempting to close an open circuit; use a duration (e.g. `1m`).                                                                                   | 1m           |
 | COS_JOURNAL_LOGICAL_DELETION      | Event deletion is triggered after saving a new snapshot. Old events are deleted before old snapshots.                                                              | false        |
 | COS_COMMAND_HANDLER_TIMEOUT       | Timeout for the aggregate to process a command and reply (seconds)                                                                                                | 5            |
-| COS_GRPC_CALLS_TIMEOUT            | RPC deadline (milliseconds). Failure to meet this results in a timeout exception.                                                                                 | 1mn          |
+| COS_NUM_SHARDS                    | Number of shards for cluster sharding. Must be a **power of 2** (e.g. 8, 16, 32) for optimal distribution. Same value required on all nodes.                         | 16           |
+| COS_GRPC_CALLS_TIMEOUT            | RPC deadline (milliseconds). Failure to meet this results in a timeout exception.                                                                                 | 60000        |
+| COS_GRPC_KEEPALIVE_ENABLED        | Enable HTTP/2 keepalive on outbound gRPC channels (write-side and read-side). Reduces "http2 exception" under load when connections are closed by LB/firewall.    | false        |
+| COS_GRPC_KEEPALIVE_TIME           | Interval between keepalive pings. Use a duration (e.g. `120s`).                                                                                                  | 120s         |
+| COS_GRPC_KEEPALIVE_TIMEOUT        | How long to wait for ping ack before closing the connection. Use a duration (e.g. `60s`).                                                                          | 60s          |
+| COS_GRPC_KEEPALIVE_WITHOUT_CALLS  | Send keepalive pings even when there are no active RPCs (recommended for long-lived connections).                                                                   | true         |
 
 ## 📡 Telemetry Configuration
 
