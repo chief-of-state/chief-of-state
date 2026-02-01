@@ -11,8 +11,8 @@ import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
-import org.apache.pekko.actor.typed.pubsub.Topic
 import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.pubsub.Topic
 
 class EventPublisherSpec extends BaseActorSpec(s"""
       pekko.cluster.sharding.number-of-shards = 1

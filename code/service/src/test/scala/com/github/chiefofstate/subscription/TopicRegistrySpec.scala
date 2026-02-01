@@ -8,8 +8,8 @@ package com.github.chiefofstate.subscription
 
 import com.github.chiefofstate.helper.BaseActorSpec
 import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
-import org.apache.pekko.actor.typed.pubsub.Topic
 import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.pubsub.Topic
 
 class TopicRegistrySpec extends BaseActorSpec(s"""
       pekko.cluster.sharding.number-of-shards = 1

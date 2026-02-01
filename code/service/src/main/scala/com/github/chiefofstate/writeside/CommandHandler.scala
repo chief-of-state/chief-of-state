@@ -10,7 +10,6 @@ import com.github.chiefofstate.config.GrpcConfig
 import com.github.chiefofstate.protobuf.v1.common.Header.Value
 import com.github.chiefofstate.protobuf.v1.internal.RemoteCommand
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
-import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.protobuf.v1.writeside.{HandleCommandRequest, HandleCommandResponse}
 import io.grpc.Metadata
 import io.grpc.stub.MetadataUtils
@@ -25,12 +24,12 @@ import scala.util.Try
  * handles command via a gRPC call
  *
  * @param grpcConfig the grpc config
- * @param writeHandlerServiceStub the grpc client stub
+ * @param stubSupplier supplies a stub per call (single channel or channel pool)
  * @param circuitBreaker optional circuit breaker for resilience
  */
 case class CommandHandler(
     grpcConfig: GrpcConfig,
-    writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub,
+    stubSupplier: WriteSideStubSupplier,
     circuitBreaker: Option[CircuitBreaker] = None
 ) extends WriteSideCommandHandler {
 
@@ -53,32 +52,33 @@ case class CommandHandler(
     // let us set the client request headers
     val headers: Metadata = new Metadata()
 
-    // Build the gRPC call
-    def makeGrpcCall(): HandleCommandResponse = {
-      remoteCommand.propagatedHeaders.foreach { header =>
-        header.value match {
-          case Value.StringValue(value) =>
-            headers.put(Metadata.Key.of(header.key, Metadata.ASCII_STRING_MARSHALLER), value)
-          case Value.BytesValue(value) =>
-            headers.put(
-              Metadata.Key.of(header.key, Metadata.BINARY_BYTE_MARSHALLER),
-              value.toByteArray
-            )
-          case Value.Empty =>
-            throw new RuntimeException("header value must be string or bytes")
+    // Build the gRPC call (stub from supplier: single channel or pool.next())
+    def makeGrpcCall(): HandleCommandResponse =
+      stubSupplier.withStub { stub =>
+        remoteCommand.propagatedHeaders.foreach { header =>
+          header.value match {
+            case Value.StringValue(value) =>
+              headers.put(Metadata.Key.of(header.key, Metadata.ASCII_STRING_MARSHALLER), value)
+            case Value.BytesValue(value) =>
+              headers.put(
+                Metadata.Key.of(header.key, Metadata.BINARY_BYTE_MARSHALLER),
+                value.toByteArray
+              )
+            case Value.Empty =>
+              throw new RuntimeException("header value must be string or bytes")
+          }
         }
-      }
 
-      writeHandlerServiceStub
-        .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
-        .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
-        .handleCommand(
-          HandleCommandRequest()
-            .withPriorState(priorState.getState)
-            .withCommand(remoteCommand.getCommand)
-            .withPriorEventMeta(priorState.getMeta)
-        )
-    }
+        stub
+          .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
+          .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
+          .handleCommand(
+            HandleCommandRequest()
+              .withPriorState(priorState.getState)
+              .withCommand(remoteCommand.getCommand)
+              .withPriorEventMeta(priorState.getMeta)
+          )
+      }
 
     // Wrap call with circuit breaker if present
     circuitBreaker match {

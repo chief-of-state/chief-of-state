@@ -12,8 +12,8 @@ import com.github.chiefofstate.config.{
   ReadSideConfig,
   ReadSideConfigReader
 }
+import com.github.chiefofstate.netty.Netty
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
-import com.github.chiefofstate.utils.Netty
 import com.typesafe.config.{Config, ConfigException}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.pekko.actor.typed.ActorSystem

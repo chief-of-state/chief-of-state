@@ -82,3 +82,9 @@ COS_READ_SIDE_CONFIG__PORT__KAFKA: 50053
 ```
 
 See the [read side configuration](./configuration.md#read-side-configuration) docs for more details.
+
+## 📡 Real-Time Event Streaming (Subscription)
+
+Chief of State can stream entity events in real time over gRPC. When subscription is enabled, clients can call **Subscribe** (events for one entity) or **SubscribeAll** (events for all entities) and receive each event as it is persisted. Use **Unsubscribe** / **UnsubscribeAll** with the returned `subscription_id` to stop a stream.
+
+See the [Subscription](./subscription.md) guide for enabling, API details, and usage.

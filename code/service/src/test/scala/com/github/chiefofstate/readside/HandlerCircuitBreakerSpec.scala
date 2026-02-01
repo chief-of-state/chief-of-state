@@ -15,14 +15,13 @@ import com.github.chiefofstate.protobuf.v1.readside.{
   ReadSideHandlerServiceGrpc
 }
 import com.google.protobuf.any
-import io.grpc.Status
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
-import io.grpc.{ManagedChannel, ServerServiceDefinition}
+import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import org.apache.pekko.pattern.CircuitBreaker
 
 import scala.concurrent.ExecutionContext.global
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class HandlerCircuitBreakerSpec extends BaseSpec {
 

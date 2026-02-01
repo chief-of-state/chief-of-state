@@ -6,11 +6,11 @@
 
 package com.github.chiefofstate.readside
 
-import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
-import org.apache.pekko.actor.typed.ActorSystem
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.helper.BaseSpec
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
+import org.apache.pekko.actor.typed.ActorSystem
 import org.testcontainers.utility.DockerImageName
 
 class ReadSideServiceStarterSpec extends BaseSpec with ForAllTestContainer {

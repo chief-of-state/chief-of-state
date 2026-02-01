@@ -15,16 +15,16 @@ import com.github.chiefofstate.protobuf.v1.service.{
   ProcessCommandRequest,
   ProcessCommandResponse
 }
+import com.github.chiefofstate.protocol.ServerProtocol
 import com.github.chiefofstate.services.CosServiceApi
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
 import org.apache.pekko.http.scaladsl.model.{ContentTypes, StatusCodes}
-
-import java.util.Base64
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.matchers.should.Matchers
 
+import java.util.Base64
 import scala.concurrent.Future
 
 class HttpRoutesSpec extends BaseSpec with Matchers with ScalatestRouteTest {
@@ -40,7 +40,7 @@ class HttpRoutesSpec extends BaseSpec with Matchers with ScalatestRouteTest {
       |""".stripMargin
 
   val writeSideConfig: WriteSideConfig = WriteSideConfig(
-    protocol = "http",
+    protocol = ServerProtocol.Http,
     host = "localhost",
     port = 8080,
     useTls = false,

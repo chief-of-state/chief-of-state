@@ -18,7 +18,7 @@ import com.github.chiefofstate.protobuf.v1.writeside.{
   WriteSideHandlerServiceGrpc
 }
 import com.google.protobuf.any
-import io.grpc.inprocess._
+import io.grpc.inprocess.*
 import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 
 import scala.concurrent.ExecutionContext.global
@@ -75,7 +75,7 @@ class EventHandlerSpec extends BaseSpec {
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       val remoteEventHandler: EventHandler =
-        EventHandler(grpcConfig, writeHandlerServicetub)
+        EventHandler(grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val triedHandleEventResponse: Try[HandleEventResponse] =
         remoteEventHandler.handleEvent(event, stateAny, eventMeta)
       triedHandleEventResponse.success.value shouldBe expected
@@ -112,7 +112,7 @@ class EventHandlerSpec extends BaseSpec {
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       val remoteEventHandler: EventHandler =
-        EventHandler(grpcConfig, writeHandlerServicetub)
+        EventHandler(grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val triedHandleEventResponse: Try[HandleEventResponse] =
         remoteEventHandler.handleEvent(event, stateAny, eventMeta)
       (triedHandleEventResponse.failure.exception should have).message("UNKNOWN")

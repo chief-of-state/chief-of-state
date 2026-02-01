@@ -6,27 +6,27 @@
 
 package com.github.chiefofstate
 
-import org.apache.pekko.actor.testkit.typed.scaladsl.TestProbe
-import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
-import org.apache.pekko.persistence.typed.PersistenceId
 import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.helper.BaseActorSpec
 import com.github.chiefofstate.protobuf.v1.common.{Header, MetaData}
+import com.github.chiefofstate.protobuf.v1.internal.*
 import com.github.chiefofstate.protobuf.v1.internal.CommandReply.Reply
-import com.github.chiefofstate.protobuf.v1.internal._
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
 import com.github.chiefofstate.protobuf.v1.tests.{Account, AccountOpened, OpenAccount}
+import com.github.chiefofstate.protobuf.v1.writeside.*
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import com.github.chiefofstate.protobuf.v1.writeside._
 import com.github.chiefofstate.serialization.SendReceive
-import com.github.chiefofstate.utils.{Validator, Util}
-import com.github.chiefofstate.writeside.{CommandHandler, EventHandler}
+import com.github.chiefofstate.utils.{Util, Validator}
+import com.github.chiefofstate.writeside.{CommandHandler, EventHandler, SingleStubSupplier}
 import com.google.protobuf.any
 import com.google.protobuf.any.Any
 import com.google.protobuf.empty.Empty
 import com.typesafe.config.{Config, ConfigFactory}
-import io.grpc.inprocess._
+import io.grpc.inprocess.*
 import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
+import org.apache.pekko.actor.testkit.typed.scaladsl.TestProbe
+import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
+import org.apache.pekko.persistence.typed.PersistenceId
 import scalapb.GeneratedMessage
 
 import java.util.UUID
@@ -194,9 +194,9 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        CommandHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val remoteEventHandler: EventHandler =
-        EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        EventHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         Validator(cosConfig.writeSideConfig)
@@ -263,9 +263,9 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        CommandHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val remoteEventHandler: EventHandler =
-        EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        EventHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         utils.Validator(cosConfig.writeSideConfig)
@@ -317,10 +317,10 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.CommandHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
 
       val remoteEventHandler: EventHandler =
-        EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        EventHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         utils.Validator(cosConfig.writeSideConfig)
@@ -375,9 +375,9 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.CommandHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val remoteEventHandler: EventHandler =
-        writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.EventHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         utils.Validator(cosConfig.writeSideConfig)
@@ -436,9 +436,9 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.CommandHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val remoteEventHandler: EventHandler =
-        writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.EventHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         utils.Validator(cosConfig.writeSideConfig)
@@ -504,9 +504,9 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        writeside.CommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        writeside.CommandHandler(mainConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val remoteEventHandler: EventHandler =
-        writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        writeside.EventHandler(mainConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         utils.Validator(mainConfig.writeSideConfig)
@@ -581,9 +581,9 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        writeside.CommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        writeside.CommandHandler(mainConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val remoteEventHandler: EventHandler =
-        writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        writeside.EventHandler(mainConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         utils.Validator(mainConfig.writeSideConfig)
@@ -649,9 +649,9 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        writeside.CommandHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        writeside.CommandHandler(mainConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val remoteEventHandler: EventHandler =
-        writeside.EventHandler(mainConfig.grpcConfig, writeHandlerServicetub)
+        writeside.EventHandler(mainConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         Validator(mainConfig.writeSideConfig)
@@ -718,9 +718,9 @@ class EntitySpec extends BaseActorSpec(s"""
         createTestProbe[GeneratedMessage]()
 
       val remoteCommandHandler: CommandHandler =
-        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.CommandHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val remoteEventHandler: EventHandler =
-        writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.EventHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         utils.Validator(cosConfig.writeSideConfig)
@@ -790,10 +790,10 @@ class EntitySpec extends BaseActorSpec(s"""
         new WriteSideHandlerServiceBlockingStub(serverChannel)
 
       val remoteCommandHandler: CommandHandler =
-        writeside.CommandHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.CommandHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
 
       val remoteEventHandler: EventHandler =
-        writeside.EventHandler(cosConfig.grpcConfig, writeHandlerServicetub)
+        writeside.EventHandler(cosConfig.grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val shardIndex = 0
       val eventsAndStateProtosValidation: Validator =
         utils.Validator(cosConfig.writeSideConfig)

@@ -8,6 +8,7 @@ package com.github.chiefofstate.writeside
 
 import com.github.chiefofstate.config.{GrpcClient, GrpcConfig, GrpcServer}
 import com.github.chiefofstate.helper.BaseSpec
+import com.github.chiefofstate.netty.ChannelPool
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.common.Header.Value
 import com.github.chiefofstate.protobuf.v1.internal.RemoteCommand
@@ -21,7 +22,7 @@ import com.github.chiefofstate.protobuf.v1.writeside.{
 }
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.Any
-import io.grpc.inprocess._
+import io.grpc.inprocess.*
 import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 
 import scala.concurrent.ExecutionContext.global
@@ -81,9 +82,48 @@ class CommandHandlerSpec extends BaseSpec {
         .withPropagatedHeaders(Seq(Header().withKey("header-1").withStringValue("header-value-1")))
 
       val remoteCommandHandler: CommandHandler =
-        CommandHandler(grpcConfig, writeHandlerServicetub)
+        CommandHandler(grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
+      triedHandleCommandResponse.success.value shouldBe expected
+    }
+
+    "handle command successful with channel pool" in {
+      val state = Account().withAccountUuid("456")
+      val stateWrapper: StateWrapper =
+        StateWrapper().withState(com.google.protobuf.any.Any.pack(state))
+      val command: Any = Any.pack(OpenAccount())
+
+      val event: AccountOpened            = AccountOpened()
+      val expected: HandleCommandResponse = HandleCommandResponse().withEvent(Any.pack(event))
+
+      val request: HandleCommandRequest = HandleCommandRequest()
+        .withCommand(command)
+        .withPriorState(stateWrapper.getState)
+        .withPriorEventMeta(stateWrapper.getMeta)
+
+      val serviceImpl = mock[WriteSideHandlerServiceGrpc.WriteSideHandlerService]
+      (serviceImpl.handleCommand _)
+        .expects(request)
+        .returning(scala.concurrent.Future.successful(expected))
+
+      val service    = WriteSideHandlerServiceGrpc.bindService(serviceImpl, global)
+      val serverName = InProcessServerBuilder.generateName()
+      createServer(serverName, service)
+      val pool = new ChannelPool(
+        Seq(getChannel(serverName), getChannel(serverName)).toIndexedSeq
+      )
+      val stubSupplier = PooledStubSupplier(pool)
+
+      val remoteCommand = RemoteCommand()
+        .withCommand(command)
+        .withPropagatedHeaders(Seq(Header().withKey("header-1").withStringValue("header-value-1")))
+
+      val remoteCommandHandler: CommandHandler =
+        CommandHandler(grpcConfig, stubSupplier)
+      val triedHandleCommandResponse: Try[HandleCommandResponse] =
+        remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
+
       triedHandleCommandResponse.success.value shouldBe expected
     }
 
@@ -122,7 +162,7 @@ class CommandHandlerSpec extends BaseSpec {
         )
 
       val remoteCommandHandler: CommandHandler =
-        CommandHandler(grpcConfig, writeHandlerServicetub)
+        CommandHandler(grpcConfig, SingleStubSupplier(writeHandlerServicetub))
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)
       (triedHandleCommandResponse.failure.exception should have).message("INTERNAL")
@@ -150,7 +190,7 @@ class CommandHandlerSpec extends BaseSpec {
         )
 
       val remoteCommandHandler: CommandHandler =
-        CommandHandler(grpcConfig, writeHandlerServicetub)
+        CommandHandler(grpcConfig, SingleStubSupplier(writeHandlerServicetub))
 
       val triedHandleCommandResponse: Try[HandleCommandResponse] =
         remoteCommandHandler.handleCommand(remoteCommand, stateWrapper)

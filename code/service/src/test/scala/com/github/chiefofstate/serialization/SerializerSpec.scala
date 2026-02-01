@@ -6,9 +6,6 @@
 
 package com.github.chiefofstate.serialization
 
-import org.apache.pekko.actor.ExtendedActorSystem
-import org.apache.pekko.actor.testkit.typed.scaladsl.TestProbe
-import org.apache.pekko.actor.typed.scaladsl.adapter._
 import com.github.chiefofstate.helper.BaseActorSpec
 import com.github.chiefofstate.protobuf.v1.common.Header
 import com.github.chiefofstate.protobuf.v1.internal.{
@@ -20,6 +17,9 @@ import com.github.chiefofstate.protobuf.v1.internal.{
 import com.github.chiefofstate.protobuf.v1.tests.OpenAccount
 import com.google.protobuf.any.Any
 import com.google.protobuf.wrappers.StringValue
+import org.apache.pekko.actor.ExtendedActorSystem
+import org.apache.pekko.actor.testkit.typed.scaladsl.TestProbe
+import org.apache.pekko.actor.typed.scaladsl.adapter.*
 import scalapb.GeneratedMessage
 
 class SerializerSpec extends BaseActorSpec(s"""

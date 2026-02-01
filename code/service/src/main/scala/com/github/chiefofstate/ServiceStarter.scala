@@ -6,37 +6,52 @@
 
 package com.github.chiefofstate
 
-import com.github.chiefofstate.config.{CosConfig, ServerProtocol}
+import com.github.chiefofstate.config.CosConfig
 import com.github.chiefofstate.http.HttpRoutes
 import com.github.chiefofstate.interceptors.MetadataInterceptor
-import com.github.chiefofstate.protobuf.v1.internal.{MigrationFailed, MigrationSucceeded}
+import com.github.chiefofstate.netty.Netty
+import com.github.chiefofstate.protobuf.v1.internal.MigrationFailed
+import com.github.chiefofstate.protobuf.v1.internal.MigrationSucceeded
 import com.github.chiefofstate.protobuf.v1.manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.service.ChiefOfStateServiceGrpc.ChiefOfStateService
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import com.github.chiefofstate.readside.{ReadSideManager, ReadSideServiceStarter}
-import com.github.chiefofstate.services.{CosReadSideManagerService, CosService}
-import com.github.chiefofstate.subscription.{EventPublisher, SubscriptionGuardian, TopicRegistry}
-import com.github.chiefofstate.utils.{Netty, Validator, Util}
-import com.github.chiefofstate.writeside.{
-  CommandHandler,
-  EventHandler,
-  HttpCommandHandler,
-  HttpEventHandler,
-  WriteSideCommandHandler,
-  WriteSideEventHandler
-}
+import com.github.chiefofstate.protocol.ServerProtocol
+import com.github.chiefofstate.readside.ReadSideManager
+import com.github.chiefofstate.readside.ReadSideServiceStarter
+import com.github.chiefofstate.services.CosReadSideManagerService
+import com.github.chiefofstate.services.CosService
+import com.github.chiefofstate.subscription.EventPublisher
+import com.github.chiefofstate.subscription.SubscriptionGuardian
+import com.github.chiefofstate.subscription.TopicRegistry
+import com.github.chiefofstate.utils.Util
+import com.github.chiefofstate.utils.Validator
+import com.github.chiefofstate.writeside.CommandHandler
+import com.github.chiefofstate.writeside.EventHandler
+import com.github.chiefofstate.writeside.HttpCommandHandler
+import com.github.chiefofstate.writeside.HttpEventHandler
+import com.github.chiefofstate.writeside.PooledStubSupplier
+import com.github.chiefofstate.writeside.SingleStubSupplier
+import com.github.chiefofstate.writeside.WriteSideCommandHandler
+import com.github.chiefofstate.writeside.WriteSideEventHandler
 import com.typesafe.config.Config
-import io.grpc._
+import io.grpc.*
+import org.apache.pekko.Done
+import org.apache.pekko.actor.CoordinatedShutdown
+import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.ActorSystem
+import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.actor.typed.{ActorRef, ActorSystem, Behavior}
-import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity}
+import org.apache.pekko.cluster.sharding.typed.scaladsl.ClusterSharding
+import org.apache.pekko.cluster.sharding.typed.scaladsl.Entity
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.persistence.typed.PersistenceId
 import org.apache.pekko.util.Timeout
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.sys.ShutdownHookThread
 
 /**
@@ -91,28 +106,49 @@ object ServiceStarter {
             remoteCommandHandler: WriteSideCommandHandler,
             remoteEventHandler: WriteSideEventHandler
           ) =
-            cosConfig.writeSideConfig.protocol.toLowerCase match {
-              case "grpc" =>
+            cosConfig.writeSideConfig.protocol match {
+              case ServerProtocol.Grpc =>
                 log.info("Using gRPC protocol for write-side handlers")
-                val channel: ManagedChannel =
-                  Netty
-                    .channelBuilder(
+                val poolSize = cosConfig.grpcConfig.client.poolSize
+                val stubSupplier =
+                  if (poolSize > 1) {
+                    log.info(s"Using gRPC channel pool for write-side (pool-size=$poolSize)")
+                    val pool = Netty.createChannelPool(
+                      poolSize,
                       cosConfig.writeSideConfig.host,
                       cosConfig.writeSideConfig.port,
                       cosConfig.writeSideConfig.useTls,
                       cosConfig.grpcConfig.client.keepalive
                     )
-                    .build()
-
-                val writeHandler: WriteSideHandlerServiceBlockingStub =
-                  new WriteSideHandlerServiceBlockingStub(channel)
+                    CoordinatedShutdown(context.system).addTask(
+                      CoordinatedShutdown.PhaseServiceUnbind,
+                      "shutdown-write-side-channel-pool"
+                    ) { () =>
+                      pool.shutdown()
+                      Future.successful(Done)
+                    }
+                    PooledStubSupplier(pool)
+                  } else {
+                    val channel: ManagedChannel =
+                      Netty
+                        .channelBuilder(
+                          cosConfig.writeSideConfig.host,
+                          cosConfig.writeSideConfig.port,
+                          cosConfig.writeSideConfig.useTls,
+                          cosConfig.grpcConfig.client.keepalive
+                        )
+                        .build()
+                    val writeHandler =
+                      new WriteSideHandlerServiceBlockingStub(channel)
+                    SingleStubSupplier(writeHandler)
+                  }
 
                 (
-                  CommandHandler(cosConfig.grpcConfig, writeHandler, writeSideCircuitBreaker),
-                  EventHandler(cosConfig.grpcConfig, writeHandler, writeSideCircuitBreaker)
+                  CommandHandler(cosConfig.grpcConfig, stubSupplier, writeSideCircuitBreaker),
+                  EventHandler(cosConfig.grpcConfig, stubSupplier, writeSideCircuitBreaker)
                 )
 
-              case "http" =>
+              case ServerProtocol.Http =>
                 log.info("Using HTTP protocol for write-side handlers")
                 val scheme = if (cosConfig.writeSideConfig.useTls) "https" else "http"
                 val baseUrl =
@@ -135,9 +171,9 @@ object ServiceStarter {
                   )
                 )
 
-              case unknown =>
+              case ServerProtocol.Both =>
                 throw new IllegalArgumentException(
-                  s"Unknown write-side protocol '$unknown'. Must be 'grpc' or 'http'"
+                  "Write-side protocol 'both' is not currently supported. Use 'grpc' or 'http'"
                 )
             }
 

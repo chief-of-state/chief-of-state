@@ -9,7 +9,7 @@ package com.github.chiefofstate.config
 import com.github.chiefofstate.helper.BaseSpec
 import com.typesafe.config.ConfigFactory
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 class CircuitBreakerConfigSpec extends BaseSpec {
   "CircuitBreakerConfig" should {

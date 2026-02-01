@@ -12,22 +12,15 @@ import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.RemoteCommand
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
 import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
-import com.github.chiefofstate.protobuf.v1.writeside.{
-  HandleCommandRequest,
-  HandleCommandResponse,
-  HandleEventRequest,
-  HandleEventResponse,
-  WriteSideHandlerServiceGrpc
-}
+import com.github.chiefofstate.protobuf.v1.writeside.*
 import com.google.protobuf.any
-import io.grpc.Status
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
-import io.grpc.{ManagedChannel, ServerServiceDefinition}
+import io.grpc.{ManagedChannel, ServerServiceDefinition, Status}
 import org.apache.pekko.actor.testkit.typed.scaladsl.ActorTestKit
 import org.apache.pekko.pattern.{CircuitBreaker, CircuitBreakerOpenException}
 
 import scala.concurrent.ExecutionContext.global
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.{Failure, Success}
 
 class CircuitBreakerSpec extends BaseSpec {
@@ -85,7 +78,7 @@ class CircuitBreakerSpec extends BaseSpec {
         resetTimeout = 10.seconds
       )(testKit.system.executionContext)
 
-      val handler = CommandHandler(grpcConfig, stub, Some(breaker))
+      val handler = CommandHandler(grpcConfig, SingleStubSupplier(stub), Some(breaker))
       val result  = handler.handleCommand(remoteCommand, priorState)
 
       result shouldBe a[Success[_]]
@@ -119,7 +112,7 @@ class CircuitBreakerSpec extends BaseSpec {
         resetTimeout = 10.seconds
       )(testKit.system.executionContext)
 
-      val handler = CommandHandler(grpcConfig, stub, Some(breaker))
+      val handler = CommandHandler(grpcConfig, SingleStubSupplier(stub), Some(breaker))
 
       // First call fails - opens the circuit
       val firstResult = handler.handleCommand(remoteCommand, priorState)
@@ -152,7 +145,7 @@ class CircuitBreakerSpec extends BaseSpec {
       val channel = getChannel(serverName)
       val stub    = new WriteSideHandlerServiceBlockingStub(channel)
 
-      val handler = CommandHandler(grpcConfig, stub, None)
+      val handler = CommandHandler(grpcConfig, SingleStubSupplier(stub), None)
       val result  = handler.handleCommand(remoteCommand, priorState)
 
       result shouldBe a[Success[_]]
@@ -189,7 +182,7 @@ class CircuitBreakerSpec extends BaseSpec {
         resetTimeout = 10.seconds
       )(testKit.system.executionContext)
 
-      val handler = EventHandler(grpcConfig, stub, Some(breaker))
+      val handler = EventHandler(grpcConfig, SingleStubSupplier(stub), Some(breaker))
       val result  = handler.handleEvent(event, priorState, eventMeta)
 
       result shouldBe a[Success[_]]
@@ -224,7 +217,7 @@ class CircuitBreakerSpec extends BaseSpec {
         resetTimeout = 10.seconds
       )(testKit.system.executionContext)
 
-      val handler = EventHandler(grpcConfig, stub, Some(breaker))
+      val handler = EventHandler(grpcConfig, SingleStubSupplier(stub), Some(breaker))
 
       // First call fails - opens the circuit
       val firstResult = handler.handleEvent(event, priorState, eventMeta)
@@ -258,7 +251,7 @@ class CircuitBreakerSpec extends BaseSpec {
       val channel = getChannel(serverName)
       val stub    = new WriteSideHandlerServiceBlockingStub(channel)
 
-      val handler = EventHandler(grpcConfig, stub, None)
+      val handler = EventHandler(grpcConfig, SingleStubSupplier(stub), None)
       val result  = handler.handleEvent(event, priorState, eventMeta)
 
       result shouldBe a[Success[_]]

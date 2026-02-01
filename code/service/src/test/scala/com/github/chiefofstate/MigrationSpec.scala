@@ -6,8 +6,6 @@
 
 package com.github.chiefofstate
 
-import org.apache.pekko.actor.testkit.typed.scaladsl.{ActorTestKit, BehaviorTestKit, TestProbe}
-import org.apache.pekko.actor.typed.ActorRef
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate
 import com.github.chiefofstate.helper.BaseSpec
@@ -16,6 +14,8 @@ import com.github.chiefofstate.protobuf.v1.internal.{MigrationSucceeded, StartMi
 import com.github.chiefofstate.serialization.{Message, SendReceive}
 import com.google.protobuf.wrappers.StringValue
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
+import org.apache.pekko.actor.testkit.typed.scaladsl.{ActorTestKit, BehaviorTestKit, TestProbe}
+import org.apache.pekko.actor.typed.ActorRef
 import org.testcontainers.utility.DockerImageName
 import scalapb.GeneratedMessage
 

@@ -6,15 +6,15 @@
 
 package com.github.chiefofstate.readside
 
-import org.apache.pekko.persistence.query.Offset
-import org.apache.pekko.projection.eventsourced.EventEnvelope
-import org.apache.pekko.projection.jdbc.JdbcSession
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
+import org.apache.pekko.persistence.query.Offset
+import org.apache.pekko.projection.eventsourced.EventEnvelope
+import org.apache.pekko.projection.jdbc.JdbcSession
 import org.testcontainers.utility.DockerImageName
 
 import java.sql.{Connection, DriverManager}

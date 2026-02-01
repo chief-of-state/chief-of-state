@@ -6,16 +6,17 @@
 
 package com.github.chiefofstate.utils
 
-import com.github.chiefofstate.config._
+import com.github.chiefofstate.config.*
 import com.github.chiefofstate.helper.BaseSpec
 import com.github.chiefofstate.protobuf.v1.tests.{Account, AccountOpened}
+import com.github.chiefofstate.protocol.ServerProtocol
 import com.github.chiefofstate.utils
 import com.google.protobuf.any.Any
 
 class ValidatorSpec extends BaseSpec {
 
   val sharedConfig: WriteSideConfig = WriteSideConfig(
-    protocol = "grpc",
+    protocol = ServerProtocol.Grpc,
     host = "localhost",
     port = 1000,
     useTls = false,

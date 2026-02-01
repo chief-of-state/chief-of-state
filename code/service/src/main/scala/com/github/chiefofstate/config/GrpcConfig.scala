@@ -18,7 +18,11 @@ import java.time.Duration
  */
 case class GrpcConfig(client: GrpcClient, server: GrpcServer)
 
-case class GrpcClient(timeout: Int, keepalive: Option[GrpcClientKeepalive] = None)
+case class GrpcClient(
+    timeout: Int,
+    keepalive: Option[GrpcClientKeepalive] = None,
+    poolSize: Int = 1
+)
 
 /**
  * HTTP/2 keepalive settings for outbound gRPC channels.
@@ -36,6 +40,7 @@ object GrpcConfig {
   private val ClientKey       = "chiefofstate.grpc.client"
   private val KeepaliveKey    = s"$ClientKey.keepalive"
   private val DeadlineTimeout = s"$ClientKey.deadline-timeout"
+  private val PoolSizeKey     = s"$ClientKey.pool-size"
 
   /**
    * creates a new instance of rhe GrpcConfig
@@ -58,10 +63,17 @@ object GrpcConfig {
         )
       } else None
 
+    val poolSize: Int = if (config.hasPath(PoolSizeKey)) {
+      val n = config.getInt(PoolSizeKey)
+      require(n >= 1, s"$PoolSizeKey must be >= 1, got $n")
+      n
+    } else 1
+
     GrpcConfig(
       GrpcClient(
         timeout = config.getInt(DeadlineTimeout),
-        keepalive = keepalive
+        keepalive = keepalive,
+        poolSize = poolSize
       ),
       GrpcServer(
         config.getString("chiefofstate.grpc.server.address"),

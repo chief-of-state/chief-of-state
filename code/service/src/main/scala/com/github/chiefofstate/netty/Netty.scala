@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate.utils
+package com.github.chiefofstate.netty
 
 import com.github.chiefofstate.config.GrpcClientKeepalive
+import com.github.chiefofstate.netty.ChannelPool
 import io.grpc.ManagedChannel
 import io.grpc.netty.NegotiationType.{PLAINTEXT, TLS}
 import io.grpc.netty.{NegotiationType, NettyChannelBuilder, NettyServerBuilder}

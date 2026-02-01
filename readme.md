@@ -45,11 +45,12 @@ From version `v2.4.11` onward, Chief of State has been fully migrated from Akka 
 
 - **Journal & Snapshot** — Serialization using Google Protocol Buffer message format
 - **Clustering** — Preconfigured clustering and domain entity sharding with the split-brain-resolver algorithm
-- **Caching** — Automatic caching and entity passivation
+- **Caching** — Automatic caching and entity Passivation
 - **Storage** — Automatic configuration of PostgreSQL storage on boot
 - **Observability** — OpenTelemetry integration for tracing and metrics
 - **Compaction** — Journal compaction support
 - **Kubernetes** — Direct integration to form a cluster using the Kubernetes API
+- **Subscriptions** — Real-time events streaming without interacting with the Journal Store
 - **Read Side Management** — Via the [CLI tool](https://github.com/chief-of-state/cos-cli):
   - Skip offset per shard and across the whole CoS cluster
   - Pause, resume, and restart read sides per shard or cluster-wide

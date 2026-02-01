@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-package com.github.chiefofstate.utils
+package com.github.chiefofstate.netty
 
 import com.github.chiefofstate.helper.BaseSpec
+import com.github.chiefofstate.netty.Netty
 
 class NettySpec extends BaseSpec {
   "buildChannel" should {

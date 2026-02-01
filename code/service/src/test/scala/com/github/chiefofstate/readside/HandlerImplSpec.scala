@@ -16,7 +16,7 @@ import com.github.chiefofstate.protobuf.v1.readside.{
 }
 import com.github.chiefofstate.protobuf.v1.tests.{Account, AccountOpened}
 import io.grpc.Status
-import io.grpc.inprocess._
+import io.grpc.inprocess.*
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry}
 import io.opentelemetry.context.propagation.ContextPropagators

@@ -6,9 +6,9 @@
 
 package com.github.chiefofstate.helper
 
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.pekko.actor.testkit.typed.TestKitSettings
 import org.apache.pekko.actor.testkit.typed.scaladsl.{ActorTestKit, ActorTestKitBase}
-import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.time.Span
 
 class BaseActorSpec(testKit: ActorTestKit) extends ActorTestKitBase(testKit) with BaseSpec {

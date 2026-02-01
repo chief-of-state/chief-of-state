@@ -6,13 +6,6 @@
 
 package com.github.chiefofstate.services
 
-import org.apache.pekko.actor.typed.ActorSystem
-import org.apache.pekko.actor.typed.Scheduler
-import org.apache.pekko.actor.typed.scaladsl.AskPattern.schedulerFromActorSystem
-import org.apache.pekko.actor.typed.scaladsl.Behaviors
-import org.apache.pekko.cluster.sharding.typed.javadsl.{ClusterSharding => ClusterShardingJava}
-import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef, EntityTypeKey}
-import org.apache.pekko.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
 import com.github.chiefofstate.Entity
 import com.github.chiefofstate.config.WriteSideConfig
 import com.github.chiefofstate.helper.{BaseActorSpec, GrpcHelpers, TestConfig}
@@ -20,21 +13,10 @@ import com.github.chiefofstate.interceptors.MetadataInterceptor
 import com.github.chiefofstate.protobuf.v1.common.MetaData
 import com.github.chiefofstate.protobuf.v1.internal.{CommandReply, RemoteCommand, SendCommand}
 import com.github.chiefofstate.protobuf.v1.persistence.StateWrapper
-import com.github.chiefofstate.protobuf.v1.service.{
-  ChiefOfStateServiceGrpc,
-  GetStateRequest,
-  ProcessCommandRequest,
-  SubscribeAllRequest,
-  SubscribeAllResponse,
-  SubscribeRequest,
-  SubscribeResponse,
-  UnsubscribeAllRequest,
-  UnsubscribeAllResponse,
-  UnsubscribeRequest,
-  UnsubscribeResponse
-}
-import com.github.chiefofstate.subscription.{EventPublisher, SubscriptionGuardian, TopicRegistry}
+import com.github.chiefofstate.protobuf.v1.service.*
+import com.github.chiefofstate.protocol.ServerProtocol
 import com.github.chiefofstate.serialization.{Message, SendReceive}
+import com.github.chiefofstate.subscription.{EventPublisher, SubscriptionGuardian, TopicRegistry}
 import com.github.chiefofstate.utils.Util
 import com.google.protobuf.any
 import com.google.protobuf.wrappers.StringValue
@@ -42,15 +24,21 @@ import com.google.rpc.code
 import com.google.rpc.error_details.BadRequest
 import com.google.rpc.status.Status
 import io.grpc.Status.Code
+import io.grpc.{ManagedChannel, Metadata, StatusException}
 import io.grpc.inprocess.{InProcessChannelBuilder, InProcessServerBuilder}
 import io.grpc.protobuf.StatusProto
 import io.grpc.stub.{MetadataUtils, StreamObserver}
-import io.grpc.{ManagedChannel, Metadata, StatusException}
+import org.apache.pekko.actor.typed.{ActorSystem, Scheduler}
+import org.apache.pekko.actor.typed.scaladsl.AskPattern.schedulerFromActorSystem
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.cluster.sharding.typed.javadsl.ClusterSharding as ClusterShardingJava
+import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, EntityRef, EntityTypeKey}
+import org.apache.pekko.cluster.sharding.typed.testkit.scaladsl.TestEntityRef
 
-import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Success
 
 class CosServiceSpec extends BaseActorSpec(s"""
@@ -86,7 +74,7 @@ class CosServiceSpec extends BaseActorSpec(s"""
   implicit val scheduler: Scheduler = schedulerFromActorSystem(actorSystem)
 
   val writeSideConfig: WriteSideConfig = WriteSideConfig(
-    protocol = "grpc",
+    protocol = ServerProtocol.Grpc,
     host = "",
     port = 0,
     useTls = false,

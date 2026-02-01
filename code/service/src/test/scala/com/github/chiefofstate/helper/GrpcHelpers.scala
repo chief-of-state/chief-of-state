@@ -6,7 +6,7 @@
 
 package com.github.chiefofstate.helper
 
-import io.grpc._
+import io.grpc.*
 
 import java.io.Closeable
 import java.util.concurrent.TimeUnit

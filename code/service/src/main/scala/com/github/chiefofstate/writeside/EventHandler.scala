@@ -8,7 +8,6 @@ package com.github.chiefofstate.writeside
 
 import com.github.chiefofstate.config.GrpcConfig
 import com.github.chiefofstate.protobuf.v1.common.MetaData
-import com.github.chiefofstate.protobuf.v1.writeside.WriteSideHandlerServiceGrpc.WriteSideHandlerServiceBlockingStub
 import com.github.chiefofstate.protobuf.v1.writeside.{HandleEventRequest, HandleEventResponse}
 import com.google.protobuf.any
 import io.opentelemetry.instrumentation.annotations.WithSpan
@@ -22,12 +21,12 @@ import scala.util.Try
  * handles a given event by making a rpc call
  *
  * @param grpcConfig the grpc config
- * @param writeHandlerServiceStub the grpc client stub
+ * @param stubSupplier supplies a stub per call (single channel or channel pool)
  * @param circuitBreaker optional circuit breaker for resilience
  */
 case class EventHandler(
     grpcConfig: GrpcConfig,
-    writeHandlerServiceStub: WriteSideHandlerServiceBlockingStub,
+    stubSupplier: WriteSideStubSupplier,
     circuitBreaker: Option[CircuitBreaker] = None
 ) extends WriteSideEventHandler {
 
@@ -48,14 +47,18 @@ case class EventHandler(
   ): Try[HandleEventResponse] = {
     log.debug(s"sending request to the event handler, ${event.typeUrl}")
 
-    // Build the gRPC call
-    def makeGrpcCall(): HandleEventResponse = {
-      writeHandlerServiceStub
-        .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
-        .handleEvent(
-          HandleEventRequest().withEvent(event).withPriorState(priorState).withEventMeta(eventMeta)
-        )
-    }
+    // Build the gRPC call (stub from supplier: single channel or pool.next())
+    def makeGrpcCall(): HandleEventResponse =
+      stubSupplier.withStub { stub =>
+        stub
+          .withDeadlineAfter(grpcConfig.client.timeout, TimeUnit.MILLISECONDS)
+          .handleEvent(
+            HandleEventRequest()
+              .withEvent(event)
+              .withPriorState(priorState)
+              .withEventMeta(eventMeta)
+          )
+      }
 
     // Wrap call with circuit breaker if present
     circuitBreaker match {

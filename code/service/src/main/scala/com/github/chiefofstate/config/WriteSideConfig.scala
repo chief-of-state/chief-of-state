@@ -6,12 +6,13 @@
 
 package com.github.chiefofstate.config
 
+import com.github.chiefofstate.protocol.ServerProtocol
 import com.typesafe.config.Config
 
 /**
  * WriteHandler configuration
  *
- * @param protocol the protocol to use: "grpc" or "http"
+ * @param protocol the protocol to use (Grpc, Http, or Both)
  * @param host the write handler host
  * @param port the write handler port
  * @param useTls enable TLS for outbound write handler calls (gRPC: TLS, HTTP: https)
@@ -22,7 +23,7 @@ import com.typesafe.config.Config
  * @param circuitBreakerConfig circuit breaker configuration
  */
 case class WriteSideConfig(
-    protocol: String,
+    protocol: ServerProtocol,
     host: String,
     port: Int,
     useTls: Boolean,
@@ -48,7 +49,7 @@ object WriteSideConfig {
   private val circuitBreakerKey: String    = "chiefofstate.write-side.circuit-breaker"
 
   /**
-   * creates an instancee of WriteSideConfig
+   * creates an instance of WriteSideConfig
    *
    * @param config the configuration object
    * @return a new instance of WriteSideConfig
@@ -62,11 +63,22 @@ object WriteSideConfig {
     }
 
     // Protocol defaults to grpc for backward compatibility
-    val protocol = if (config.hasPath(protocolKey)) {
+    val protocolStr = if (config.hasPath(protocolKey)) {
       config.getString(protocolKey)
     } else {
       "grpc"
     }
+
+    val protocol =
+      try {
+        ServerProtocol.fromString(protocolStr)
+      } catch {
+        case e: IllegalArgumentException =>
+          throw new IllegalArgumentException(
+            s"Invalid write-side protocol: $protocolStr. Must be 'grpc', 'http', or 'both'",
+            e
+          )
+      }
 
     WriteSideConfig(
       protocol = protocol,
