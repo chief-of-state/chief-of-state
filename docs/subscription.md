@@ -28,16 +28,6 @@ Subscription is **disabled** by default. Enable it with:
 COS_SUBSCRIPTION_ENABLED=true
 ```
 
-**Example (application.conf):**
-
-```hocon
-chiefofstate {
-  subscription {
-    enabled = true
-  }
-}
-```
-
 When subscription is disabled, `Subscribe` and `SubscribeAll` return gRPC status **UNIMPLEMENTED** with the description: *"Subscription is not enabled; configure subscription to use streaming"*.
 
 ## 📡 gRPC API
