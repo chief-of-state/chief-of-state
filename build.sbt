@@ -1,7 +1,7 @@
 Test / parallelExecution := false
 Test / fork              := true
 // Prevent race in forked test harness (EOFException) when forked JVM exits
-testForkedParallel       := false
+testForkedParallel := false
 
 lazy val root: Project = project
   .in(file("."))
@@ -14,7 +14,7 @@ lazy val root: Project = project
     Compile / mainClass                       := Some("com.github.chiefofstate.Entrypoint"),
     makeBatScripts                            := Seq(),
     executableScriptName                      := "entrypoint",
-    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "2.24.0" % "runtime",
+    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "2.25.0" % "runtime",
     Universal / javaOptions ++= Seq(
       // Setting the OpenTelemetry java agent options
       // reference: https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters
