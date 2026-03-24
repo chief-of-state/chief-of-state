@@ -14,11 +14,11 @@ object Dependencies {
     val SilencerVersion: String             = "1.7.19"
     val LogbackVersion: String              = "1.5.32"
     val ScalaTestVersion: String            = "3.2.19"
-    val PekkoManagementVersion: String      = "1.2.0"
+    val PekkoManagementVersion: String      = "1.2.1"
     val PekkoProjectionVersion: String      = "1.1.0"
     val PostgresDriverVersion: String       = "42.7.10"
     val SlickVersion: String                = "3.6.1"
-    val PekkoPersistenceJdbcVersion: String = "1.2.0"
+    val PekkoPersistenceJdbcVersion: String = "1.2.1"
     val ScalaMockVersion: String            = "7.5.4"
 
     val JaninoVersion: String                          = "3.1.12"
