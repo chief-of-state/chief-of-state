@@ -1,7 +1,7 @@
 # Chief of State
 
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/chief-of-state/chief-of-state/master.yml?branch=main)
-[![codecov](https://codecov.io/gh/chief-of-state/chief-of-state/graph/badge.svg?token=DBO3JBTHZ0)](https://codecov.io/gh/chief-of-state/chief-of-state)
+[![codecov](https://codecov.io/gh/chief-of-state/chief-of-state/branch/main/graph/badge.svg?token=DBO3JBTHZ0)](https://codecov.io/gh/chief-of-state/chief-of-state)
 ![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/chief-of-state/chief-of-state?include_prereleases)
 [![GitHub](https://img.shields.io/github/license/chief-of-state/chief-of-state)](https://github.com/chief-of-state/chief-of-state/blob/master/LICENSE)
 
