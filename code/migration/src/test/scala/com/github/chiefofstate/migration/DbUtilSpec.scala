@@ -41,6 +41,22 @@ class DbUtilSpec extends BaseSpec with ForAllTestContainer {
       DbUtil.tableExists(dbConfig, "fake_table") shouldBe false
     }
   }
+  ".dropTableIfExists" should {
+    "drop an existing table" in {
+      val statement = connection.createStatement()
+      statement.addBatch(s"create table to_drop(id int)")
+      statement.executeBatch()
+      DbUtil.tableExists(dbConfig, "to_drop") shouldBe true
+
+      DbUtil.dropTableIfExists("to_drop", dbConfig)
+      DbUtil.tableExists(dbConfig, "to_drop") shouldBe false
+    }
+
+    "be a no-op when the table is absent" in {
+      noException shouldBe thrownBy(DbUtil.dropTableIfExists("does_not_exist", dbConfig))
+    }
+  }
+
   ".isDatabaseOnline" should {
     "return true when the database is online" in {
       // let us parse the database jdbc url to get the port and the ost

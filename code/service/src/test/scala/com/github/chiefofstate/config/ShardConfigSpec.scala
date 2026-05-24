@@ -25,5 +25,23 @@ class ShardConfigSpec extends BaseSpec {
           """)
       an[ConfigException] shouldBe thrownBy(ShardConfig(config))
     }
+
+    "fail when number-of-shards is non-positive" in {
+      val config: Config =
+        ConfigFactory.parseString("pekko.cluster.sharding.number-of-shards = 0")
+      an[IllegalArgumentException] shouldBe thrownBy(ShardConfig(config))
+    }
+
+    "fail when number-of-shards exceeds 10000" in {
+      val config: Config =
+        ConfigFactory.parseString("pekko.cluster.sharding.number-of-shards = 20000")
+      an[IllegalArgumentException] shouldBe thrownBy(ShardConfig(config))
+    }
+
+    "fail when number-of-shards is not a power of 2" in {
+      val config: Config =
+        ConfigFactory.parseString("pekko.cluster.sharding.number-of-shards = 5")
+      an[IllegalArgumentException] shouldBe thrownBy(ShardConfig(config))
+    }
   }
 }

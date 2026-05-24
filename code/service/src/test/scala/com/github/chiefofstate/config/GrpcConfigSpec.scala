@@ -98,6 +98,48 @@ class GrpcConfigSpec extends BaseSpec {
     }
   }
 
+  "parse pool-size when set" in {
+    val config: Config = ConfigFactory.parseString(s"""
+            chiefofstate {
+              grpc {
+                client {
+                  deadline-timeout = 100
+                  pool-size = 4
+                }
+                server {
+                  address = "0.0.0.0"
+                  port = 9000
+                }
+              }
+            }
+          """)
+    GrpcConfig(config).client.poolSize shouldBe 4
+  }
+
+  "default pool-size to 1 when not set" in {
+    val config: Config = ConfigFactory.parseString(s"""
+            chiefofstate {
+              grpc {
+                client { deadline-timeout = 100 }
+                server { address = "0.0.0.0", port = 9000 }
+              }
+            }
+          """)
+    GrpcConfig(config).client.poolSize shouldBe 1
+  }
+
+  "fail when pool-size is less than 1" in {
+    val config: Config = ConfigFactory.parseString(s"""
+            chiefofstate {
+              grpc {
+                client { deadline-timeout = 100, pool-size = 0 }
+                server { address = "0.0.0.0", port = 9000 }
+              }
+            }
+          """)
+    an[IllegalArgumentException] shouldBe thrownBy(GrpcConfig(config))
+  }
+
   "fail when settings are missing or having invalid names" in {
     val config: Config = ConfigFactory.parseString(s"""
             chiefofstate {

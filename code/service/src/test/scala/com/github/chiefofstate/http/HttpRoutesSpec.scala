@@ -184,6 +184,43 @@ class HttpRoutesSpec extends BaseSpec with Matchers with ScalatestRouteTest {
       }
     }
 
+    "POST /v1/commands/:entityId/process overrides a mismatched body entity_id with the path" in {
+      val pathEntity = "entity-from-path"
+      val bodyEntity = "different-entity"
+      // Service should be called with the path entity id, not the body one
+      val response = ProcessCommandResponse()
+        .withState(any.Any.pack(StringValue("state")))
+      val cosService = mock[CosServiceApi]
+      (cosService.processCommand _)
+        .expects(ProcessCommandRequest(entityId = pathEntity))
+        .returning(Future.successful(response))
+
+      val routes = createHttpRoutes(cosService).routes
+      val request = Post(s"/v1/commands/$pathEntity/process")
+        .withEntity(ContentTypes.`application/json`, s"""{"entity_id":"$bodyEntity"}""")
+
+      request ~> routes ~> check { status shouldBe StatusCodes.OK }
+    }
+
+    "POST /v1/commands forwards HTTP headers into gRPC-style metadata" in {
+      val entityId = "entity-headers"
+      val response = ProcessCommandResponse()
+        .withState(any.Any.pack(StringValue("state")))
+      val cosService = mock[CosServiceApi]
+      (cosService.processCommand _)
+        .expects(ProcessCommandRequest(entityId = entityId))
+        .returning(Future.successful(response))
+
+      val routes = createHttpRoutes(cosService).routes
+      val request = Post(s"/v1/commands/$entityId/process")
+        .withEntity(ContentTypes.`application/json`, s"""{"entity_id":"$entityId"}""")
+        .withHeaders(
+          org.apache.pekko.http.scaladsl.model.headers.RawHeader("x-trace-id", "abc-123")
+        )
+
+      request ~> routes ~> check { status shouldBe StatusCodes.OK }
+    }
+
     "reject requests to unknown paths" in {
       val cosService = mock[CosServiceApi]
       val routes     = createHttpRoutes(cosService).routes

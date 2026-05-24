@@ -9,13 +9,13 @@ package com.github.chiefofstate.services
 import com.github.chiefofstate.protobuf.v1.common.ReadSideOffset
 import com.github.chiefofstate.protobuf.v1.manager.ReadSideManagerServiceGrpc.ReadSideManagerService
 import com.github.chiefofstate.protobuf.v1.manager._
-import com.github.chiefofstate.readside.ReadSideManager
+import com.github.chiefofstate.readside.StateManager
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class CosReadSideManagerService(readSideManager: ReadSideManager)(implicit ec: ExecutionContext)
+class CosReadSideManagerService(readSideManager: StateManager)(implicit ec: ExecutionContext)
     extends ReadSideManagerService {
 
   final val log: Logger = LoggerFactory.getLogger(getClass)

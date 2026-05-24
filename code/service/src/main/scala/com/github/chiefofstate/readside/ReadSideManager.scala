@@ -16,7 +16,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
-sealed trait StateManager {
+trait StateManager {
 
   /**
    * returns the offset of a read side given the offset

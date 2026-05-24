@@ -39,6 +39,54 @@ class SnapshotConfigSpec extends BaseSpec {
       an[ConfigException] shouldBe thrownBy(SnapshotConfig(config))
     }
 
+    "skip validation when snapshots are disabled" in {
+      val config: Config = ConfigFactory.parseString(s"""
+            chiefofstate.snapshot-criteria {
+              disable-snapshot = true
+              retention-frequency = 0
+              retention-number = 0
+              delete-events-on-snapshot = false
+            }
+          """)
+      noException shouldBe thrownBy(SnapshotConfig(config))
+    }
+
+    "fail when retention-frequency is non-positive while snapshots are enabled" in {
+      val config: Config = ConfigFactory.parseString(s"""
+            chiefofstate.snapshot-criteria {
+              disable-snapshot = false
+              retention-frequency = 0
+              retention-number = 2
+              delete-events-on-snapshot = false
+            }
+          """)
+      an[IllegalArgumentException] shouldBe thrownBy(SnapshotConfig(config))
+    }
+
+    "fail when retention-number is non-positive while snapshots are enabled" in {
+      val config: Config = ConfigFactory.parseString(s"""
+            chiefofstate.snapshot-criteria {
+              disable-snapshot = false
+              retention-frequency = 100
+              retention-number = 0
+              delete-events-on-snapshot = false
+            }
+          """)
+      an[IllegalArgumentException] shouldBe thrownBy(SnapshotConfig(config))
+    }
+
+    "fail when retention-number exceeds 100" in {
+      val config: Config = ConfigFactory.parseString(s"""
+            chiefofstate.snapshot-criteria {
+              disable-snapshot = false
+              retention-frequency = 100
+              retention-number = 101
+              delete-events-on-snapshot = false
+            }
+          """)
+      an[IllegalArgumentException] shouldBe thrownBy(SnapshotConfig(config))
+    }
+
     "fail when some settings are wrong" in {
       val config: Config = ConfigFactory.parseString(s"""
             chiefofstate {

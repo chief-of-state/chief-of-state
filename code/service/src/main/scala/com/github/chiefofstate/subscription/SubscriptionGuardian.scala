@@ -15,33 +15,22 @@ import java.util.UUID
 import scala.collection.mutable
 
 /**
- * Guardian actor that spawns stream-setup actors for gRPC subscription requests
- * and tracks subscriptions by [[subscriptionId]] for [[Unsubscribe]].
- *
- * == Why a guardian ==
- * The gRPC service ([[com.github.chiefofstate.services.CosService]]) runs outside
- * the actor system. To spawn typed actors (for subscribing to Pekko [[Topic]] and
- * forwarding events to [[io.grpc.stub.StreamObserver]]), we need an [[org.apache.pekko.actor.typed.ActorContext]].
- * The guardian holds that context and spawns a short-lived "stream setup" actor per
- * [[SpawnStreamSetup]] request.
+ * Guardian actor that spawns subscriber actors for gRPC subscription requests and
+ * tracks subscriptions by [[subscriptionId]] for [[Unsubscribe]] / [[Cancel]].
  *
  * == Flow for each subscription ==
- * 1. [[CosService]] receives `Subscribe` or `SubscribeAll` and sends
- *    [[SpawnStreamSetup]](subscriptionId, topicName, onEvent) to this guardian.
- * 2. Guardian spawns [[streamSetupBehavior]], which asks [[TopicRegistry]] for the
- *    topic ref, spawns a [[streamSubscriberBehavior]] actor, subscribes it to the topic,
- *    then sends [[RegisterSubscription]](subscriptionId, subscriberRef) back to the guardian.
- * 3. Guardian stores subscriptionId -> subscriberRef. The subscriber stays alive and
- *    forwards each [[EventWrapper]] via `onEvent`.
- * 4. When [[Unsubscribe]](subscriptionId, replyTo) is received, guardian stops the
- *    subscriber, removes it from the map, and replies with [[UnsubscribeResponse]].
+ * 1. [[CosService]] sends [[SpawnStreamSetup]](subscriptionId, topicName, onEvent).
+ * 2. Guardian spawns a [[streamSubscriberBehavior]] child actor, records it in the
+ *    subscriptions map, and asks [[TopicRegistry]] to subscribe it to the topic.
+ * 3. The subscriber forwards each [[EventWrapper]] via `onEvent`.
+ * 4. [[Unsubscribe]] or [[Cancel]] removes the entry and stops the child subscriber;
+ *    `TopicRegistry` notices the subscriber's termination and evicts the topic if
+ *    it has no more subscribers.
  *
  * == Lifecycle ==
- * - Spawned once per node when subscription is enabled (see [[com.github.chiefofstate.ServiceStarter]]).
- * - Receives [[SpawnStreamSetup]] from [[CosService]] on each new gRPC subscription.
- *
- * == Concurrency ==
- * - Single actor; spawning and map updates are serialized. Each stream setup runs in its own child actor.
+ * - Spawned once per node when subscription is enabled.
+ * - Subscriber actors are children of the guardian, so they survive long enough to
+ *   receive events and can be stopped via `context.stop`.
  */
 object SubscriptionGuardian {
 
@@ -51,12 +40,6 @@ object SubscriptionGuardian {
       subscriptionId: String,
       topicName: String,
       onEvent: EventWrapper => Unit
-  ) extends Command
-
-  /** Internal: sent by stream-setup actor to register the subscriber ref for a subscription id. */
-  private final case class RegisterSubscription(
-      subscriptionId: String,
-      subscriberRef: ActorRef[EventWrapper]
   ) extends Command
 
   /** Request to stop the subscription identified by subscription_id; reply is sent to replyTo. */
@@ -73,14 +56,15 @@ object SubscriptionGuardian {
       val subscriptions: mutable.Map[String, ActorRef[EventWrapper]] = mutable.Map.empty
       Behaviors.receiveMessage {
         case SpawnStreamSetup(subscriptionId, topicName, onEvent) =>
-          context.spawn(
-            streamSetupBehavior(subscriptionId, topicName, topicRegistryRef, onEvent, context.self),
-            "StreamSetup-" + UUID.randomUUID().toString.take(8)
+          // Subscriber must be a child of the guardian so that context.stop on
+          // Unsubscribe/Cancel works and so its lifetime isn't tied to a short-lived
+          // setup actor.
+          val subscriber = context.spawn(
+            streamSubscriberBehavior(onEvent),
+            "Subscriber-" + UUID.randomUUID().toString.take(8)
           )
-          Behaviors.same
-
-        case RegisterSubscription(subscriptionId, subscriberRef) =>
-          subscriptions(subscriptionId) = subscriberRef
+          subscriptions(subscriptionId) = subscriber
+          topicRegistryRef ! TopicRegistry.Subscribe(topicName, subscriber)
           Behaviors.same
 
         case Unsubscribe(subscriptionId, replyTo) =>
@@ -92,27 +76,6 @@ object SubscriptionGuardian {
           subscriptions.remove(subscriptionId).foreach(context.stop)
           Behaviors.same
       }
-    }
-
-  /**
-   * Short-lived actor: spawns a subscriber, asks TopicRegistry to subscribe it to the
-   * topic, registers the subscriber with the guardian, then stops.
-   */
-  private def streamSetupBehavior(
-      subscriptionId: String,
-      topicName: String,
-      topicRegistryRef: ActorRef[TopicRegistry.Command],
-      onEvent: EventWrapper => Unit,
-      guardianRef: ActorRef[Command]
-  ): Behavior[Nothing] =
-    Behaviors.setup[Nothing] { context =>
-      val subscriber = context.spawn(
-        streamSubscriberBehavior(onEvent),
-        "Subscriber-" + UUID.randomUUID().toString.take(8)
-      )
-      topicRegistryRef ! TopicRegistry.Subscribe(topicName, subscriber)
-      guardianRef ! RegisterSubscription(subscriptionId, subscriber)
-      Behaviors.stopped
     }
 
   /**
