@@ -124,7 +124,8 @@ class ChannelPool(channels: IndexedSeq[ManagedChannel]) {
    * @return a ManagedChannel from the pool
    */
   def next(): ManagedChannel = {
-    val index = Math.abs(counter.getAndIncrement() % channels.size)
+    // floorMod gives a non-negative result even when getAndIncrement wraps past Int.MaxValue
+    val index = Math.floorMod(counter.getAndIncrement(), channels.size)
     channels(index)
   }
 

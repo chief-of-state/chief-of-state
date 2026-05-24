@@ -15,7 +15,7 @@ import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import scala.collection.mutable
+import java.util.{LinkedHashMap => JLinkedHashMap, Map => JMap}
 
 /**
  * Publishes persisted entity events to Pekko DistributedPubSub (Topic) so that
@@ -52,17 +52,27 @@ object EventPublisher {
   /** Prefix for entity-specific topic names. Full name is `EntityEventsTopicPrefix + entityId`. */
   val EntityEventsTopicPrefix: String = "cos.events.entity."
 
+  /**
+   * Maximum number of entity-specific topic actors cached locally. Entity IDs form an
+   * unbounded set in long-running services; LRU eviction keeps memory bounded. Evicted
+   * topic actors are stopped; cluster subscribers (which attach to TopicRegistry's
+   * topic actor, not this cache) keep receiving events via the same logical topic name.
+   */
+  val DefaultMaxCachedEntityTopics: Int = 10000
+
   final val log: Logger = LoggerFactory.getLogger(getClass)
 
   /** Command to publish an event for a given entity (sent by [[com.github.chiefofstate.Entity]]). */
   sealed trait Command
   final case class Publish(entityId: String, event: EventWrapper) extends Command
 
-  def apply(): Behavior[Command] =
+  def apply(): Behavior[Command] = apply(DefaultMaxCachedEntityTopics)
+
+  def apply(maxCachedEntityTopics: Int): Behavior[Command] =
     Behaviors.setup { context =>
       val allTopic: ActorRef[Topic.Command[EventWrapper]] =
         context.spawn(Topic[EventWrapper](AllEventsTopicName), "CosEventsAll")
-      new EventPublisher(context, allTopic).behavior()
+      new EventPublisher(context, allTopic, maxCachedEntityTopics).behavior()
     }
 }
 
@@ -73,22 +83,40 @@ object EventPublisher {
  */
 private final class EventPublisher(
     context: ActorContext[EventPublisher.Command],
-    allTopic: ActorRef[Topic.Command[EventWrapper]]
+    allTopic: ActorRef[Topic.Command[EventWrapper]],
+    maxCachedEntityTopics: Int
 ) {
 
   import EventPublisher._
 
-  /** Cache of topic name -> Topic ref; entity topics are created on first use. */
-  private val entityTopics: mutable.Map[String, ActorRef[Topic.Command[EventWrapper]]] =
-    mutable.Map.empty
+  /**
+   * Cache of topic name -> Topic ref, bounded with access-order LRU eviction. The
+   * eldest entry's topic actor is stopped on eviction. EP-spawned topics never have
+   * local subscribers attached, so stopping them is safe; they only forward to
+   * DistributedPubSub.
+   */
+  private val entityTopics =
+    new JLinkedHashMap[String, ActorRef[Topic.Command[EventWrapper]]](16, 0.75f, true) {
+      override def removeEldestEntry(
+          eldest: JMap.Entry[String, ActorRef[Topic.Command[EventWrapper]]]
+      ): Boolean = {
+        val shouldEvict = size > maxCachedEntityTopics
+        if (shouldEvict) context.stop(eldest.getValue)
+        shouldEvict
+      }
+    }
 
   def behavior(): Behavior[Command] =
     Behaviors.receiveMessage { case Publish(entityId, event) =>
       val entityTopicName = EntityEventsTopicPrefix + entityId
-      val entityTopic = entityTopics.getOrElseUpdate(
-        entityTopicName,
-        context.spawnAnonymous(Topic[EventWrapper](entityTopicName))
-      )
+      val cached          = entityTopics.get(entityTopicName)
+      val entityTopic =
+        if (cached != null) cached
+        else {
+          val fresh = context.spawnAnonymous(Topic[EventWrapper](entityTopicName))
+          entityTopics.put(entityTopicName, fresh)
+          fresh
+        }
       allTopic ! Topic.Publish(event)
       entityTopic ! Topic.Publish(event)
       Behaviors.same

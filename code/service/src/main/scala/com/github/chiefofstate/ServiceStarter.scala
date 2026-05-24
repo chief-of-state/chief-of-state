@@ -138,6 +138,13 @@ object ServiceStarter {
                           cosConfig.grpcConfig.client.keepalive
                         )
                         .build()
+                    CoordinatedShutdown(context.system).addTask(
+                      CoordinatedShutdown.PhaseServiceUnbind,
+                      "shutdown-write-side-channel"
+                    ) { () =>
+                      channel.shutdown()
+                      Future.successful(Done)
+                    }
                     val writeHandler =
                       new WriteSideHandlerServiceBlockingStub(channel)
                     SingleStubSupplier(writeHandler)

@@ -111,17 +111,14 @@ Contributions are welcome!
 The project adheres to [Semantic Versioning](https://semver.org) and [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). If you see an issue you'd like to fix, the best way is to submit a pull request. To test your changes locally:
 
 ```bash
-# Install Earthly CLI (macOS)
-brew install earthly/earthly/earthly
+# Run the test suite
+make test
 
-# Build the Docker image
-earthly +build-image
-
-# Run tests
-earthly -P --no-output +test-local
+# Build the runtime Docker image
+make docker-build
 ```
 
-> **Tip:** See the [Earthly docs](https://docs.earthly.dev/) for installation on Linux and Windows.
+> **Tip:** Run `make help` to see all available targets.
 
 ## 📄 License
 

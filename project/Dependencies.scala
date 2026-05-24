@@ -8,31 +8,32 @@ object Dependencies {
   // Package versions
   object Versions {
     val ScalaVersion: String                = "3.3.7"
-    val PekkoVersion: String                = "1.4.0"
-    val PekkoHttpVersion: String            = "1.1.0"
+    val PekkoVersion: String                = "1.6.0"
+    val PekkoHttpVersion: String            = "1.3.0"
     val ScalapbCommonProtoVersion: String   = "2.9.6-0"
     val SilencerVersion: String             = "1.7.19"
     val LogbackVersion: String              = "1.5.32"
-    val ScalaTestVersion: String            = "3.2.19"
-    val PekkoManagementVersion: String      = "1.2.0"
+    val ScalaTestVersion: String            = "3.2.20"
+    val PekkoManagementVersion: String      = "1.2.1"
     val PekkoProjectionVersion: String      = "1.1.0"
-    val PostgresDriverVersion: String       = "42.7.10"
+    val PostgresDriverVersion: String       = "42.7.11"
     val SlickVersion: String                = "3.6.1"
     val PekkoPersistenceJdbcVersion: String = "1.2.0"
-    val ScalaMockVersion: String            = "7.5.4"
+    val ScalaMockVersion: String            = "7.5.5"
 
     val JaninoVersion: String                          = "3.1.12"
-    val LogstashLogbackVersion: String                 = "8.1"
-    val OpenTelemetrySdkVersion: String                = "1.60.1"
+    val LogstashLogbackVersion: String                 = "9.0"
+    val OpenTelemetrySdkVersion: String                = "1.62.0"
     val TestContainers: String                         = "0.44.1"
-    val OpenTelemetrySdkConfigVersion: String          = "1.60.1"
-    val OpenTelemetryInstrumentationApiVersion: String = "2.25.0"
-    val OpenTelemetrySdkTestingVersion: String         = "1.60.1"
-    val OpenTelemetryExtensionVersion: String          = "1.60.1"
-    val OpenTelemetryApiVersion: String                = "1.60.1"
+    val OpenTelemetrySdkConfigVersion: String          = "1.62.0"
+    val OpenTelemetryInstrumentationApiVersion: String = "2.28.1"
+    val OpenTelemetrySdkTestingVersion: String         = "1.62.0"
+    val OpenTelemetryExtensionVersion: String          = "1.62.0"
+    val OpenTelemetryApiVersion: String                = "1.62.0"
     val ScalaXmlVersion: String                        = "2.4.0"
-    val JacksonVersion: String                         = "2.19.4"
-    val NettyVersion: String                           = "4.2.10.Final"
+    val JacksonVersion: String                         = "2.21.3"
+    val JacksonAnnotationsVersion: String              = "2.21"
+    val NettyVersion: String                           = "4.2.13.Final"
   }
 
   // include the dependencies
@@ -77,7 +78,7 @@ object Dependencies {
     "org.scala-lang.modules" %% "scala-xml"                % ScalaXmlVersion,
     // Jackson dependencies
     "com.fasterxml.jackson.core"       % "jackson-core"            % JacksonVersion,
-    "com.fasterxml.jackson.core"       % "jackson-annotations"     % JacksonVersion,
+    "com.fasterxml.jackson.core"       % "jackson-annotations"     % JacksonAnnotationsVersion,
     "com.fasterxml.jackson.core"       % "jackson-databind"        % JacksonVersion,
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % JacksonVersion,
     "com.fasterxml.jackson.module"    %% "jackson-module-scala"    % JacksonVersion,

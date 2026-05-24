@@ -38,7 +38,7 @@ import io.grpc.Metadata
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.protobuf.StatusProto
-import io.grpc.stub.StreamObserver
+import io.grpc.stub.{ServerCallStreamObserver, StreamObserver}
 import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.Scheduler
@@ -319,6 +319,15 @@ class CosService(
           catch { case _: Throwable => }
       }
     }
+
+    // When the gRPC client cancels the stream (disconnect, timeout, explicit cancel),
+    // tell the guardian to clean up so we don't leak the subscriber actor.
+    responseObserver match {
+      case s: ServerCallStreamObserver[T] @unchecked =>
+        s.setOnCancelHandler(() => guardianRef ! SubscriptionGuardian.Cancel(subscriptionId))
+      case _ => ()
+    }
+
     guardianRef ! SubscriptionGuardian.SpawnStreamSetup(subscriptionId, topicName, onEvent)
   }
 }

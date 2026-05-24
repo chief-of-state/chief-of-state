@@ -48,19 +48,13 @@ object ReadSideConfigReader {
   }
 
   private def parseYAMLFile(f: File): Seq[ReadSideConfig] = {
-    // create an instance of YAMLFactory
     val factory = new YAMLFactory()
-    // create an instance of ObjectMapper
-    val mapper = new ObjectMapper(factory)
-    // register the default scala module
+    val mapper  = new ObjectMapper(factory)
     mapper.registerModule(DefaultScalaModule)
+    val parser = factory.createParser(f)
     val configs =
-      mapper
-        .readValues(factory.createParser(f), new TypeReference[ReadSideConfig] {})
-        .readAll()
-        .asScala
-        .toSeq
-    // let us validate the configs
+      try mapper.readValues(parser, new TypeReference[ReadSideConfig] {}).readAll().asScala.toSeq
+      finally parser.close()
     if (!configs.forall(_.isValid)) {
       throw new IllegalArgumentException("invalid read side configuration")
     }

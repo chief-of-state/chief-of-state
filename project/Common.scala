@@ -19,11 +19,11 @@ object Common extends AutoPlugin {
   override def globalSettings =
     Seq(
       // Let Slick 3.6.1 be used even when pekko-persistence-jdbc declares 3.5.1 (same major, early-semver)
-      libraryDependencySchemes += "com.typesafe.slick" %% "slick"         % "early-semver",
+      libraryDependencySchemes += "com.typesafe.slick" %% "slick"          % "early-semver",
       libraryDependencySchemes += "com.typesafe.slick" %% "slick-hikaricp" % "early-semver",
-      scalaVersion         := Versions.ScalaVersion,
-      organization         := "com.github.chiefofstate",
-      organizationName     := "Chief Of State.",
+      scalaVersion                                     := Versions.ScalaVersion,
+      organization                                     := "com.github.chiefofstate",
+      organizationName                                 := "Chief Of State.",
       organizationHomepage := Some(url("https://github.com/chief-of-state")),
       startYear            := Some(2020),
       licenses += ("MIT", url("https://opensource.org/licenses/MIT")),
@@ -57,6 +57,7 @@ object Common extends AutoPlugin {
       ),
       // OSSRH was sunset 2025-06-30; use Sonatype Central. Maven Central is included by default.
       // Add Sonatype Central Snapshots if snapshot dependencies are required:
+      resolvers += Resolver.mavenCentral,
       resolvers += Resolver.sonatypeCentralSnapshots,
       scalafmtOnCompile := true,
       // require test coverage

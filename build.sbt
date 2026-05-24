@@ -14,7 +14,7 @@ lazy val root: Project = project
     Compile / mainClass                       := Some("com.github.chiefofstate.Entrypoint"),
     makeBatScripts                            := Seq(),
     executableScriptName                      := "entrypoint",
-    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "2.25.0" % "runtime",
+    javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % "2.28.1" % "runtime",
     Universal / javaOptions ++= Seq(
       // Setting the OpenTelemetry java agent options
       // reference: https://github.com/open-telemetry/opentelemetry-java/blob/main/sdk-extensions/autoconfigure/README.md#exporters
@@ -26,8 +26,12 @@ lazy val root: Project = project
       "-Dotel.instrumentation.hikaricp.enabled=false",
       "-Dotel.instrumentation.jdbc.enabled=false",
       "-Dio.opentelemetry.javaagent.slf4j.simpleLogger.defaultLogLevel=error",
+      // Bound Netty's pooled direct memory (gRPC + Pekko HTTP both use Netty).
+      // 128 MiB is enough for typical workloads and stops the off-heap pool from
+      // claiming hundreds of MB at the JVM's discretion.
+      "-Dio.netty.maxDirectMemory=134217728",
       // -J params will be added as jvm parameters
-      "-J-Xms300m",
+      "-J-Xms128m",
       "-J-XX:+UseContainerSupport",
       "-J-XX:MinRAMPercentage=60.0",
       "-J-XX:MaxRAMPercentage=90.0",

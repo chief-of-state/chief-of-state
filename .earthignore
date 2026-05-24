@@ -1,7 +1,0 @@
-**/.protogen
-**/.protogen_test
-**/target
-**tmp
-target
-tmp
-**/metals.sbt

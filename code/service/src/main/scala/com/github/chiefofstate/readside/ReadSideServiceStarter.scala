@@ -16,11 +16,13 @@ import com.github.chiefofstate.netty.Netty
 import com.github.chiefofstate.protobuf.v1.readside.ReadSideHandlerServiceGrpc.ReadSideHandlerServiceBlockingStub
 import com.typesafe.config.{Config, ConfigException}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import org.apache.pekko.Done
+import org.apache.pekko.actor.CoordinatedShutdown
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.pattern.CircuitBreaker
 import org.slf4j.{Logger, LoggerFactory}
 
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
@@ -51,6 +53,15 @@ class ReadSideServiceStarter(
 
   def init(): Unit = {
     logger.info(s"initializing read sides, count=${readSideConfigs.size}")
+
+    // close the Hikari pool on coordinated shutdown (no-op if dataSource was never used)
+    CoordinatedShutdown(system).addTask(
+      CoordinatedShutdown.PhaseServiceUnbind,
+      "shutdown-readside-datasource"
+    ) { () =>
+      dataSource.close()
+      Future.successful(Done)
+    }
 
     // configure enabled read sides
     readSideConfigs.filter(c => c.enabled).foreach { config =>
@@ -87,12 +98,19 @@ class ReadSideServiceStarter(
         case "grpc" =>
           // construct a remote gRPC read side client for this read side (same keepalive as write-side)
           val grpcClientKeepalive = GrpcConfig(system.settings.config).client.keepalive
+          val channel =
+            Netty
+              .channelBuilder(config.host, config.port, config.useTls, grpcClientKeepalive)
+              .build
+          CoordinatedShutdown(system).addTask(
+            CoordinatedShutdown.PhaseServiceUnbind,
+            s"shutdown-readside-channel-${config.readSideId}"
+          ) { () =>
+            channel.shutdown()
+            Future.successful(Done)
+          }
           val rpcClient: ReadSideHandlerServiceBlockingStub =
-            new ReadSideHandlerServiceBlockingStub(
-              Netty
-                .channelBuilder(config.host, config.port, config.useTls, grpcClientKeepalive)
-                .build
-            )
+            new ReadSideHandlerServiceBlockingStub(channel)
           logger.info(
             s"Using gRPC handler for ${config.readSideId} at ${config.host}:${config.port} (timeout=${config.timeout}ms)"
           )

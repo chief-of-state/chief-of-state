@@ -8,7 +8,6 @@ package com.github.chiefofstate.subscription
 
 import com.github.chiefofstate.protobuf.v1.persistence.EventWrapper
 import com.github.chiefofstate.protobuf.v1.service.UnsubscribeResponse
-import org.apache.pekko.actor.typed.pubsub.Topic
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 
@@ -66,6 +65,9 @@ object SubscriptionGuardian {
       replyTo: ActorRef[UnsubscribeResponse]
   ) extends Command
 
+  /** Fire-and-forget stop, used when the gRPC stream is cancelled by the client. */
+  final case class Cancel(subscriptionId: String) extends Command
+
   def apply(topicRegistryRef: ActorRef[TopicRegistry.Command]): Behavior[Command] =
     Behaviors.setup { context =>
       val subscriptions: mutable.Map[String, ActorRef[EventWrapper]] = mutable.Map.empty
@@ -82,20 +84,19 @@ object SubscriptionGuardian {
           Behaviors.same
 
         case Unsubscribe(subscriptionId, replyTo) =>
-          subscriptions.remove(subscriptionId) match {
-            case Some(subscriberRef) =>
-              context.stop(subscriberRef)
-              replyTo ! UnsubscribeResponse(subscriptionId = subscriptionId)
-            case None =>
-              replyTo ! UnsubscribeResponse(subscriptionId = subscriptionId)
-          }
+          subscriptions.remove(subscriptionId).foreach(context.stop)
+          replyTo ! UnsubscribeResponse(subscriptionId = subscriptionId)
+          Behaviors.same
+
+        case Cancel(subscriptionId) =>
+          subscriptions.remove(subscriptionId).foreach(context.stop)
           Behaviors.same
       }
     }
 
   /**
-   * Short-lived actor: asks TopicRegistry for the topic ref, spawns a subscriber,
-   * subscribes it to the topic, registers the subscriber with the guardian, then stops.
+   * Short-lived actor: spawns a subscriber, asks TopicRegistry to subscribe it to the
+   * topic, registers the subscriber with the guardian, then stops.
    */
   private def streamSetupBehavior(
       subscriptionId: String,
@@ -103,18 +104,15 @@ object SubscriptionGuardian {
       topicRegistryRef: ActorRef[TopicRegistry.Command],
       onEvent: EventWrapper => Unit,
       guardianRef: ActorRef[Command]
-  ): Behavior[ActorRef[Topic.Command[EventWrapper]]] =
-    Behaviors.setup { context =>
-      topicRegistryRef ! TopicRegistry.GetOrCreateTopic(topicName, context.self)
-      Behaviors.receiveMessage { topicRef =>
-        val subscriber = context.spawn(
-          streamSubscriberBehavior(onEvent),
-          "Subscriber-" + UUID.randomUUID().toString.take(8)
-        )
-        topicRef ! Topic.Subscribe(subscriber)
-        guardianRef ! RegisterSubscription(subscriptionId, subscriber)
-        Behaviors.stopped
-      }
+  ): Behavior[Nothing] =
+    Behaviors.setup[Nothing] { context =>
+      val subscriber = context.spawn(
+        streamSubscriberBehavior(onEvent),
+        "Subscriber-" + UUID.randomUUID().toString.take(8)
+      )
+      topicRegistryRef ! TopicRegistry.Subscribe(topicName, subscriber)
+      guardianRef ! RegisterSubscription(subscriptionId, subscriber)
+      Behaviors.stopped
     }
 
   /**
