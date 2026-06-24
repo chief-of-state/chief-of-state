@@ -12,7 +12,7 @@ object Dependencies {
     val PekkoHttpVersion: String            = "1.3.0"
     val ScalapbCommonProtoVersion: String   = "2.9.6-0"
     val SilencerVersion: String             = "1.7.19"
-    val LogbackVersion: String              = "1.5.32"
+    val LogbackVersion: String              = "1.5.35"
     val ScalaTestVersion: String            = "3.2.20"
     val PekkoManagementVersion: String      = "1.2.1"
     val PekkoProjectionVersion: String      = "1.1.0"
