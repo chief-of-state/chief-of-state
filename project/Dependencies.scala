@@ -33,7 +33,7 @@ object Dependencies {
     val ScalaXmlVersion: String                        = "2.4.0"
     val JacksonVersion: String                         = "2.21.4"
     val JacksonAnnotationsVersion: String              = "2.21"
-    val NettyVersion: String                           = "4.2.13.Final"
+    val NettyVersion: String                           = "4.2.15.Final"
   }
 
   // include the dependencies
