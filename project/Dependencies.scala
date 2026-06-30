@@ -16,7 +16,7 @@ object Dependencies {
     val ScalaTestVersion: String            = "3.2.20"
     val PekkoManagementVersion: String      = "1.2.1"
     val PekkoProjectionVersion: String      = "1.1.0"
-    val PostgresDriverVersion: String       = "42.7.11"
+    val PostgresDriverVersion: String       = "42.7.12"
     val SlickVersion: String                = "3.6.1"
     val PekkoPersistenceJdbcVersion: String = "1.3.0"
     val ScalaMockVersion: String            = "7.5.5"
